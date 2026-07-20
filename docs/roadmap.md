@@ -19,12 +19,15 @@ Minecraft to be tested. `./gradlew :test-harness:runDemo` shows it end to end.
 - A child-first classloader with a transformation hook ✅
 - The `@Mod` annotation, the `fenix-processor` index, and lifecycle dispatch ✅
 
-## Phase 2 — Launching real Minecraft
+## Phase 2 — Launching real Minecraft ✅
 
 - `fenix-installer`: a version manifest and launcher profile written into
-  `.minecraft`
-- Locating the game jar and detecting the side
-- A dry-run mode that proves the classpath is right without opening a window
+  `.minecraft` ✅ — the profile inherits from vanilla, so the launcher builds
+  the classpath and Fenix only swaps the main class
+- Locating the game jar and detecting the side ✅ — plus the game version read
+  from the jar's `version.json`, which feeds the `minecraft` builtin
+- A dry-run mode that proves the classpath is right without opening a window ✅
+  — `--fenix.dryRun`, verified against the real 26.2 client jar
 
 ## Phase 3 — Mixin
 

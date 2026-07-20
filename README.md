@@ -2,10 +2,11 @@
 
 A modern Minecraft mod loader, and the toolchain around it.
 
-> **Status: the loader core works — against a fake game.** Discovery,
-> resolution, child-first classloading, the compile-time mod index and the
-> full lifecycle run end to end under `./gradlew :test-harness:runDemo`.
-> Minecraft itself is not launched yet. See [the roadmap](docs/roadmap.md).
+> **Status: real Minecraft launches through a Fenix profile.** The installer
+> writes a launcher profile inheriting from vanilla 26.2, the loader finds the
+> game on the classpath, and a dry run against the real client jar proves the
+> whole pipeline resolves — mods, versions and all. Mixin integration is next.
+> See [the roadmap](docs/roadmap.md).
 
 Fenix targets **Minecraft 26.2** on **Java 25**. Since Minecraft 26.1 the game
 ships unobfuscated, so there is no mapping or remapping step anywhere in this
@@ -55,10 +56,11 @@ and `fenix-api` aggregates them.
 Requires **JDK 25**. The Gradle wrapper is checked in.
 
 ```bash
-./gradlew build                    # compile and test everything
-./gradlew :test-harness:runDemo    # boot the fake game through the loader
-./gradlew installFenix             # publish every artifact to ~/.m2
-./gradlew projects                 # list the modules
+./gradlew build                              # compile and test everything
+./gradlew :test-harness:runDemo              # boot the fake game through the loader
+./gradlew :fenix-installer:installToLauncher # write the Fenix profile into .minecraft
+./gradlew installFenix                       # publish every artifact to ~/.m2
+./gradlew projects                           # list the modules
 ```
 
 ## Documentation
