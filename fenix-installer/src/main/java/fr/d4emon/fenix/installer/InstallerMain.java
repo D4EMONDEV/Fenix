@@ -2,6 +2,7 @@ package fr.d4emon.fenix.installer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -24,8 +25,8 @@ public final class InstallerMain {
               --dir <path>          the .minecraft directory (default: the standard location)
               --minecraft <version> the vanilla version to install on top of""";
 
-    /** The artifacts embedded in the installer, in classpath order. */
-    private static final List<String> PAYLOAD_ARTIFACTS = List.of("fenix-loader", "fenix-api-core");
+    /** Lists the embedded jars and their coordinates; written by the build. */
+    private static final String PAYLOAD_INDEX = "/fenix-payload/payload.index";
 
     private InstallerMain() {
     }
@@ -69,7 +70,7 @@ public final class InstallerMain {
                 + " into " + minecraftDir);
 
         Installer.Report report = Installer.install(
-                minecraftDir, minecraftVersion, fenixVersion, extractPayload(fenixVersion));
+                minecraftDir, minecraftVersion, fenixVersion, extractPayload());
 
         System.out.println();
         System.out.println("Installed:");
@@ -94,25 +95,43 @@ public final class InstallerMain {
     }
 
     /**
-     * Extracts the embedded loader jars to temporary files the installer can
-     * copy from. Missing payload means a hand-built or IDE-run installer.
+     * Extracts every embedded jar to a temporary file, reading their Maven
+     * coordinates from the payload index. Missing payload means a hand-built or
+     * IDE-run installer.
      */
-    private static List<Installer.Library> extractPayload(String fenixVersion) throws IOException {
+    private static List<Installer.Library> extractPayload() throws IOException {
         List<Installer.Library> libraries = new ArrayList<>();
-        for (String artifact : PAYLOAD_ARTIFACTS) {
-            String resource = "/fenix-payload/" + artifact + "-" + fenixVersion + ".jar";
+        for (String line : readPayloadIndex()) {
+            // group:artifact:version:filename
+            String[] fields = line.split(":", 4);
+            if (fields.length != 4) {
+                throw new InstallException("the installer's payload index is malformed: '" + line + "'");
+            }
+            String resource = "/fenix-payload/" + fields[3];
             try (InputStream in = InstallerMain.class.getResourceAsStream(resource)) {
                 if (in == null) {
                     throw new InstallException("the installer is missing its embedded " + resource
                             + " — build it with gradlew :fenix-installer:jar");
                 }
-                Path temp = Files.createTempFile(artifact + "-", ".jar");
+                Path temp = Files.createTempFile(fields[1] + "-", ".jar");
                 temp.toFile().deleteOnExit();
                 Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
-                libraries.add(new Installer.Library("fr.d4emon.fenix", artifact, fenixVersion, temp));
+                libraries.add(new Installer.Library(fields[0], fields[1], fields[2], temp));
             }
         }
         return libraries;
+    }
+
+    private static List<String> readPayloadIndex() throws IOException {
+        try (InputStream in = InstallerMain.class.getResourceAsStream(PAYLOAD_INDEX)) {
+            if (in == null) {
+                throw new InstallException("the installer is missing its payload index — "
+                        + "build it with gradlew :fenix-installer:jar");
+            }
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8).lines()
+                    .filter(line -> !line.isBlank())
+                    .toList();
+        }
     }
 
     /**
