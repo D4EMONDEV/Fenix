@@ -29,11 +29,14 @@ Minecraft to be tested. `./gradlew :test-harness:runDemo` shows it end to end.
 - A dry-run mode that proves the classpath is right without opening a window ✅
   — `--fenix.dryRun`, verified against the real 26.2 client jar
 
-## Phase 3 — Mixin
+## Phase 3 — Mixin ✅
 
-- A Fenix mixin service backed by the loader's classloader
-- `mixins` in mod metadata, and the shared `fr.d4emon.fenix.mixin.*` root
-- No refmaps: the game is unobfuscated
+- A Fenix mixin service backed by the loader's classloader ✅
+- `mixins` in mod metadata, and the shared `fr.d4emon.fenix.mixin.*` root ✅
+- No refmaps: the game is unobfuscated ✅ — mixins target Minecraft by string,
+  so nothing needs the game on its compile classpath
+- Lifecycle mixins fire `onRegister`/`onInit` from inside the game, and
+  `testmod`'s title mixin is the visible proof
 
 ## Phase 4 — The Gradle plugin
 

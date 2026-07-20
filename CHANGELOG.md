@@ -7,6 +7,27 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Mixin integration.** Mods can now transform the game. `FenixMixinService`
+  bridges the SpongePowered Mixin fork to the loader's classloader; `MixinSetup`
+  brings the environment up, registers every config (the loader's own and each
+  mod's `mixins`), and hands classes to the transformer as they load. The
+  classloader pins ASM and Mixin to the parent so a transformed game class and
+  the transformer share one copy of `CallbackInfo`, and defines Mixin's
+  synthetic classes on demand. No refmaps — the game is unobfuscated — and
+  mixins target Minecraft by string, so a mod (and the loader itself) compiles
+  without the game on its classpath. Proven by a conformance test that applies
+  a mixin to a synthetic target through the real pipeline.
+- Lifecycle mixins fire the later phases from inside real Minecraft:
+  `onRegister` at the head of `BuiltInRegistries.freeze`, `onInit` at the tail
+  of the client and server constructors. `testmod` ships a title mixin that
+  appends " | Fenix Loader" to the window title — the visible proof a mod
+  reached into the game.
+- The installer now ships Mixin and ASM alongside the loader, listed as
+  libraries in the version manifest, so the launcher puts the whole
+  transformation stack on the classpath.
+
 ### Fixed
 
 - Launch time: the classloader was reopening and reparsing the game jar's
