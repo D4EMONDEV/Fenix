@@ -84,6 +84,38 @@ public final class MinecraftDownloader {
         }
     }
 
+    /**
+     * Ensures the dedicated server is present and un-bundled.
+     *
+     * @param version the Minecraft version
+     * @return the extracted server jar, its libraries, and its main class
+     * @throws RuntimeException if the version has no server or a download fails
+     */
+    public MinecraftServer resolveServer(String version) {
+        try {
+            Path versionDir = Files.createDirectories(cacheRoot.resolve(version));
+            JsonObject versionJson = fetchVersionJson(version, versionDir);
+
+            JsonObject downloads = versionJson.getAsJsonObject("downloads");
+            if (!downloads.has("server")) {
+                throw new IOException("Minecraft " + version + " has no dedicated server download");
+            }
+            JsonObject server = downloads.getAsJsonObject("server");
+
+            Path bundle = versionDir.resolve("server-bundle-" + server.get("sha1").getAsString() + ".jar");
+            if (!Files.isRegularFile(bundle) || !sha1(bundle).equals(server.get("sha1").getAsString())) {
+                downloadTo(server.get("url").getAsString(), bundle);
+            }
+            return new ServerUnbundler(versionDir.resolve("server")).unbundle(bundle);
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new RuntimeException("failed to prepare the Minecraft " + version + " server: "
+                    + e.getMessage(), e);
+        }
+    }
+
     private JsonObject fetchVersionJson(String version, Path versionDir) throws IOException, InterruptedException {
         Path cached = versionDir.resolve(version + ".json");
         if (Files.isRegularFile(cached)) {
