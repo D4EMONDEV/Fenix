@@ -39,12 +39,14 @@ dependencies {
 }
 
 val minecraftVersion = rootProperties.getProperty("minecraft_version")
+val vineflowerVersion = libs.versions.vineflower.get()
 
 tasks.processResources {
     filesMatching("fenix-plugin.properties") {
         expand(
             "version" to version,
             "minecraft_version" to minecraftVersion,
+            "vineflower_version" to vineflowerVersion,
         )
     }
 }

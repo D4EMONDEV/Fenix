@@ -97,7 +97,21 @@ public final class FenixDevPlugin implements Plugin<Project> {
         game.compileLibs().forEach(lib -> dependencies.add(clientClasspath.getName(), lib));
         game.nativeLibs().forEach(lib -> dependencies.add(clientClasspath.getName(), lib));
 
+        // The server launch classpath: the loader and API only. The server's own
+        // libraries come from the bundle, added when runServer actually runs, so
+        // the 60 MB download is not paid on every configure.
+        Configuration serverClasspath = project.getConfigurations().create("fenixServerClasspath");
+        dependencies.add(serverClasspath.getName(), "fr.d4emon.fenix:fenix-loader:" + loaderVersion);
+        dependencies.add(serverClasspath.getName(), "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+
+        Configuration vineflower = project.getConfigurations().create("fenixVineflower");
+        dependencies.add(vineflower.getName(),
+                "org.vineflower:vineflower:" + readPluginProperties().getProperty("vineflower"));
+
         registerRunClient(project, game, clientClasspath, fenixMod);
+        registerRunServer(project, minecraft, cacheRoot, serverClasspath, fenixMod);
+        registerGenSources(project, game, vineflower);
+        writeRunConfigs(project);
     }
 
     private void registerRunClient(Project project, MinecraftLibraries game,
@@ -142,6 +156,105 @@ public final class FenixDevPlugin implements Plugin<Project> {
             }
             task.setArgs(args);
         });
+    }
+
+    private void registerRunServer(Project project, String minecraft, Path cacheRoot,
+                                   Configuration serverClasspath, Configuration fenixMod) {
+        Directory runDir = project.getLayout().getProjectDirectory().dir("run-server");
+        var jar = project.getTasks().named("jar");
+
+        var syncServerMods = project.getTasks().register("syncServerMods", Copy.class, task -> {
+            task.setDescription("Copies this mod and its Fenix mod dependencies into run-server/mods");
+            task.from(jar);
+            task.from(fenixMod);
+            task.into(runDir.dir("mods"));
+        });
+
+        boolean dryRun = project.hasProperty("fenix.dryRun");
+        project.getTasks().register("runServer", JavaExec.class, task -> {
+            task.setGroup("fenix");
+            task.setDescription("Launches the Minecraft dedicated server through Fenix, with this mod installed");
+            task.dependsOn(syncServerMods);
+            task.getMainClass().set(LAUNCH_MAIN);
+            task.setWorkingDir(runDir);
+
+            // The server bundle is large and only needed here, so it is resolved
+            // when the task runs rather than at configuration time.
+            task.doFirst(unused -> {
+                MinecraftServer server = new MinecraftDownloader(cacheRoot).resolveServer(minecraft);
+                task.setClasspath(project.files(serverClasspath, server.libraries()));
+
+                List<String> args = new ArrayList<>(List.of(
+                        "--fenix.gameJar", server.serverJar().toAbsolutePath().toString(),
+                        "--fenix.gameMain", server.mainClass(),
+                        "--fenix.side", "server",
+                        "--fenix.gameDir", runDir.getAsFile().getAbsolutePath()));
+                // Fenix never writes eula=true; accepting the licence is the
+                // user's act. Without run-server/eula.txt the server exits early
+                // by its own choice, which a dry run sidesteps entirely.
+                args.add(dryRun ? "--fenix.dryRun" : "nogui");
+                task.setArgs(args);
+            });
+        });
+    }
+
+    private void registerGenSources(Project project, MinecraftLibraries game, Configuration vineflower) {
+        var outputDir = project.getLayout().getBuildDirectory().dir("fenix/minecraft-sources");
+
+        project.getTasks().register("genSources", JavaExec.class, task -> {
+            task.setGroup("fenix");
+            task.setDescription("Decompiles Minecraft with Vineflower for navigation");
+            task.setClasspath(vineflower);
+            task.getMainClass().set("org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler");
+            task.getOutputs().dir(outputDir);
+            task.doFirst(unused -> outputDir.get().getAsFile().mkdirs());
+            task.setArgs(List.of(
+                    "-jrt=1", // resolve JDK types from the runtime image, not a stub
+                    game.clientJar().toAbsolutePath().toString(),
+                    outputDir.get().getAsFile().getAbsolutePath()));
+        });
+    }
+
+    /**
+     * Writes IntelliJ run configurations for the Fenix tasks during a Gradle
+     * sync, so they appear in the IDE's run menu without hand-editing. They are
+     * Gradle-type configurations: the launch classpath is assembled by the
+     * tasks, which an Application configuration could not reproduce.
+     */
+    private void writeRunConfigs(Project project) {
+        if (!Boolean.getBoolean("idea.sync.active")) {
+            return;
+        }
+        for (String taskName : List.of("runClient", "runServer", "genSources")) {
+            writeRunConfig(project, taskName);
+        }
+    }
+
+    private static void writeRunConfig(Project project, String taskName) {
+        java.nio.file.Path runConfigDir = project.getProjectDir().toPath().resolve(".run");
+        String taskPath = project.getPath().equals(":") ? ":" + taskName : project.getPath() + ":" + taskName;
+        String xml = """
+                <component name="ProjectRunConfigurationManager">
+                  <configuration default="false" name="%s" type="GradleRunConfiguration" factoryName="Gradle">
+                    <ExternalSystemSettings>
+                      <option name="externalProjectPath" value="$PROJECT_DIR$" />
+                      <option name="taskNames">
+                        <list>
+                          <option value="%s" />
+                        </list>
+                      </option>
+                    </ExternalSystemSettings>
+                    <method v="2" />
+                  </configuration>
+                </component>
+                """.formatted(taskName, taskPath);
+        try {
+            java.nio.file.Files.createDirectories(runConfigDir);
+            java.nio.file.Files.writeString(runConfigDir.resolve(taskName + ".run.xml"), xml);
+        } catch (IOException e) {
+            project.getLogger().warn("Fenix could not write the {} run configuration: {}",
+                    taskName, e.getMessage());
+        }
     }
 
     private static void addRepositories(Project project) {
