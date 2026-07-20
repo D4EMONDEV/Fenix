@@ -49,13 +49,25 @@ index are for.
 
 Standard semantic-version range syntax:
 
-| Constraint | Matches                                     |
-|------------|---------------------------------------------|
-| `1.2.3`    | exactly that version                        |
-| `>=1.2.0`  | that version or newer                       |
-| `^1.2.0`   | `>=1.2.0` and `<2.0.0` — compatible updates |
-| `~1.2.0`   | `>=1.2.0` and `<1.3.0` — patch updates      |
-| `*`        | any version                                 |
+| Constraint | Matches                                             |
+|------------|-----------------------------------------------------|
+| `1.2.3`    | exactly that version                                 |
+| `>=1.2.0`  | that version or newer; `>`, `<=` and `<` work too    |
+| `^1.2.0`   | compatible updates — `>=1.2.0 <2.0.0`                |
+| `~1.2.0`   | patch updates — `>=1.2.0 <1.3.0`                     |
+| `*`        | any version                                          |
+
+**Below `1.0.0` the caret tightens**, because a project that has not reached its
+first release breaks things on minor bumps. `^0.2.0` means `>=0.2.0 <0.3.0`, and
+`^0.0.3` means `>=0.0.3 <0.0.4`. Fenix is a `0.x` project today, so
+`"fenix": "^0.1.0"` will not accept `0.2.0`.
+
+A version missing its minor or patch component is filled in with zeros, so
+`~26.2` behaves as `~26.2.0`.
+
+A pre-release falls inside any range that spans it: `^1.0.0` accepts
+`1.5.0-rc.1`. Fenix does not add the exclusion rules package managers layer on
+top — predictable beats clever here.
 
 `depends` drives **initialisation order** as well as validation: a mod is always
 initialised after everything it depends on.
