@@ -6,6 +6,7 @@ import fr.d4emon.fenix.loader.classloader.FenixClassLoader;
 import fr.d4emon.fenix.loader.discovery.DiscoveryResult;
 import fr.d4emon.fenix.loader.discovery.ModCandidate;
 import fr.d4emon.fenix.loader.discovery.ModDiscoverer;
+import fr.d4emon.fenix.loader.game.GameLocator;
 import fr.d4emon.fenix.loader.log.ConsoleLogger;
 import fr.d4emon.fenix.loader.metadata.InvalidMetadataException;
 import fr.d4emon.fenix.loader.resolve.ModResolver;
@@ -14,12 +15,21 @@ import fr.d4emon.fenix.loader.resolve.ResolutionResult;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 /**
  * The loader's entry point: what the launcher starts instead of the game.
+ *
+ * <p>A Fenix launcher profile inherits from the vanilla version, so the
+ * launcher builds the vanilla classpath — game jar included — and starts this
+ * class with the vanilla arguments. Fenix's own options are namespaced
+ * {@code --fenix.*}; every other argument belongs to the game and passes
+ * through untouched. The game directory is peeked from the vanilla
+ * {@code --gameDir} so the loader and the game always agree on it.
  *
  * <p>The pipeline is discovery, resolution, classloading, instantiation,
  * {@code onPreLaunch}, then the game's own {@code main}. The later phases fire
@@ -28,12 +38,13 @@ import java.util.Map;
 public final class Launch {
 
     private static final String USAGE = """
-            Usage: Launch --gameMain <class> [options] [-- game arguments...]
-              --gameMain <class>   the game's main class (required)
-              --gameJar <jar>      the game jar, loaded in the transformable scope
-              --gameDir <dir>      the game directory (default: current directory)
-              --mods <dir>         the mods directory (default: <gameDir>/mods)
-              --side client|server the side to launch (default: client)""";
+            Fenix options (everything else is handed to the game):
+              --fenix.gameMain <class>  main class, when the game is not Minecraft on the classpath
+              --fenix.gameJar <jar>     game jar to load in the transformable scope
+              --fenix.gameDir <dir>     game directory (default: the game's own --gameDir, else '.')
+              --fenix.mods <dir>        mods directory (default: <gameDir>/mods)
+              --fenix.side client|server  the side (default: detected from the game jar)
+              --fenix.dryRun            stop after proving the game and mods resolve""";
 
     private Launch() {
     }
@@ -41,7 +52,7 @@ public final class Launch {
     /**
      * Launches the game through Fenix.
      *
-     * @param args see {@code --help} in the class documentation
+     * @param args Fenix's {@code --fenix.*} options plus the game's arguments
      */
     public static void main(String[] args) {
         try {
@@ -69,10 +80,45 @@ public final class Launch {
         ConsoleLogger log = new ConsoleLogger("fenix");
         Version loaderVersion = FenixVersion.current();
 
-        log.info("Fenix Loader {} — {} side, game directory {}",
-                loaderVersion, options.side().toString().toLowerCase(Locale.ROOT), options.gameDir());
+        // 1. What are we launching?
+        GameLocator.Game located = null;
+        String mainClass = options.gameMain();
+        Path gameJar = options.gameJar();
+        if (mainClass == null) {
+            Path explicitJar = gameJar;
+            located = (explicitJar != null
+                    ? GameLocator.inspect(explicitJar)
+                    : GameLocator.locate(System.getProperty("java.class.path")))
+                    .orElseThrow(() -> new LaunchException(explicitJar != null
+                            ? explicitJar + " is not a Minecraft jar — no known main class inside"
+                            : "Minecraft was not found on the classpath — launch through a Fenix profile, "
+                                    + "or pass --fenix.gameMain" + System.lineSeparator() + USAGE));
+            mainClass = located.mainClass();
+            gameJar = located.jar();
+        } else if (gameJar != null) {
+            // An explicit main can still point at a real Minecraft jar; probing
+            // it is what feeds the "minecraft" version into resolution.
+            located = GameLocator.inspect(gameJar).orElse(null);
+        }
 
-        // 1. What is installed?
+        Side side = options.side() != null ? options.side()
+                : located != null ? located.side()
+                : Side.CLIENT;
+
+        Map<String, Version> builtins = new HashMap<>();
+        builtins.put("fenix", loaderVersion);
+        if (located != null && located.version().isPresent()) {
+            builtins.put("minecraft", located.version().get());
+        }
+
+        log.info("Fenix Loader {} — {} side, game directory {}",
+                loaderVersion, side.toString().toLowerCase(Locale.ROOT), options.gameDir());
+        if (located != null) {
+            log.info("game: {} ({})", located.jar().getFileName(),
+                    located.version().map(Version::toString).orElse("unknown version"));
+        }
+
+        // 2. What is installed?
         DiscoveryResult discovered = ModDiscoverer.scan(options.modsDir());
         if (discovered.hasProblems()) {
             StringBuilder message = new StringBuilder("some files in ")
@@ -83,9 +129,8 @@ public final class Launch {
             throw new LaunchException(message.toString());
         }
 
-        // 2. Can it all load together, and in what order?
-        ResolutionResult resolved = ModResolver.resolve(
-                discovered.mods(), options.side(), Map.of("fenix", loaderVersion));
+        // 3. Can it all load together, and in what order?
+        ResolutionResult resolved = ModResolver.resolve(discovered.mods(), side, Map.copyOf(builtins));
         for (ModCandidate skipped : resolved.skipped()) {
             log.info("skipping {} — it only loads on the {}",
                     skipped, skipped.metadata().side().toString().toLowerCase(Locale.ROOT));
@@ -94,31 +139,37 @@ public final class Launch {
             log.info("loading {}", mod);
         }
 
-        // 3. Build the world mods and the game live in.
+        // 4. Build the world the game and mods live in.
         FenixClassLoader loader = new FenixClassLoader(Launch.class.getClassLoader());
-        if (options.gameJar() != null) {
-            loader.addPath(options.gameJar());
+        if (gameJar != null) {
+            loader.addPath(gameJar);
         }
         for (ModCandidate mod : resolved.loadOrder()) {
             loader.addPath(mod.path());
         }
 
-        // 4. Wake the mods up, before any game class exists.
+        // 5. Wake the mods up, before any game class exists.
         List<LoadedMod> mods = ModInstantiator.instantiate(loader, resolved.loadOrder());
-        FenixRuntime runtime = new FenixRuntime(options.side(), options.gameDir(), mods);
+        FenixRuntime runtime = new FenixRuntime(side, options.gameDir(), mods);
         FenixHooks.bind(runtime);
         runtime.firePreLaunch();
 
-        // 5. Hand over to the game, inside the transformable scope.
+        // 6. Hand over to the game, inside the transformable scope.
         Class<?> gameMain;
         try {
-            gameMain = loader.loadClass(options.gameMain());
+            gameMain = loader.loadClass(mainClass);
         } catch (ClassNotFoundException e) {
-            throw new LaunchException("the game main class " + options.gameMain()
-                    + " was not found — check --gameMain and --gameJar", e);
+            throw new LaunchException("the game main class " + mainClass
+                    + " was not found — check --fenix.gameMain and --fenix.gameJar", e);
         }
 
-        log.info("handing over to {}", options.gameMain());
+        if (options.dryRun()) {
+            log.info("dry run — {} resolves through the Fenix classloader, {} mod(s) ready; "
+                    + "stopping before the game starts", mainClass, mods.size());
+            return;
+        }
+
+        log.info("handing over to {}", mainClass);
         Thread.currentThread().setContextClassLoader(loader);
         try {
             gameMain.getMethod("main", String[].class).invoke(null, (Object) options.gameArgs());
@@ -131,49 +182,62 @@ public final class Launch {
     /**
      * The command line, parsed.
      *
-     * @param gameMain the game's main class, required
+     * @param gameMain the game's main class, or {@code null} to locate Minecraft
      * @param gameJar  the game jar for the child scope, or {@code null}
      * @param gameDir  the game directory
      * @param modsDir  the mods directory
-     * @param side     the side to launch
-     * @param gameArgs everything after {@code --}, passed to the game untouched
+     * @param side     the explicit side, or {@code null} to detect it
+     * @param dryRun   whether to stop before invoking the game
+     * @param gameArgs every non-Fenix argument, forwarded to the game untouched
      */
-    record Options(String gameMain, Path gameJar, Path gameDir, Path modsDir, Side side, String[] gameArgs) {
+    record Options(String gameMain, Path gameJar, Path gameDir, Path modsDir,
+                   Side side, boolean dryRun, String[] gameArgs) {
 
         static Options parse(String[] args) {
             String gameMain = null;
             Path gameJar = null;
-            Path gameDir = Path.of(".");
+            Path fenixGameDir = null;
             Path modsDir = null;
-            Side side = Side.CLIENT;
-            String[] gameArgs = new String[0];
+            Side side = null;
+            boolean dryRun = false;
+            List<String> gameArgs = new ArrayList<>(args.length);
+            Path peekedGameDir = null;
 
             int i = 0;
             while (i < args.length) {
                 String arg = args[i];
                 switch (arg) {
-                    case "--gameMain" -> gameMain = value(args, i++);
-                    case "--gameJar" -> gameJar = Path.of(value(args, i++));
-                    case "--gameDir" -> gameDir = Path.of(value(args, i++));
-                    case "--mods" -> modsDir = Path.of(value(args, i++));
-                    case "--side" -> side = parseSide(value(args, i++));
-                    case "--" -> {
-                        gameArgs = java.util.Arrays.copyOfRange(args, i + 1, args.length);
-                        i = args.length - 1;
+                    case "--fenix.gameMain" -> gameMain = value(args, i++);
+                    case "--fenix.gameJar" -> gameJar = Path.of(value(args, i++));
+                    case "--fenix.gameDir" -> fenixGameDir = Path.of(value(args, i++));
+                    case "--fenix.mods" -> modsDir = Path.of(value(args, i++));
+                    case "--fenix.side" -> side = parseSide(value(args, i++));
+                    case "--fenix.dryRun" -> dryRun = true;
+                    default -> {
+                        if (arg.startsWith("--fenix.")) {
+                            throw new LaunchException(
+                                    "unknown option '" + arg + "'" + System.lineSeparator() + USAGE);
+                        }
+                        // The game's argument — forwarded, but --gameDir is also
+                        // peeked so the loader agrees with the game on where the
+                        // game directory (and thus mods/) is.
+                        gameArgs.add(arg);
+                        if (arg.equals("--gameDir") && i + 1 < args.length) {
+                            peekedGameDir = Path.of(args[i + 1]);
+                        }
                     }
-                    default -> throw new LaunchException(
-                            "unknown option '" + arg + "'" + System.lineSeparator() + USAGE);
                 }
                 i++;
             }
 
-            if (gameMain == null) {
-                throw new LaunchException("--gameMain is required" + System.lineSeparator() + USAGE);
-            }
+            Path gameDir = fenixGameDir != null ? fenixGameDir
+                    : peekedGameDir != null ? peekedGameDir
+                    : Path.of(".");
             if (modsDir == null) {
                 modsDir = gameDir.resolve("mods");
             }
-            return new Options(gameMain, gameJar, gameDir, modsDir, side, gameArgs);
+            return new Options(gameMain, gameJar, gameDir, modsDir, side, dryRun,
+                    gameArgs.toArray(String[]::new));
         }
 
         private static String value(String[] args, int index) {
@@ -189,7 +253,7 @@ public final class Launch {
                 case "client" -> Side.CLIENT;
                 case "server" -> Side.SERVER;
                 default -> throw new LaunchException(
-                        "--side must be 'client' or 'server', not '" + text + "'");
+                        "--fenix.side must be 'client' or 'server', not '" + text + "'");
             };
         }
     }

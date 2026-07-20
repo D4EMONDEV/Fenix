@@ -47,10 +47,10 @@ tasks.register<JavaExec>("runDemo") {
 
     argumentProviders.add {
         listOf(
-            "--gameJar", harnessJar.get().asFile.absolutePath,
-            "--gameMain", "fr.d4emon.fenix.testing.harness.FakeGame",
-            "--gameDir", demoDir.get().asFile.absolutePath,
-            "--side", "client",
+            "--fenix.gameJar", harnessJar.get().asFile.absolutePath,
+            "--fenix.gameMain", "fr.d4emon.fenix.testing.harness.FakeGame",
+            "--fenix.gameDir", demoDir.get().asFile.absolutePath,
+            "--fenix.side", "client",
         )
     }
 }
