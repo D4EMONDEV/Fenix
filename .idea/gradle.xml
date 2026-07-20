@@ -45,6 +45,7 @@
             <option value="$PROJECT_DIR$/testmod" />
           </set>
         </option>
+        <option name="resolveExternalAnnotations" value="true" />
         <option name="myGradleHome" value="" />
       </GradleProjectSettings>
     </option>
