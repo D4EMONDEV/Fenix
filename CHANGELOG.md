@@ -7,6 +7,16 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Launch time: the classloader was reopening and reparsing the game jar's
+  31,000-entry central directory for **every class it defined** — the
+  uncached-connection fix for Windows file locks, applied per read. Real
+  Minecraft took minutes to reach the title screen. Jars added to the child
+  scope are now opened once, kept open, and read through their in-memory
+  index; `close()` still releases the locks, and every classloader test passes
+  unchanged. Loading 2000 real game classes: 163.9 s before, 0.4 s after.
+
 ### Added
 
 - `fenix-installer`: writes a Fenix profile into `.minecraft` — the loader jars

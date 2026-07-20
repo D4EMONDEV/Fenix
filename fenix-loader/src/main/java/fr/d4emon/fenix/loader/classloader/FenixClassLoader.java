@@ -2,11 +2,10 @@ package fr.d4emon.fenix.loader.classloader;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.JarURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.cert.Certificate;
@@ -16,6 +15,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * The classloader the game and every mod run inside.
@@ -47,6 +48,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>Resources follow the same child-first rule, so a mod's
  * {@code assets/} shadow the classpath's on lookup, and
  * {@link #getResources(String)} lists child results first.
+ *
+ * <p><strong>Performance contract:</strong> each jar added with
+ * {@link #addPath(Path)} is opened exactly once and stays open until
+ * {@link #close()}; class bytes are read from that open, indexed
+ * {@link JarFile}. The game defines tens of thousands of classes at startup —
+ * anything per-class that reopens a jar (in particular the JDK's
+ * {@code jar:} URL machinery, cached or not) turns launch time from seconds
+ * into minutes. Keeping the jars open ourselves is also what lets
+ * {@link #close()} actually release the file locks, which Windows needs before
+ * a player can update their mods folder.
  */
 public final class FenixClassLoader extends URLClassLoader {
 
@@ -60,6 +71,7 @@ public final class FenixClassLoader extends URLClassLoader {
             "fr.d4emon.fenix.api.");
 
     private final List<ClassTransformer> transformers = new CopyOnWriteArrayList<>();
+    private final List<ChildSource> sources = new CopyOnWriteArrayList<>();
 
     /**
      * Creates an empty loader; jars are added afterwards with {@link #addPath(Path)}.
@@ -76,15 +88,25 @@ public final class FenixClassLoader extends URLClassLoader {
      * Adds a jar — or, in a development environment, a directory of classes —
      * to the child scope.
      *
+     * <p>A jar is opened here, once, and stays open until {@link #close()}.
+     *
      * @param path the jar file or class directory
-     * @throws NullPointerException if the path is {@code null}
+     * @throws IllegalArgumentException if the path cannot be opened
+     * @throws NullPointerException     if the path is {@code null}
      */
     public void addPath(Path path) {
         Objects.requireNonNull(path, "path");
         try {
+            // Registered with the URL machinery too, so findResource and
+            // findResources keep working for URL-based lookups.
             addURL(path.toUri().toURL());
+            sources.add(Files.isDirectory(path)
+                    ? new DirectorySource(path)
+                    : new JarSource(path));
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(path + " cannot be expressed as a URL", e);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(path + " cannot be opened as a jar: " + e.getMessage(), e);
         }
     }
 
@@ -131,20 +153,19 @@ public final class FenixClassLoader extends URLClassLoader {
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         String path = name.replace('.', '/') + ".class";
-        URL resource = findResource(path);
-        if (resource == null) {
-            throw new ClassNotFoundException(name);
+        for (ChildSource source : sources) {
+            byte[] bytes;
+            try {
+                bytes = source.readClass(path);
+            } catch (IOException e) {
+                throw new ClassNotFoundException(name, e);
+            }
+            if (bytes != null) {
+                bytes = transform(name, bytes);
+                return defineClass(name, bytes, 0, bytes.length, source.codeSource());
+            }
         }
-
-        byte[] bytes;
-        try (InputStream in = openUncached(resource)) {
-            bytes = in.readAllBytes();
-        } catch (IOException e) {
-            throw new ClassNotFoundException(name, e);
-        }
-
-        bytes = transform(name, bytes);
-        return defineClass(name, bytes, 0, bytes.length, codeSource(resource, path));
+        throw new ClassNotFoundException(name);
     }
 
     @Override
@@ -155,27 +176,20 @@ public final class FenixClassLoader extends URLClassLoader {
 
     @Override
     public InputStream getResourceAsStream(String name) {
-        URL resource = getResource(name);
-        if (resource == null) {
-            return null;
+        // Served from our own open jars: the default implementation would go
+        // through a jar: URL connection per call, which either reopens the jar
+        // every time or parks it in the JDK's global cache past close().
+        for (ChildSource source : sources) {
+            try {
+                InputStream in = source.openResource(name);
+                if (in != null) {
+                    return in;
+                }
+            } catch (IOException e) {
+                return null;
+            }
         }
-        try {
-            return openUncached(resource);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    /**
-     * Opens a resource while bypassing the JDK's global {@code jar:} connection
-     * cache. The cache holds jar files open past {@link #close()}, which on
-     * Windows means the files cannot be deleted or replaced for as long as the
-     * JVM lives — exactly what a player updating their mods folder would hit.
-     */
-    private static InputStream openUncached(URL resource) throws IOException {
-        var connection = resource.openConnection();
-        connection.setUseCaches(false);
-        return connection.getInputStream();
+        return getParent().getResourceAsStream(name);
     }
 
     @Override
@@ -183,6 +197,26 @@ public final class FenixClassLoader extends URLClassLoader {
         List<URL> resources = new ArrayList<>(Collections.list(findResources(name)));
         getParent().getResources(name).asIterator().forEachRemaining(resources::add);
         return Collections.enumeration(resources);
+    }
+
+    @Override
+    public void close() throws IOException {
+        IOException failure = null;
+        for (ChildSource source : sources) {
+            try {
+                source.close();
+            } catch (IOException e) {
+                failure = e;
+            }
+        }
+        try {
+            super.close();
+        } catch (IOException e) {
+            failure = e;
+        }
+        if (failure != null) {
+            throw failure;
+        }
     }
 
     private static boolean isParentOnly(String name) {
@@ -214,28 +248,90 @@ public final class FenixClassLoader extends URLClassLoader {
     }
 
     /**
-     * Derives the location tooling sees on the defined class — the jar it came
-     * from, or the class directory root — so that "which file did this class
-     * load from?" stays answerable inside a transformed process.
+     * One entry of the child scope, with its bytes directly reachable — no URL
+     * connections, no per-read jar opening.
      */
-    private static CodeSource codeSource(URL resource, String path) {
-        try {
-            if (resource.openConnection() instanceof JarURLConnection jarConnection) {
-                return new CodeSource(jarConnection.getJarFileURL(), (Certificate[]) null);
-            }
-        } catch (IOException ignored) {
-            // The class still loads; only the reported location is affected.
+    private sealed interface ChildSource permits JarSource, DirectorySource {
+
+        /** {@return the class bytes, or {@code null} when this source lacks the class} */
+        byte[] readClass(String path) throws IOException;
+
+        /** {@return a stream over the resource, or {@code null} when absent} */
+        InputStream openResource(String path) throws IOException;
+
+        /** {@return the location tooling sees on classes defined from here} */
+        CodeSource codeSource();
+
+        void close() throws IOException;
+    }
+
+    private static final class JarSource implements ChildSource {
+
+        private final JarFile jar;
+        private final CodeSource codeSource;
+
+        JarSource(Path path) throws IOException {
+            this.jar = new JarFile(path.toFile());
+            this.codeSource = new CodeSource(path.toUri().toURL(), (Certificate[]) null);
         }
 
-        String text = resource.toString();
-        if (text.endsWith(path)) {
-            try {
-                URL root = URI.create(text.substring(0, text.length() - path.length())).toURL();
-                return new CodeSource(root, (Certificate[]) null);
-            } catch (MalformedURLException | IllegalArgumentException ignored) {
-                // Fall through to the resource itself.
+        @Override
+        public byte[] readClass(String path) throws IOException {
+            JarEntry entry = jar.getJarEntry(path);
+            if (entry == null) {
+                return null;
+            }
+            try (InputStream in = jar.getInputStream(entry)) {
+                return in.readAllBytes();
             }
         }
-        return new CodeSource(resource, (Certificate[]) null);
+
+        @Override
+        public InputStream openResource(String path) throws IOException {
+            JarEntry entry = jar.getJarEntry(path);
+            return entry == null ? null : jar.getInputStream(entry);
+        }
+
+        @Override
+        public CodeSource codeSource() {
+            return codeSource;
+        }
+
+        @Override
+        public void close() throws IOException {
+            jar.close();
+        }
+    }
+
+    private static final class DirectorySource implements ChildSource {
+
+        private final Path root;
+        private final CodeSource codeSource;
+
+        DirectorySource(Path root) throws MalformedURLException {
+            this.root = root;
+            this.codeSource = new CodeSource(root.toUri().toURL(), (Certificate[]) null);
+        }
+
+        @Override
+        public byte[] readClass(String path) throws IOException {
+            Path file = root.resolve(path);
+            return Files.isRegularFile(file) ? Files.readAllBytes(file) : null;
+        }
+
+        @Override
+        public InputStream openResource(String path) throws IOException {
+            Path file = root.resolve(path);
+            return Files.isRegularFile(file) ? Files.newInputStream(file) : null;
+        }
+
+        @Override
+        public CodeSource codeSource() {
+            return codeSource;
+        }
+
+        @Override
+        public void close() {
+        }
     }
 }
