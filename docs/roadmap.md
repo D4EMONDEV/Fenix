@@ -38,14 +38,21 @@ Minecraft to be tested. `./gradlew :test-harness:runDemo` shows it end to end.
 - Lifecycle mixins fire `onRegister`/`onInit` from inside the game, and
   `testmod`'s title mixin is the visible proof
 
-## Phase 4 — The Gradle plugin
+## Phase 4 — The Gradle plugin 🚧
 
 `fr.d4emon.fenix.dev`, which is what makes Fenix usable by anyone else.
 
-- Download the client from piston-meta, plus vanilla libraries
-- `genSources` via Vineflower
-- `runClient`, `runServer`
-- IDE run configurations
+- Download the client from piston-meta, plus vanilla libraries ✅ — the client
+  is cached and SHA-1 verified; libraries are ordinary Gradle dependencies
+- `runClient` ✅ — launches through the loader with the mod in `run/mods`,
+  reusing the vanilla launcher's assets
+- `runServer` — not yet
+- `genSources` via Vineflower — not yet
+- IDE run configurations — not yet
+
+`examples/example-mod` is a complete Fenix mod whose whole build file is
+`id("fr.d4emon.fenix.dev")`: it compiles against real Minecraft and runs
+through Fenix.
 
 ## Phase 5 — The API
 

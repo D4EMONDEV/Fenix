@@ -9,6 +9,16 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The `fr.d4emon.fenix.dev` Gradle plugin** — a Fenix mod's entire build file
+  is now `id("fr.d4emon.fenix.dev")`. It downloads and SHA-1-verifies the
+  Minecraft client into the Fenix cache, puts the game and its libraries on the
+  compile classpath under real names, wires the API and annotation processor,
+  templates `${version}`/`${minecraft_version}` in `fenix.mod.json`, selects the
+  game's Java toolchain, and adds `runClient` — which launches the client
+  through the loader with the mod in `run/mods`, reusing the vanilla launcher's
+  assets. `examples/example-mod` is the proof: it compiles against Minecraft and
+  runs through Fenix. In-repo, the Fenix coordinates resolve to the sibling
+  projects via dependency substitution, so a fresh clone needs no publish step.
 - **Mixin integration.** Mods can now transform the game. `FenixMixinService`
   bridges the SpongePowered Mixin fork to the loader's classloader; `MixinSetup`
   brings the environment up, registers every config (the loader's own and each

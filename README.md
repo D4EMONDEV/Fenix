@@ -2,11 +2,12 @@
 
 A modern Minecraft mod loader, and the toolchain around it.
 
-> **Status: mods can transform the game.** Real Minecraft launches through a
-> Fenix profile, and Mixin is wired in end to end — a mod (or the loader
-> itself) rewrites game classes as they load, with no mappings and without the
-> game on its compile classpath. `testmod` proves it by changing the window
-> title. See [the roadmap](docs/roadmap.md).
+> **Status: there is a real mod-development workflow.** A mod's entire build
+> file is `id("fr.d4emon.fenix.dev")` — the plugin fetches Minecraft, compiles
+> the mod against it, and `runClient` launches the game through the loader with
+> the mod installed and Mixin wired in. `examples/example-mod` is a working mod;
+> `testmod` proves transformation by changing the window title. See
+> [the roadmap](docs/roadmap.md).
 
 Fenix targets **Minecraft 26.2** on **Java 25**. Since Minecraft 26.1 the game
 ships unobfuscated, so there is no mapping or remapping step anywhere in this
