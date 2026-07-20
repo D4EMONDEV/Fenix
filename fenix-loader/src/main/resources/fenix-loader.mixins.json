@@ -1,12 +1,17 @@
 {
-  "required": true,
+  "required": false,
   "minVersion": "0.8.7",
   "package": "fr.d4emon.fenix.mixin.loader",
   "compatibilityLevel": "JAVA_25",
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   },
-  "mixins": [],
-  "client": [],
+  "mixins": [
+    "BuiltInRegistriesMixin",
+    "MinecraftServerInitMixin"
+  ],
+  "client": [
+    "MinecraftInitMixin"
+  ],
   "server": []
 }

@@ -10,4 +10,8 @@ description = "In-repo mod used to exercise the loader by hand while developing 
 dependencies {
     compileOnly(project(":fenix-api"))
     annotationProcessor(project(":fenix-processor"))
+
+    // For the title mixin. compileOnly: Mixin is on the loader's classpath at
+    // runtime, so a mod never ships its own copy.
+    compileOnly(libs.mixin)
 }

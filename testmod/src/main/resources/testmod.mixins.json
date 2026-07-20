@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "minVersion": "0.8.7",
+  "package": "fr.d4emon.fenix.mixin.testmod",
+  "compatibilityLevel": "JAVA_25",
+  "injectors": {
+    "defaultRequire": 0
+  },
+  "client": [
+    "TitleMixin"
+  ]
+}
