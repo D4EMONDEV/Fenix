@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/build-logic" name="build-logic">
+                <projects>
+                  <project path="$PROJECT_DIR$/build-logic" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/fenix-gradle-plugin" name="fenix-gradle-plugin">
+                <projects>
+                  <project path="$PROJECT_DIR$/fenix-gradle-plugin" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/build-logic" />
+            <option value="$PROJECT_DIR$/ember" />
+            <option value="$PROJECT_DIR$/examples/example-mod" />
+            <option value="$PROJECT_DIR$/fenix-api/bundle" />
+            <option value="$PROJECT_DIR$/fenix-api/command" />
+            <option value="$PROJECT_DIR$/fenix-api/config" />
+            <option value="$PROJECT_DIR$/fenix-api/core" />
+            <option value="$PROJECT_DIR$/fenix-api/event" />
+            <option value="$PROJECT_DIR$/fenix-api/network" />
+            <option value="$PROJECT_DIR$/fenix-api/registry" />
+            <option value="$PROJECT_DIR$/fenix-api/resource" />
+            <option value="$PROJECT_DIR$/fenix-gradle-plugin" />
+            <option value="$PROJECT_DIR$/fenix-installer" />
+            <option value="$PROJECT_DIR$/fenix-loader" />
+            <option value="$PROJECT_DIR$/fenix-processor" />
+            <option value="$PROJECT_DIR$/testing/conformance" />
+            <option value="$PROJECT_DIR$/testing/harness" />
+            <option value="$PROJECT_DIR$/testmod" />
+          </set>
+        </option>
+        <option name="myGradleHome" value="" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

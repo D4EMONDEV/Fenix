@@ -1,0 +1,21 @@
+# Normalise line endings: LF in the repository and in the working tree, so a
+# Windows checkout and a Linux CI run produce byte-identical files.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF or cmd.exe mis-parses them.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Never touch these.
+*.jar binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Keep generated wrappers out of language statistics and diffs.
+gradle/wrapper/gradle-wrapper.jar binary linguist-vendored
+gradlew text eol=lf

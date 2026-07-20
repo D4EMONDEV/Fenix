@@ -1,0 +1,68 @@
+name: Bug report
+description: Something in Fenix behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A crash log tells us more than any description. Please attach one if the
+        game or the build failed.
+
+  - type: input
+    id: fenix-version
+    attributes:
+      label: Fenix version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft-version
+    attributes:
+      label: Minecraft version
+      placeholder: "26.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: side
+    attributes:
+      label: Where does it happen?
+      options:
+        - Client
+        - Dedicated server
+        - Both
+        - At build time
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log or crash report
+      description: Paste it here, or attach the file. It will be formatted automatically.
+      render: text
+
+  - type: textarea
+    id: mods
+    attributes:
+      label: Other mods installed
+      description: Whether the problem survives with only this mod installed is useful to know.

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "example-mod",
+  "version": "${version}",
+  "name": "Fenix Example Mod",
+  "description": "The smallest thing a Fenix mod author has to write.",
+  "authors": ["D4EMON"],
+  "license": "Apache-2.0",
+  "contact": {
+    "homepage": "https://github.com/D4EMONDEV/Fenix",
+    "issues": "https://github.com/D4EMONDEV/Fenix/issues"
+  },
+  "side": "both",
+  "depends": {
+    "fenix": ">=0.1.0",
+    "minecraft": "~${minecraft_version}",
+    "fenix-api": "${version}"
+  }
+}

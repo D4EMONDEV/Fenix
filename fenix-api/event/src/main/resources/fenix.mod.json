@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "fenix-api-event",
+  "version": "${version}",
+  "name": "Fenix API — Events",
+  "description": "Event bus plus the game, client and server lifecycle events built on it.",
+  "authors": ["D4EMON"],
+  "license": "Apache-2.0",
+  "contact": {
+    "homepage": "https://github.com/D4EMONDEV/Fenix",
+    "issues": "https://github.com/D4EMONDEV/Fenix/issues"
+  },
+  "side": "both",
+  "depends": {
+    "fenix": ">=0.1.0",
+    "minecraft": "~${minecraft_version}"
+  }
+}

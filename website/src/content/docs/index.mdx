@@ -1,0 +1,43 @@
+---
+title: Fenix
+description: A modern Minecraft mod loader.
+template: splash
+hero:
+  tagline: A modern Minecraft mod loader. Mods that fail to compile instead of failing to launch.
+  actions:
+    - text: Get started
+      link: /guides/getting-started/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/D4EMONDEV/Fenix
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+:::caution[Early days]
+Fenix is under construction. The API will change without warning until `1.0`.
+:::
+
+<CardGrid stagger>
+  <Card title="Errors at compile time" icon="approve-check">
+    Mods are indexed while they compile. A typo in a mod class is a `javac`
+    error with a line number, not a mod that silently never loads.
+  </Card>
+
+  <Card title="No global state" icon="puzzle">
+    Your mod is handed a context object instead of reaching for a singleton,
+    which is what lets every mod have its own logger and its own view.
+  </Card>
+
+  <Card title="Take only what you need" icon="seti:config">
+    The API is a set of small modules. If all you use is the event bus, that is
+    all you ship.
+  </Card>
+
+  <Card title="No mappings" icon="rocket">
+    Minecraft has shipped unobfuscated since 26.1, so there is no remapping
+    step anywhere. You write against real names.
+  </Card>
+</CardGrid>

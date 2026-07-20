@@ -1,0 +1,42 @@
+# Single source of truth for every dependency version in the monorepo.
+# Included builds (build-logic, fenix-gradle-plugin) import this same file.
+
+[versions]
+# Toolchain — Minecraft 26.2 runs on java-runtime-epsilon (major 25).
+java = "25"
+
+# Game
+minecraft = "26.2"
+
+# Loader runtime
+mixin = "0.17.3+mixin.0.8.7"   # net.fabricmc fork of SpongePowered Mixin
+asm = "9.10.1"
+gson = "2.14.0"                # version shipped on the vanilla classpath
+slf4j = "2.0.17"               # version shipped on the vanilla classpath
+
+# Build tooling
+vineflower = "1.12.0"          # decompiler used by the `genSources` task
+
+# Test
+junit = "6.1.2"
+
+[libraries]
+mixin = { module = "net.fabricmc:sponge-mixin", version.ref = "mixin" }
+
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+asm-analysis = { module = "org.ow2.asm:asm-analysis", version.ref = "asm" }
+asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+
+vineflower = { module = "org.vineflower:vineflower", version.ref = "vineflower" }
+
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[bundles]
+asm = ["asm", "asm-analysis", "asm-commons", "asm-tree", "asm-util"]

@@ -1,0 +1,12 @@
+/* Fenix accent: ember orange, warm greys. */
+:root {
+  --sl-color-accent-low: #3a1403;
+  --sl-color-accent: #c2410c;
+  --sl-color-accent-high: #fdba74;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #ffedd5;
+  --sl-color-accent: #c2410c;
+  --sl-color-accent-high: #7c2d12;
+}

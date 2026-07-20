@@ -1,0 +1,27 @@
+root = true
+
+[*]
+charset = utf-8
+# LF everywhere, matching .gitattributes, so a Windows checkout and a Linux CI
+# run produce byte-identical files.
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 120
+tab_width = 4
+
+[*.{yml,yaml,json,json5,toml}]
+indent_size = 2
+
+[*.{md,markdown}]
+indent_size = 2
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{bat,cmd}]
+end_of_line = crlf
+
+[gradlew.bat]
+end_of_line = crlf
