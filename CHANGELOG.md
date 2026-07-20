@@ -19,6 +19,13 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   assets. `examples/example-mod` is the proof: it compiles against Minecraft and
   runs through Fenix. In-repo, the Fenix coordinates resolve to the sibling
   projects via dependency substitution, so a fresh clone needs no publish step.
+- The dev plugin gained `runServer`, `genSources` and IDE run configurations,
+  completing the developer workflow. `runServer` un-bundles Mojang's server jar
+  (a bundler since 1.18) and launches the real server through the loader on the
+  server side; `genSources` decompiles Minecraft with Vineflower for
+  navigation; and during an IntelliJ sync the plugin writes Gradle run
+  configurations for all three launch tasks. Fenix still never writes
+  `eula=true` — accepting the licence stays the user's act.
 - **Mixin integration.** Mods can now transform the game. `FenixMixinService`
   bridges the SpongePowered Mixin fork to the loader's classloader; `MixinSetup`
   brings the environment up, registers every config (the loader's own and each

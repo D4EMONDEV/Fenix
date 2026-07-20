@@ -69,6 +69,5 @@ so a typo is a compile error rather than a mod that silently never loads.
 ```bash
 ./gradlew runClient
 ./gradlew runServer
-./gradlew ember        # regenerate assets and data
 ./gradlew genSources   # decompile Minecraft for navigation
 ```
