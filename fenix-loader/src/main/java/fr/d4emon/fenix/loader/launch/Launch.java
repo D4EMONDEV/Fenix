@@ -9,6 +9,7 @@ import fr.d4emon.fenix.loader.discovery.ModDiscoverer;
 import fr.d4emon.fenix.loader.game.GameLocator;
 import fr.d4emon.fenix.loader.log.ConsoleLogger;
 import fr.d4emon.fenix.loader.metadata.InvalidMetadataException;
+import fr.d4emon.fenix.loader.mixin.MixinSetup;
 import fr.d4emon.fenix.loader.resolve.ModResolver;
 import fr.d4emon.fenix.loader.resolve.ResolutionException;
 import fr.d4emon.fenix.loader.resolve.ResolutionResult;
@@ -148,13 +149,23 @@ public final class Launch {
             loader.addPath(mod.path());
         }
 
-        // 5. Wake the mods up, before any game class exists.
+        // 5. Bring up Mixin and register every config, before any game class
+        // can load. The loader's own config carries the lifecycle hooks; mods
+        // add theirs. On a non-Minecraft game the configs are simply inert.
+        List<String> mixinConfigs = new ArrayList<>();
+        mixinConfigs.add("fenix-loader.mixins.json");
+        for (ModCandidate mod : resolved.loadOrder()) {
+            mixinConfigs.addAll(mod.metadata().mixins());
+        }
+        MixinSetup.bootstrap(loader, side, mixinConfigs);
+
+        // 6. Wake the mods up, before any game class exists.
         List<LoadedMod> mods = ModInstantiator.instantiate(loader, resolved.loadOrder());
         FenixRuntime runtime = new FenixRuntime(side, options.gameDir(), mods);
         FenixHooks.bind(runtime);
         runtime.firePreLaunch();
 
-        // 6. Hand over to the game, inside the transformable scope.
+        // 7. Hand over to the game, inside the transformable scope.
         Class<?> gameMain;
         try {
             gameMain = loader.loadClass(mainClass);

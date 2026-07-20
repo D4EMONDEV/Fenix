@@ -15,6 +15,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -27,7 +28,7 @@ import java.util.jar.JarFile;
  * define game classes from the original jar and this loader would never see
  * them.
  *
- * <p>Two package prefixes are exceptions, always taken from the parent:
+ * <p>Several package prefixes are exceptions, always taken from the parent:
  *
  * <ul>
  * <li>{@code fr.d4emon.fenix.loader.} — the loader itself;</li>
@@ -36,6 +37,13 @@ import java.util.jar.JarFile;
  *     JVM would hold two {@code Class} objects with the same name, and every
  *     cast across the boundary would fail. The parent's copy is the only
  *     one that can exist.</li>
+ * <li>{@code org.objectweb.asm.} and {@code org.spongepowered.asm.} — the
+ *     transformation stack. A transformed game class holds references to Mixin
+ *     runtime types like {@code CallbackInfo}; those must resolve to the same
+ *     copy the transformer used, so exactly one copy can exist, on the
+ *     parent. The one exception is {@code org.spongepowered.asm.synthetic.},
+ *     which Mixin generates at runtime against game classes and which
+ *     therefore has to be defined here (see {@link ClassGenerator}).</li>
  * </ul>
  *
  * <p>({@code java.} is short-circuited to the parent as well, as everywhere:
@@ -61,17 +69,40 @@ import java.util.jar.JarFile;
  */
 public final class FenixClassLoader extends URLClassLoader {
 
+    /**
+     * Produces the bytes of a class no jar contains — Mixin's runtime-generated
+     * synthetic classes. Returns {@code null} when it cannot generate the name,
+     * which becomes a {@link ClassNotFoundException}.
+     */
+    @FunctionalInterface
+    public interface ClassGenerator {
+
+        /**
+         * Generates one class.
+         *
+         * @param binaryName the class being defined
+         * @return the class bytes, or {@code null} if not generatable
+         */
+        byte[] generate(String binaryName);
+    }
+
     static {
         registerAsParallelCapable();
     }
 
+    /** Mixin generates these against game classes, so they must be child-defined. */
+    private static final String SYNTHETIC_PREFIX = "org.spongepowered.asm.synthetic.";
+
     private static final List<String> PARENT_ONLY = List.of(
             "java.",
             "fr.d4emon.fenix.loader.",
-            "fr.d4emon.fenix.api.");
+            "fr.d4emon.fenix.api.",
+            "org.objectweb.asm.",
+            "org.spongepowered.asm.");
 
     private final List<ClassTransformer> transformers = new CopyOnWriteArrayList<>();
     private final List<ChildSource> sources = new CopyOnWriteArrayList<>();
+    private final AtomicReference<ClassGenerator> classGenerator = new AtomicReference<>();
 
     /**
      * Creates an empty loader; jars are added afterwards with {@link #addPath(Path)}.
@@ -124,12 +155,60 @@ public final class FenixClassLoader extends URLClassLoader {
         transformers.add(Objects.requireNonNull(transformer, "transformer"));
     }
 
+    /**
+     * Installs the generator for classes no jar contains.
+     *
+     * <p>There is one, Mixin's, so a second call is a wiring bug and is refused.
+     *
+     * @param generator the generator
+     * @throws NullPointerException  if the generator is {@code null}
+     * @throws IllegalStateException if a generator is already installed
+     */
+    public void setClassGenerator(ClassGenerator generator) {
+        Objects.requireNonNull(generator, "generator");
+        if (!classGenerator.compareAndSet(null, generator)) {
+            throw new IllegalStateException("a class generator is already installed");
+        }
+    }
+
+    /**
+     * Reads a class's bytes without transforming them, child scope before parent.
+     *
+     * <p>This is what the Mixin service reads mixin classes and target-class
+     * hierarchies through: it wants the original bytecode, never the
+     * post-transformation result.
+     *
+     * @param binaryName the class name, for example {@code net.minecraft.client.Minecraft}
+     * @return the raw class bytes, or {@code null} if nothing has them
+     * @throws IOException          if a source fails to read
+     * @throws NullPointerException if the name is {@code null}
+     */
+    public byte[] readClassBytes(String binaryName) throws IOException {
+        Objects.requireNonNull(binaryName, "binaryName");
+        String path = binaryName.replace('.', '/') + ".class";
+        for (ChildSource source : sources) {
+            byte[] bytes = source.readClass(path);
+            if (bytes != null) {
+                return bytes;
+            }
+        }
+        try (InputStream in = getParent().getResourceAsStream(path)) {
+            return in == null ? null : in.readAllBytes();
+        }
+    }
+
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {
             Class<?> loaded = findLoadedClass(name);
             if (loaded == null) {
-                loaded = isParentOnly(name) ? getParent().loadClass(name) : loadChildFirst(name);
+                if (name.startsWith(SYNTHETIC_PREFIX)) {
+                    loaded = findClass(name);          // generated here, against game classes
+                } else if (isParentOnly(name)) {
+                    loaded = getParent().loadClass(name);
+                } else {
+                    loaded = loadChildFirst(name);
+                }
             }
             if (resolve) {
                 resolveClass(loaded);
@@ -163,6 +242,15 @@ public final class FenixClassLoader extends URLClassLoader {
             if (bytes != null) {
                 bytes = transform(name, bytes);
                 return defineClass(name, bytes, 0, bytes.length, source.codeSource());
+            }
+        }
+
+        // No jar has it: it may be a class Mixin generates on demand.
+        ClassGenerator generator = classGenerator.get();
+        if (generator != null) {
+            byte[] generated = generator.generate(name);
+            if (generated != null) {
+                return defineClass(name, generated, 0, generated.length, (CodeSource) null);
             }
         }
         throw new ClassNotFoundException(name);
