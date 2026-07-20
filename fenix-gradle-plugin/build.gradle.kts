@@ -38,15 +38,24 @@ dependencies {
     implementation(libs.vineflower)
 }
 
-// TODO: declare the plugin once its implementation class exists.
-//
-// gradlePlugin {
-//     plugins {
-//         create("fenixDev") {
-//             id = "fr.d4emon.fenix.dev"
-//             implementationClass = "fr.d4emon.fenix.gradle.FenixDevPlugin"
-//             displayName = "Fenix development plugin"
-//             description = "Downloads Minecraft, wires the Fenix loader, and adds runClient / runServer / genSources / ember."
-//         }
-//     }
-// }
+val minecraftVersion = rootProperties.getProperty("minecraft_version")
+
+tasks.processResources {
+    filesMatching("fenix-plugin.properties") {
+        expand(
+            "version" to version,
+            "minecraft_version" to minecraftVersion,
+        )
+    }
+}
+
+gradlePlugin {
+    plugins {
+        create("fenixDev") {
+            id = "fr.d4emon.fenix.dev"
+            implementationClass = "fr.d4emon.fenix.gradle.FenixDevPlugin"
+            displayName = "Fenix development plugin"
+            description = "Downloads Minecraft, wires the Fenix loader and API, and adds runClient."
+        }
+    }
+}

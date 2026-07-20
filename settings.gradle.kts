@@ -21,7 +21,10 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    // PREFER_SETTINGS, not FAIL_ON_PROJECT_REPOS: the dev plugin adds its own
+    // repositories (for external mods that have none in settings), and these
+    // settings repos simply take precedence in-repo rather than erroring.
+    repositoriesMode = RepositoriesMode.PREFER_SETTINGS
     repositories {
         mavenCentral()
         maven("https://maven.fabricmc.net/") { name = "FabricMC" }        // sponge-mixin
