@@ -9,3 +9,9 @@ description = "Annotation processor that writes the compile-time mod index the l
 // This processor runs inside the mod author's compiler, so it must not drag
 // anything onto their annotation processor path. Annotations are matched by
 // their fully qualified name and the index is written as hand-rolled JSON.
+
+dependencies {
+    // Tests compile real mod sources against the actual API; the processor
+    // itself stays dependency-free.
+    testImplementation(project(":fenix-api-core"))
+}

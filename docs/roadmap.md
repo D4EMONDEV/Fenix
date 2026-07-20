@@ -8,16 +8,16 @@ phase 0 is implemented yet.
 Monorepo layout, Gradle build with convention plugins, version catalogue,
 module boundaries, repository documentation. `./gradlew build` is green.
 
-## Phase 1 — Loader core
+## Phase 1 — Loader core ✅
 
 The loader running against `testing/harness`, a fake game, so none of this needs
-Minecraft to be tested.
+Minecraft to be tested. `./gradlew :test-harness:runDemo` shows it end to end.
 
-- `fenix.mod.json` parsing and validation
-- Mod discovery from a mods directory
-- Semantic version constraint solving and dependency ordering
-- A child-first classloader with a transformation hook
-- The `@Mod` annotation, the `fenix-processor` index, and lifecycle dispatch
+- `fenix.mod.json` parsing and validation ✅
+- Mod discovery from a mods directory ✅
+- Semantic version constraint solving and dependency ordering ✅
+- A child-first classloader with a transformation hook ✅
+- The `@Mod` annotation, the `fenix-processor` index, and lifecycle dispatch ✅
 
 ## Phase 2 — Launching real Minecraft
 
