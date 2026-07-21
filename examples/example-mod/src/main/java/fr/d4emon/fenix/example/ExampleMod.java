@@ -6,7 +6,8 @@ import fr.d4emon.fenix.api.Mod;
 import fr.d4emon.fenix.event.BlockEvents;
 import fr.d4emon.fenix.event.Flow;
 import fr.d4emon.fenix.event.ServerEvents;
-import net.minecraft.world.level.block.Blocks;
+import fr.d4emon.fenix.example.content.ModBlocks;
+import fr.d4emon.fenix.example.content.ModContent;
 
 /**
  * The smallest useful Fenix mod: one class, a couple of listeners.
@@ -23,6 +24,12 @@ public final class ExampleMod implements FenixMod {
     }
 
     @Override
+    public void onRegister(Fenix fenix) {
+        ModContent.register();
+        fenix.logger().info("registered {} and friends", ModBlocks.RUBY_BLOCK.id());
+    }
+
+    @Override
     public void onInit(Fenix fenix) {
         fenix.logger().info("Example mod loaded — Fenix {}, {} side",
                 fenix.loaderVersion(), fenix.side());
@@ -30,11 +37,11 @@ public final class ExampleMod implements FenixMod {
         ServerEvents.STARTED.register(started ->
                 fenix.logger().info("the world is up: {}", started.server().getWorldData().getLevelName()));
 
-        // Diamond blocks cannot be broken. On the server, so it actually holds:
-        // a modified client cannot route around this.
+        // This mod's own ruby blocks cannot be broken. On the server, so it
+        // actually holds: a modified client cannot route around this.
         BlockEvents.BREAK.register(event -> {
-            if (event.level().getBlockState(event.pos()).is(Blocks.DIAMOND_BLOCK)) {
-                fenix.logger().info("{} tried to break a diamond block at {}",
+            if (event.level().getBlockState(event.pos()).is(ModBlocks.RUBY_BLOCK.get())) {
+                fenix.logger().info("{} tried to break a ruby block at {}",
                         event.player().getName().getString(), event.pos());
                 return Flow.CANCEL;
             }
