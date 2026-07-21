@@ -9,6 +9,32 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Access widening**, and the menus it unblocked. Mixin already reaches a
+  private field or method with `@Accessor` and `@Invoker`; what it cannot do is
+  make a type *nameable*. `MenuType`'s constructor is private and its parameter
+  is a private interface, so there was nothing a mod could write down — in any
+  package. Verified rather than assumed: a class placed in
+  `net.minecraft.world.inventory` still failed to compile.
+
+  A mod now declares `accessible` entries in its manifest. The loader raises
+  those members to public before anything loads them, and the Gradle plugin
+  applies the same declarations to the copy of Minecraft the mod compiles
+  against — both reading the one file the mod already ships, so what `javac`
+  allows and what the game allows cannot drift apart. Making a nested type
+  nameable takes two edits, not one: the type's own flags and the
+  `InnerClasses` entry, which is what `javac` actually reads.
+
+  On top of it: `Registrar.menu`, `MenuScreens.register` on the client, and
+  `SimpleMenu` — which lays the slots out and implements `quickMoveStack`, the
+  single most copied-and-broken method in Minecraft modding. The version that
+  circulates moves stacks into the wrong half, loops forever, or deletes items
+  when the destination is full.
+
+  One thing fell out of it: `fenix.mod.json` is no longer run through Groovy's
+  template engine, which read the `$` in `MenuType$MenuSupplier` as a variable
+  and failed the build. Escaping it would have left the source file invalid
+  JSON, which everything else reads.
+
 - **Config** (`fenix-api-config`), the last of phase 8. A record is the schema,
   the defaults and the documentation at once: its component names are the file's
   keys, its types decide what a value may be, and the instance you pass is what a

@@ -79,8 +79,14 @@ proves the loader works.
   on Page Up/Page Down. Search, inventory, hotbars and op blocks travel to
   every page.
 
-Still missing, and wanted: spawn eggs and spawn rules, and menus — which now
-only want writing, since networking is in.
+- **Menus** ✅ — `Registrar.menu` and a `SimpleMenu` that lays out slots and
+  gets `quickMoveStack` right, plus client-side screen registration.
+- **Access widening** ✅ — some of vanilla's doors are shut in a way no mixin
+  can open, `MenuType` among them. `accessible` declarations in a mod's manifest
+  are applied by the loader at run time *and* by the Gradle plugin to the jar
+  the mod compiles against, so the two cannot disagree.
+
+Still missing, and wanted: spawn eggs and spawn rules.
 
 ## Phase 6 — Ember ✅
 

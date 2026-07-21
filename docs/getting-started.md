@@ -329,6 +329,61 @@ there is no inventory and no position to look at.
 it rather than resetting it, so anything a mod attached to the old one is gone
 and has to be put back here.
 
+## Menus
+
+A block that opens a screen needs a menu type, a menu, and a screen.
+
+```java title="common"
+public static final Holder<MenuType<SafeMenu>> SAFE = REGISTRAR.menu("safe", SafeMenu::new);
+
+public final class SafeMenu extends SimpleMenu {
+    public SafeMenu(int id, Inventory player) {
+        super(ModContent.SAFE.get(), id, player, new SimpleContainer(27), 9, 3);
+    }
+}
+```
+
+```java title="src/client/java"
+MenuScreens.register(ModContent.SAFE, SafeScreen::new);
+```
+
+Open it from the server:
+
+```java
+player.openMenu(new SimpleMenuProvider(
+        (id, inventory, who) -> new SafeMenu(id, inventory),
+        Component.translatable("container.mymod.safe")));
+```
+
+`SimpleMenu` lays the slots out and writes `quickMoveStack` for you — the
+shift-click handler, which is the single most copied-and-broken method in
+Minecraft modding. The usual version moves stacks into the wrong half, loops
+forever, or deletes items when the destination is full.
+
+## Reaching what vanilla keeps shut
+
+Some of vanilla's doors are shut in a way no mixin can open: `MenuType`'s
+constructor is private and its parameter type is a *private interface*, so
+there is nothing a mod can write down, in any package.
+
+Declare what you need in `fenix.mod.json`:
+
+```json
+"accessible": [
+  "class net.minecraft.world.inventory.MenuType$MenuSupplier",
+  "method net.minecraft.world.inventory.MenuType <init>"
+]
+```
+
+The loader raises those to public before anything loads them, **and** the
+Gradle plugin applies the same declarations to the copy of Minecraft you
+compile against — so what `javac` allows and what the game allows cannot
+disagree.
+
+Reach for it only when a mixin cannot do the job. `@Accessor` and `@Invoker`
+already cover a private field or method; widening is for the cases where a type
+cannot be *named* at all.
+
 ## Configuration
 
 The record is the schema, the defaults and the documentation at once:
