@@ -4,6 +4,7 @@ import fr.d4emon.fenix.api.Fenix;
 import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Mod;
 import fr.d4emon.fenix.event.BlockEvents;
+import fr.d4emon.fenix.example.content.ModCommands;
 import fr.d4emon.fenix.event.Flow;
 import fr.d4emon.fenix.event.ServerEvents;
 import fr.d4emon.fenix.example.content.ModBlocks;
@@ -31,6 +32,11 @@ public final class ExampleMod implements FenixMod {
 
     @Override
     public void onInit(Fenix fenix) {
+        // Commands are announced through the event bus, so registering the
+        // listener once here is enough — the server fires it on start and on
+        // every datapack reload.
+        ModCommands.register();
+
         fenix.logger().info("Example mod loaded — Fenix {}, {} side",
                 fenix.loaderVersion(), fenix.side());
 

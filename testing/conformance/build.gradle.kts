@@ -56,12 +56,14 @@ evaluationDependsOn(":fenix-api-event")
 evaluationDependsOn(":fenix-api-registry")
 evaluationDependsOn(":fenix-api-resource")
 evaluationDependsOn(":fenix-api-network")
+evaluationDependsOn(":fenix-api-command")
 
 val clientJar = fenix.clientJar
 val eventJar = project(":fenix-api-event").tasks.named<Jar>("jar").flatMap { it.archiveFile }
 val registryJar = project(":fenix-api-registry").tasks.named<Jar>("jar").flatMap { it.archiveFile }
 val resourceJar = project(":fenix-api-resource").tasks.named<Jar>("jar").flatMap { it.archiveFile }
 val networkJar = project(":fenix-api-network").tasks.named<Jar>("jar").flatMap { it.archiveFile }
+val commandJar = project(":fenix-api-command").tasks.named<Jar>("jar").flatMap { it.archiveFile }
 
 tasks.test {
     // Mixin bootstraps once per JVM and never resets, so each test class that
@@ -78,11 +80,13 @@ tasks.test {
     inputs.file(registryJar).withPropertyName("registryJar")
     inputs.file(resourceJar).withPropertyName("resourceJar")
     inputs.file(networkJar).withPropertyName("networkJar")
+    inputs.file(commandJar).withPropertyName("commandJar")
     doFirst {
         systemProperty("fenix.test.clientJar", clientJar.get().asFile.absolutePath)
         systemProperty("fenix.test.eventJar", eventJar.get().asFile.absolutePath)
         systemProperty("fenix.test.registryJar", registryJar.get().asFile.absolutePath)
         systemProperty("fenix.test.resourceJar", resourceJar.get().asFile.absolutePath)
         systemProperty("fenix.test.networkJar", networkJar.get().asFile.absolutePath)
+        systemProperty("fenix.test.commandJar", commandJar.get().asFile.absolutePath)
     }
 }
