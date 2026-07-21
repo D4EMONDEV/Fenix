@@ -9,6 +9,20 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Creative tabs**, with pages. `CreativeTabs.addTo` puts content in vanilla's
+  tabs and `Registrar.creativeTab` gives a mod one of its own — without either,
+  registered content is reachable only through `/give`, which is the difference
+  between a mod a player can use and one they cannot. Vanilla's tab strip is
+  two rows of seven and vanilla fills all fourteen, so a mod tab has nowhere to
+  go: Fenix pages the strip, keeping vanilla's tabs alone on page 0 and putting
+  mod tabs on pages after it, with the recipe book's own arrows drawn at the top
+  right of the panel. Two consequences worth naming. Narrowing
+  `CreativeModeTabs.tabs()` is what makes drawing, clicking and tooltips agree,
+  since the screen asks five separate times. And vanilla's bootstrap refuses to
+  start when two tabs share a row and column — true of every mod tab, since all
+  fourteen squares are taken — so that check is widened to include the page
+  rather than dropped: two tabs actually drawn on top of each other still refuse
+  to load.
 - Ember is now a set of providers rather than one method: `EmberModelProvider`,
   `EmberLanguageProvider`, `EmberLootTableProvider`, `EmberRecipeProvider` and
   `EmberTagsProvider.BlockTagsProvider`/`.ItemTagsProvider`. A single `collect`

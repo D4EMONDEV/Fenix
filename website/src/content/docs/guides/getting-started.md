@@ -8,8 +8,7 @@ sidebar:
 :::caution
 Fenix is pre-1.0 and the API will change. This workflow works today; the
 [roadmap](https://github.com/D4EMONDEV/Fenix/blob/main/docs/roadmap.md) lists
-what is still missing — notably creative tabs, so new content is reachable with
-`/give` but does not yet appear in the creative menu.
+what is still missing — networking, config and commands, mainly.
 :::
 
 ## Requirements
@@ -94,6 +93,28 @@ public static final Holder<Block> RUBY_BLOCK = ModContent.REGISTRAR
 
 Registered with one call from `onRegister`. A `Holder` stands in until then, so
 content can live in `static final` fields.
+
+## The creative menu
+
+Until content is in a tab, only `/give` reaches it.
+
+```java
+CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS, ModBlocks.RUBY_BLOCK);
+```
+
+A tab of the mod's own works the same way, and belongs in `ModContent` since
+blocks and items both go in it:
+
+```java
+public static final ResourceKey<CreativeModeTab> TAB =
+        REGISTRAR.creativeTab("example_mod", ModItems.RUBY);
+
+CreativeTabs.addTo(TAB, ModBlocks.RUBY_BLOCK, ModItems.RUBY);
+```
+
+Vanilla's tab strip is two rows of seven and vanilla fills all fourteen, so mod
+tabs land on a second page. Arrows appear at the top right of the panel to move
+between pages, and stay hidden while there is only one.
 
 ## Reacting to the game
 

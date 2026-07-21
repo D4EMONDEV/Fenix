@@ -1,8 +1,7 @@
 # Getting started
 
 > This workflow works today. What is still missing is listed in
-> [roadmap.md](roadmap.md) — most notably creative tabs, so new content is
-> reachable with `/give` but does not yet appear in the creative menu.
+> [roadmap.md](roadmap.md) — networking, config and commands, mainly.
 
 ## Building this repository
 
@@ -93,6 +92,30 @@ public void onRegister(Fenix fenix) {
     ModContent.REGISTRAR.apply();
 }
 ```
+
+## The creative menu
+
+Registered content is not yet reachable in game except with `/give`. Put it in a
+tab, in the same `onRegister`, after `apply()`:
+
+```java
+CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS, ModBlocks.RUBY_BLOCK);
+CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
+```
+
+Or give the mod a tab of its own, and put content in both:
+
+```java
+public static final ResourceKey<CreativeModeTab> TAB =
+        REGISTRAR.creativeTab("example_mod", ModItems.RUBY);
+```
+
+Vanilla's tab strip is two rows of seven and vanilla fills all fourteen, so a
+mod tab lands on a second page. Arrows appear at the top right of the creative
+panel to move between pages; they are hidden while there is only one page, which
+is the case until a mod adds a tab.
+
+Its title is `itemGroup.<mod id>.<name>` — translate it like anything else.
 
 A `Holder` stands in until registration happens, so content can live in
 `static final` fields. That `apply()` call is also what loads the class holding

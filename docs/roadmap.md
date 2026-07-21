@@ -70,9 +70,11 @@ proves the loader works.
   Blocks and items today.
 - **Resources** ✅ — every mod jar is handed to the game as a resource pack, so
   its models, textures and translations are actually read.
+- **Creative tabs** ✅ — content goes into vanilla's tabs, or into a tab of the
+  mod's own. Vanilla's strip holds exactly fourteen and vanilla fills all
+  fourteen, so Fenix adds pages, with arrows at the top right of the panel.
 
-Still missing, and wanted: **creative tabs** (content is currently only
-reachable with `/give`), more events (player, entity, world), and more
+Still missing, and wanted: more events (player, entity, world), and more
 registries (entities, block entities, sounds).
 
 ## Phase 6 — Ember ✅
