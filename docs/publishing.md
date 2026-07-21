@@ -52,12 +52,12 @@ for years — an artifact that disappears is a mod that stops building, and its
 author has no way to bring it back.
 
 So the repository lives on a branch of its own, and Pages is pointed straight at
-that branch (**Settings → Pages → Source: Deploy from a branch → **).
+that branch — **Settings → Pages → Source: Deploy from a branch → `maven-repo`**.
 Pushing is publishing: there is no artifact to upload and no deployment to wait
 for, and the branch is both what is served and the durable copy — the two cannot
 drift apart because there is only one of them.
 
-Deploying from the workflow instead would also have needed the 
+Deploying from the workflow instead would also have needed the `github-pages`
 environment opened to tags, since by default only the default branch may deploy
 to it and releases are cut from tags.
 
