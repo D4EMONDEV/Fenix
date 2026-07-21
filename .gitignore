@@ -55,3 +55,6 @@ logs/
 
 # IntelliJ run configurations are regenerated on every Gradle sync.
 .run/
+
+# Ember's isolated game directory
+ember-run/

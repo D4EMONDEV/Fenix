@@ -20,6 +20,7 @@ subprojects {
             substitute(module("fr.d4emon.fenix:fenix-loader")).using(project(":fenix-loader"))
             substitute(module("fr.d4emon.fenix:fenix-api")).using(project(":fenix-api"))
             substitute(module("fr.d4emon.fenix:fenix-processor")).using(project(":fenix-processor"))
+            substitute(module("fr.d4emon.fenix:ember")).using(project(":ember"))
             listOf("core", "event", "registry", "resource", "network", "command", "config").forEach {
                 substitute(module("fr.d4emon.fenix:fenix-api-$it")).using(project(":fenix-api-$it"))
             }

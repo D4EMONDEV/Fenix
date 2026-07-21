@@ -125,7 +125,15 @@ public final class FenixDevPlugin implements Plugin<Project> {
         dependencies.add(vineflower.getName(),
                 "org.vineflower:vineflower:" + readPluginProperties().getProperty("vineflower"));
 
+        // Ember generates this mod's resources into a source directory that is
+        // part of the build, so generated files are reviewable and shipped.
+        Directory generated = project.getLayout().getProjectDirectory().dir("src/main/generated");
+        project.getExtensions().getByType(org.gradle.api.tasks.SourceSetContainer.class)
+                .getByName("main").getResources().srcDir(generated);
+        dependencies.add(fenixMod.getName(), "fr.d4emon.fenix:ember:" + loaderVersion);
+
         registerRunClient(project, game, clientClasspath, fenixMod);
+        registerEmber(project, game, clientClasspath, fenixMod, generated);
         registerRunServer(project, minecraft, cacheRoot, serverClasspath, fenixMod);
         registerGenSources(project, game, vineflower);
         writeRunConfigs(project);
@@ -173,6 +181,44 @@ public final class FenixDevPlugin implements Plugin<Project> {
                         "--userType", "legacy"));
             }
             task.setArgs(args);
+        });
+    }
+
+    /**
+     * Runs Ember: the game boots headlessly, the mod registers its content, and
+     * the generators write the resource files that content needs.
+     *
+     * <p>It uses its own game directory so a generation run cannot disturb a
+     * real one, and runs the game through the loader like everything else —
+     * Ember has to be inside the transformed scope to see the same Minecraft
+     * the mod does.
+     */
+    private void registerEmber(Project project, MinecraftLibraries game, Configuration clientClasspath,
+                               Configuration fenixMod, Directory generated) {
+        Directory runDir = project.getLayout().getBuildDirectory().dir("ember-run").get();
+        var jar = project.getTasks().named("jar");
+
+        var syncEmberMods = project.getTasks().register("syncEmberMods", Copy.class, task -> {
+            task.setDescription("Copies this mod, its Fenix mod dependencies and Ember into the Ember game directory");
+            task.from(jar);
+            task.from(fenixMod);
+            task.exclude(element -> !isFenixMod(element.getFile()));
+            task.into(runDir.dir("mods"));
+        });
+
+        project.getTasks().register("ember", JavaExec.class, task -> {
+            task.setGroup("fenix");
+            task.setDescription("Generates this mod's assets and data into src/main/generated");
+            task.dependsOn(syncEmberMods);
+            task.setClasspath(clientClasspath);
+            task.getMainClass().set(LAUNCH_MAIN);
+            task.getOutputs().dir(generated);
+
+            task.setArgs(List.of(
+                    "--fenix.gameJar", game.clientJar().toAbsolutePath().toString(),
+                    "--fenix.gameMain", "fr.d4emon.fenix.ember.EmberRunner",
+                    "--fenix.gameDir", runDir.getAsFile().getAbsolutePath(),
+                    generated.getAsFile().getAbsolutePath()));
         });
     }
 

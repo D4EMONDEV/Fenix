@@ -37,11 +37,14 @@ import java.util.regex.Pattern;
  * it runs inside the mod author's compiler, and anything on its classpath lands
  * on theirs. Annotations are matched by fully qualified name.
  */
-@SupportedAnnotationTypes(ModProcessor.MOD_ANNOTATION)
+@SupportedAnnotationTypes({ModProcessor.MOD_ANNOTATION, ModProcessor.GENERATOR_ANNOTATION})
 public final class ModProcessor extends AbstractProcessor {
 
     static final String MOD_ANNOTATION = "fr.d4emon.fenix.api.Mod";
     static final String FENIX_MOD_INTERFACE = "fr.d4emon.fenix.api.FenixMod";
+
+    static final String GENERATOR_ANNOTATION = "fr.d4emon.fenix.ember.Generator";
+    static final String GENERATOR_INTERFACE = "fr.d4emon.fenix.ember.EmberGenerator";
 
     /** Written to the jar root; read by the loader's {@code ModIndexReader}. */
     static final String INDEX_FILE = "fenix.index.json";
@@ -51,6 +54,10 @@ public final class ModProcessor extends AbstractProcessor {
 
     /** Mod id to binary class name, sorted so the output is reproducible. */
     private final Map<String, String> mods = new TreeMap<>();
+
+    /** Binary names of the {@code @Generator} classes, likewise sorted. */
+    private final java.util.SortedSet<String> generators = new java.util.TreeSet<>();
+
     private boolean failed;
 
     /** Instantiated by the compiler, which discovers it through {@code META-INF/services}. */
@@ -67,8 +74,13 @@ public final class ModProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (TypeElement annotation : annotations) {
+            boolean isGenerator = annotation.getQualifiedName().contentEquals(GENERATOR_ANNOTATION);
             for (Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
-                consider(element);
+                if (isGenerator) {
+                    considerGenerator(element);
+                } else {
+                    consider(element);
+                }
             }
         }
         if (roundEnv.processingOver() && !failed && !mods.isEmpty()) {
@@ -100,7 +112,7 @@ public final class ModProcessor extends AbstractProcessor {
         if (!hasPublicNoArgConstructor(type)) {
             error(type, "@Mod class " + name + " needs a public no-argument constructor");
         }
-        checkImplementsFenixMod(type, name);
+        checkImplements(type, name, FENIX_MOD_INTERFACE, "@Mod");
 
         String id = readId(type);
         if (id == null) {
@@ -121,15 +133,52 @@ public final class ModProcessor extends AbstractProcessor {
         }
     }
 
-    private void checkImplementsFenixMod(TypeElement type, String name) {
-        TypeElement fenixMod = processingEnv.getElementUtils().getTypeElement(FENIX_MOD_INTERFACE);
-        if (fenixMod == null) {
-            error(type, FENIX_MOD_INTERFACE + " is not on the compile classpath — "
-                    + "add a dependency on fenix-api-core");
+    /**
+     * Records a {@code @Generator} class, rejecting the same mistakes as for a
+     * mod — Ember has to instantiate it just the same.
+     */
+    private void considerGenerator(Element element) {
+        if (element.getKind() != ElementKind.CLASS && element.getKind() != ElementKind.RECORD) {
+            error(element, "@Generator can only mark a class");
             return;
         }
-        if (!processingEnv.getTypeUtils().isAssignable(type.asType(), fenixMod.asType())) {
-            error(type, "@Mod class " + name + " does not implement " + FENIX_MOD_INTERFACE);
+        TypeElement type = (TypeElement) element;
+        String name = type.getQualifiedName().toString();
+
+        if (type.getModifiers().contains(Modifier.ABSTRACT)) {
+            error(type, "@Generator class " + name + " must not be abstract — Ember has to instantiate it");
+        }
+        if (!type.getModifiers().contains(Modifier.PUBLIC)) {
+            error(type, "@Generator class " + name + " must be public so Ember can instantiate it");
+        }
+        if (type.getNestingKind() != NestingKind.TOP_LEVEL
+                && !(type.getNestingKind() == NestingKind.MEMBER && type.getModifiers().contains(Modifier.STATIC))) {
+            error(type, "@Generator class " + name + " must be a top-level or static nested class");
+        }
+        if (!hasPublicNoArgConstructor(type)) {
+            error(type, "@Generator class " + name + " needs a public no-argument constructor");
+        }
+        checkImplements(type, name, GENERATOR_INTERFACE, "@Generator");
+
+        generators.add(processingEnv.getElementUtils().getBinaryName(type).toString());
+    }
+
+    /**
+     * Checks that an annotated class implements what its annotation promises.
+     *
+     * @param type           the annotated class
+     * @param name           its qualified name, for the message
+     * @param interfaceName  the interface it must implement
+     * @param annotationName how to refer to the annotation in the message
+     */
+    private void checkImplements(TypeElement type, String name, String interfaceName, String annotationName) {
+        TypeElement required = processingEnv.getElementUtils().getTypeElement(interfaceName);
+        if (required == null) {
+            error(type, interfaceName + " is not on the compile classpath");
+            return;
+        }
+        if (!processingEnv.getTypeUtils().isAssignable(type.asType(), required.asType())) {
+            error(type, annotationName + " class " + name + " does not implement " + interfaceName);
         }
     }
 
@@ -170,7 +219,20 @@ public final class ModProcessor extends AbstractProcessor {
             json.append(separator).append(quote(entry.getKey())).append(": ").append(quote(entry.getValue()));
             separator = ",\n    ";
         }
-        json.append("\n  }\n}\n");
+        json.append("\n  }");
+
+        // Ember reads this to find what generates a mod's resources, so nothing
+        // has to name a class in a build file.
+        if (!generators.isEmpty()) {
+            json.append(",\n  \"generators\": [");
+            String generatorSeparator = "\n    ";
+            for (String generator : generators) {
+                json.append(generatorSeparator).append(quote(generator));
+                generatorSeparator = ",\n    ";
+            }
+            json.append("\n  ]");
+        }
+        json.append("\n}\n");
 
         try (Writer writer = processingEnv.getFiler()
                 .createResource(StandardLocation.CLASS_OUTPUT, "", INDEX_FILE)
