@@ -2,11 +2,15 @@ package fr.d4emon.fenix.probe;
 
 import fr.d4emon.fenix.registry.CreativePages;
 import fr.d4emon.fenix.registry.CreativeTabs;
+import fr.d4emon.fenix.registry.Registrar;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -53,6 +57,8 @@ public final class RegistryProbe {
                 "asItem() should be the block's own item");
 
         checkCreativePage();
+        checkBlockEntity();
+        checkSound();
 
         System.out.println("registry conformance: all checks passed");
     }
@@ -91,6 +97,46 @@ public final class RegistryProbe {
                 "so does the inventory");
         require(page.size() == 5, "page 1 is the mod's tab plus the four that always travel");
         CreativePages.turn(-1);
+    }
+
+    /**
+     * A block entity type has to know which blocks carry it.
+     *
+     * <p>Get that set wrong and nothing complains: the type registers, the
+     * block places, and the game silently never creates the block entity — so
+     * whatever it was meant to store is simply never there.
+     */
+    private static void checkBlockEntity() {
+        BlockEntityType<?> type =
+                BuiltInRegistries.BLOCK_ENTITY_TYPE.getValue(Identifier.parse("probemod:machine"));
+        require(type != null, "the block entity type should be in the registry");
+        require(type == ProbeContent.MACHINE_TYPE.get(), "the handle should be bound to it");
+
+        require(type.isValid(ProbeContent.MACHINE.get().defaultBlockState()),
+                "the type should accept its own block — otherwise the block entity is never created");
+
+        require(type.create(BlockPos.ZERO, ProbeContent.MACHINE.get().defaultBlockState()) != null,
+                "the type should be able to build one");
+
+        // A block that does not implement EntityBlock never creates its block
+        // entity. That has to be refused out loud, at startup, rather than
+        // discovered hours later by a player whose machine forgot everything.
+        Registrar spare = Registrar.of("probemod");
+        spare.blockEntity("nope", ProbeBlockEntity::new, ProbeContent.RUBY_BLOCK);
+        boolean refused = false;
+        try {
+            spare.apply();
+        } catch (IllegalArgumentException expected) {
+            refused = true;
+        }
+        require(refused, "a block that is not an EntityBlock should be refused, loudly, "
+                + "rather than never creating its block entity");
+    }
+
+    private static void checkSound() {
+        SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(Identifier.parse("probemod:chime"));
+        require(sound != null, "the sound event should be in the registry");
+        require(sound == ProbeContent.CHIME.get(), "the handle should be bound to it");
     }
 
     private static void require(boolean condition, String what) {

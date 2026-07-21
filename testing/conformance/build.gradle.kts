@@ -65,6 +65,12 @@ tasks.test {
     // touches it gets a fresh process.
     forkEvery = 1
 
+    // The probe is a mod, not a test: it extends real Minecraft classes and is
+    // repackaged into a jar the loader runs. Gradle would otherwise try to load
+    // each one looking for tests, and fail on the missing superclass — the game
+    // is deliberately not on the test runtime classpath.
+    exclude("fr/d4emon/fenix/probe/**")
+
     inputs.file(eventJar).withPropertyName("eventJar")
     inputs.file(registryJar).withPropertyName("registryJar")
     inputs.file(resourceJar).withPropertyName("resourceJar")

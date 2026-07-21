@@ -39,7 +39,9 @@ class RegistryConformanceTest {
 
     /** The probe classes, compiled by this module and repackaged as a mod. */
     private static final List<String> PROBE_CLASSES = List.of(
+            "fr/d4emon/fenix/probe/ProbeBlockEntity.class",
             "fr/d4emon/fenix/probe/ProbeContent.class",
+            "fr/d4emon/fenix/probe/ProbeMachineBlock.class",
             "fr/d4emon/fenix/probe/ProbeMod.class",
             "fr/d4emon/fenix/probe/RegistryProbe.class");
 
