@@ -51,6 +51,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         extension.getMinecraft().convention(pluginProperties.getProperty("minecraft"));
         extension.getLoaderVersion().convention(pluginProperties.getProperty("version"));
         extension.getLibrary().convention(false);
+        extension.getApi().convention(true);
 
         addRepositories(project);
 
@@ -96,7 +97,14 @@ public final class FenixDevPlugin implements Plugin<Project> {
         boolean library = extension.getLibrary().get();
         clientSourceSet(project, game, loaderVersion, library);
         if (!library) {
-            dependencies.add("compileOnly", "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+            if (extension.getApi().get()) {
+                // fenixMod and not compileOnly, so what a mod compiles against
+                // is also what is there when it runs. The two disagreeing is
+                // how you get a mod that builds and then cannot find the class
+                // it was written against — the exact failure Fenix exists to
+                // move earlier. fenixMod feeds compileOnly, so this covers both.
+                dependencies.add(fenixMod.getName(), "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+            }
             dependencies.add("annotationProcessor", "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
         }
 

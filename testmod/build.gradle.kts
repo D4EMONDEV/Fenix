@@ -9,9 +9,7 @@ fenix {
 }
 
 dependencies {
-    // Copied into run/mods, and compiled against.
-    fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")
-
-    // For the title mixin. Provided by the loader at run time.
+    // The whole API arrives by default; only the mixin library is extra here.
+    // Provided by the loader at run time.
     compileOnly(libs.mixin)
 }

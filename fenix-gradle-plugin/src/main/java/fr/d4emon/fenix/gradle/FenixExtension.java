@@ -19,6 +19,20 @@ import org.gradle.api.provider.Property;
 public abstract class FenixExtension {
 
     /**
+     * Whether the whole API is a dependency of this mod, on by default.
+     *
+     * <p>Set it to {@code false} to name the modules you use instead:
+     *
+     * <pre>{@code
+     * fenix { api = false }
+     * dependencies { fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0") }
+     * }</pre>
+     *
+     * @return the property
+     */
+    public abstract Property<Boolean> getApi();
+
+    /**
      * {@return the Minecraft version to build and run against}
      */
     public abstract Property<String> getMinecraft();

@@ -16,10 +16,9 @@ fenix {
     minecraft = "26.2"
 }
 
-dependencies {
-    // A mod-on-mod dependency: compiled against, and copied into run/mods so it
-    // is actually there at run time.
-    fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")
-    fenixMod("fr.d4emon.fenix:fenix-api-registry:0.1.0")
-    fenixMod("fr.d4emon.fenix:fenix-api-resource:0.1.0")
-}
+// No dependencies block: the plugin puts the whole Fenix API on the compile
+// classpath and into run/mods, so what this mod is written against is what is
+// there when it runs. A mod that wants a smaller set says so:
+//
+//     fenix { api = false }
+//     dependencies { fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0") }
