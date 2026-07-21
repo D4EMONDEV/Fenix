@@ -4,7 +4,9 @@
   "version": "${version}",
   "name": "Fenix Conformance",
   "description": "Checks only provable by loading real Minecraft classes through the loader.",
-  "authors": ["D4EMON"],
+  "authors": [
+    "D4EMON"
+  ],
   "license": "Apache-2.0",
   "contact": {
     "homepage": "https://github.com/D4EMONDEV/Fenix",
@@ -14,6 +16,6 @@
   "depends": {
     "fenix": ">=0.1.0",
     "minecraft": "~${minecraft_version}",
-    "fenix-api": "${version}"
+    "fenix-api-registry": "${version}"
   }
 }

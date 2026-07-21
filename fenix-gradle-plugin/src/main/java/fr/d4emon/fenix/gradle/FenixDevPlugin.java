@@ -147,10 +147,17 @@ public final class FenixDevPlugin implements Plugin<Project> {
         Directory generated = project.getLayout().getProjectDirectory().dir("src/main/generated");
         project.getExtensions().getByType(org.gradle.api.tasks.SourceSetContainer.class)
                 .getByName("main").getResources().srcDir(generated);
-        dependencies.add(fenixMod.getName(), "fr.d4emon.fenix:ember:" + loaderVersion);
+        // Ember is a build-time generator, not something a mod runs with. Its
+        // own configuration keeps it out of run/mods, where it was being copied
+        // into every client and server launch for nothing.
+        Configuration ember = project.getConfigurations().create("fenixEmber");
+        dependencies.add(ember.getName(), "fr.d4emon.fenix:ember:" + loaderVersion);
+        // Still on the compile classpath: a mod writes @Generator classes
+        // against it. It is only the runtime copy that was pointless.
+        dependencies.add("compileOnly", "fr.d4emon.fenix:ember:" + loaderVersion);
 
         registerRunClient(project, game, clientClasspath, fenixMod);
-        registerEmber(project, game, clientClasspath, fenixMod, generated);
+        registerEmber(project, game, clientClasspath, fenixMod, ember, generated);
         registerRunServer(project, minecraft, cacheRoot, serverClasspath, fenixMod);
         registerGenSources(project, game, vineflower);
         writeRunConfigs(project);
@@ -283,7 +290,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
      * the mod does.
      */
     private void registerEmber(Project project, MinecraftLibraries game, Configuration clientClasspath,
-                               Configuration fenixMod, Directory generated) {
+                               Configuration fenixMod, Configuration ember, Directory generated) {
         Directory runDir = project.getLayout().getBuildDirectory().dir("ember-run").get();
         var jar = project.getTasks().named("jar");
 
@@ -291,6 +298,8 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.setDescription("Copies this mod, its Fenix mod dependencies and Ember into the Ember game directory");
             task.from(jar);
             task.from(fenixMod);
+            // Only generation needs it, so only generation gets it.
+            task.from(ember);
             task.exclude(element -> !isFenixMod(element.getFile()));
             task.into(runDir.dir("mods"));
         });
