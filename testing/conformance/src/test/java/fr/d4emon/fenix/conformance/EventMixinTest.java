@@ -42,7 +42,10 @@ class EventMixinTest {
             "net.minecraft.server.MinecraftServer", "fenix$onTickStart",
             "net.minecraft.server.level.ServerPlayerGameMode", "fenix$onBreak",
             "net.minecraft.client.Minecraft", "fenix$onTickStart",
-            "net.minecraft.client.multiplayer.MultiPlayerGameMode", "fenix$onAttack"));
+            "net.minecraft.client.multiplayer.MultiPlayerGameMode", "fenix$onAttack",
+            "net.minecraft.server.players.PlayerList", "fenix$joined",
+            "net.minecraft.world.entity.LivingEntity", "fenix$died",
+            "net.minecraft.server.level.ServerLevel", "fenix$spawning"));
 
     @Test
     @DisplayName("every event mixin lands on its real Minecraft target")

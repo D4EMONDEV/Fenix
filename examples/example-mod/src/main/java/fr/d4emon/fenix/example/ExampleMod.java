@@ -4,7 +4,12 @@ import fr.d4emon.fenix.api.Fenix;
 import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Mod;
 import fr.d4emon.fenix.event.BlockEvents;
+import fr.d4emon.fenix.event.EntityEvents;
+import fr.d4emon.fenix.event.PlayerEvents;
 import fr.d4emon.fenix.example.content.ModCommands;
+import fr.d4emon.fenix.example.content.ModContent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.Difficulty;
 import fr.d4emon.fenix.event.Flow;
 import fr.d4emon.fenix.event.ServerEvents;
 import fr.d4emon.fenix.example.content.ModBlocks;
@@ -53,5 +58,25 @@ public final class ExampleMod implements FenixMod {
             }
             return Flow.CONTINUE;
         });
+
+        // Greeting a player needs the moment they can actually be sent
+        // something, which is what JOINED means and why it is not the same as
+        // the server having started.
+        PlayerEvents.JOINED.register(joined -> joined.player().sendSystemMessage(
+                Component.literal("This world runs the Fenix example mod.")));
+
+        // A player who died lost their tally blocks' contents to nobody in
+        // particular; this is only here to show the event carries the cause.
+        PlayerEvents.DIED.register(died -> fenix.logger().info("{} died: {}",
+                died.player().getName().getString(),
+                died.cause().getLocalizedDeathMessage(died.player()).getString()));
+
+        // Cancelling a spawn keeps the entity out of the world entirely, rather
+        // than removing it a tick later once everyone has seen it.
+        EntityEvents.SPAWNING.register(spawning ->
+                spawning.entity().getType() == ModContent.RUBY_WISP.get()
+                        && spawning.level().getDifficulty() == Difficulty.PEACEFUL
+                        ? Flow.CANCEL
+                        : Flow.CONTINUE);
     }
 }
