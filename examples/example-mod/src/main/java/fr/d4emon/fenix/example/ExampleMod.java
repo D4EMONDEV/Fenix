@@ -25,7 +25,7 @@ public final class ExampleMod implements FenixMod {
 
     @Override
     public void onRegister(Fenix fenix) {
-        ModContent.register(fenix.side());
+        ModContent.register();
         fenix.logger().info("registered {} and friends", ModBlocks.RUBY_BLOCK.id());
     }
 

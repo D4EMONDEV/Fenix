@@ -6,7 +6,6 @@ import fr.d4emon.fenix.api.Mod;
 import fr.d4emon.fenix.event.BlockEvents;
 import fr.d4emon.fenix.event.Flow;
 import fr.d4emon.fenix.event.ServerEvents;
-import fr.d4emon.fenix.event.client.ClientEvents;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -57,23 +56,9 @@ public final class TestMod implements FenixMod {
         });
 
         if (fenix.side().isClient()) {
-            registerClientListeners(fenix);
+            // The client half lives in src/client/java, where it needs no
+            // guard at all — see TestModClient.
+            fenix.logger().info("client side");
         }
-    }
-
-    /**
-     * Kept in its own method so the client-only types it names are resolved
-     * only when it actually runs. A client type mentioned directly in
-     * {@code onInit} would be a {@code NoClassDefFoundError} on a dedicated
-     * server, because loading a class resolves every type its code mentions.
-     */
-    private static void registerClientListeners(Fenix fenix) {
-        AtomicLong clientTicks = new AtomicLong();
-        ClientEvents.TICK_END.register(tick -> {
-            long count = clientTicks.incrementAndGet();
-            if (count % 600 == 0) {
-                fenix.logger().info("client tick {}", count);
-            }
-        });
     }
 }

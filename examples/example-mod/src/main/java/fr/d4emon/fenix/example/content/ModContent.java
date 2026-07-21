@@ -1,7 +1,5 @@
 package fr.d4emon.fenix.example.content;
 
-import fr.d4emon.fenix.api.Side;
-import fr.d4emon.fenix.example.content.client.ModRendering;
 import fr.d4emon.fenix.registry.CreativeTabs;
 import fr.d4emon.fenix.registry.Holder;
 import fr.d4emon.fenix.registry.Registrar;
@@ -55,7 +53,7 @@ public final class ModContent {
      * <p>Touching both classes is what runs their field initialisers — content
      * declared in a class nobody loads is content that never appears.
      */
-    public static void register(Side side) {
+    public static void register() {
         ModBlocks.load();
         ModItems.load();
         REGISTRAR.apply();
@@ -72,11 +70,5 @@ public final class ModContent {
         // in particular will go. Content belongs in both.
         CreativeTabs.addTo(TAB, ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK,
                 ModBlocks.RUBY_TALLY, ModItems.RUBY, ModItems.RUBY_HAMMER);
-
-        if (side == Side.CLIENT) {
-            // A separate method in a .client package: the guard only holds if
-            // the server never has to load the class that names client types.
-            ModRendering.register();
-        }
     }
 }
