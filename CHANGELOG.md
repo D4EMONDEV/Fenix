@@ -9,6 +9,22 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Registry sync.** The server states what it has as each player joins, the
+  client compares, and a client missing one of the server's mods is disconnected
+  with a sentence naming it. Without it such a client is admitted and then falls
+  apart: one absent block shifts every network id after it, so the player sees
+  the wrong blocks or is kicked by vanilla naming a block it cannot find, and
+  none of that mentions the mod at fault. Detection and a clear refusal — never
+  quietly remapping ids, which trades a confusing disconnect for a world that
+  corrupts slowly. Registries travel as digests, so the check costs a few hundred
+  bytes rather than the megabytes a modpack's ids would; the mod namespaces go in
+  full, which is what turns "these differ" into a name. A client without Fenix
+  answers nothing and is left alone.
+- The example mod now uses typed payloads for its tally block: the server sends
+  the count, and shift-clicking asks for a reset. The reset handler checks the
+  player is actually near the block, because a client can send any position at
+  any time — the sort of thing an example should show rather than mention.
+
 - **Typed payloads** (`fenix-api-network`). `ToServer` and `ToClient` carry a
   `StreamCodec` and put the direction in the type, so sending one the wrong way
   is a compile error rather than a packet nobody handles. Server handlers are

@@ -99,8 +99,13 @@ Textures and ogg files are what it cannot generate.
   depend on vanilla's own class-loading order, and would vanish silently when
   that order changed. Two constant types carry no such bet, and an unknown
   channel can be named in a log instead of discarded without a word.
-- Registry sync — still to do: detection and a clear refusal first, never live
-  remapping.
+- **Registry sync** ✅ — the server states what it has on join, the client
+  compares, and a mismatch is a disconnect naming the mod that is missing.
+  Detection and a clear refusal, never live remapping: a client admitted with
+  shifted network ids sees the wrong blocks, or is kicked by vanilla naming a
+  block it cannot find, and nothing in that mentions the mod at fault. Digests
+  per registry keep it to a few hundred bytes; the mod namespaces travel in
+  full, which is what lets the refusal be specific.
 
 ## Phase 8 — Commands and config
 

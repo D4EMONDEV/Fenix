@@ -229,6 +229,17 @@ claim to be opening.
 A client with no handler for a channel drops it, which is what lets a server
 run a mod its players do not have.
 
+### When the two sides disagree
+
+Fenix compares registries on join by itself: the server states what it has, the
+client compares, and a client missing one of the server's mods is disconnected
+with a sentence naming it.
+
+Without that, such a client is admitted and then falls apart in ways that name
+nothing useful — one absent block shifts every network id after it, so the
+player sees the wrong blocks or is kicked by vanilla naming a block it cannot
+find. There is nothing to switch on, and nothing to write.
+
 ## The two sides
 
 A mod has two source directories:
