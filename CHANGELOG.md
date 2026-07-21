@@ -9,6 +9,16 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The Fenix API is a `fenixMod` dependency by default rather than a compile-only
+  one, so a mod's build file needs no `dependencies` block at all. The two
+  disagreeing was how you got a mod that compiled and then could not find, at
+  run time, the class it was written against — the precise failure Fenix exists
+  to move earlier. A mod that wants fewer modules sets `fenix { api = false }`
+  and names them.
+- `@Generator` in a client source set is now a compile error naming the fix.
+  Ember reads only the common index, so one there was silently skipped and its
+  files never written — discovered later as a missing model in game.
+
 - **Split source sets.** A mod is now written in `src/main/java`, with an
   optional `src/client/java` beside it. Common code compiles against Minecraft
   with the client half stripped out, so naming a `net.minecraft.client` type

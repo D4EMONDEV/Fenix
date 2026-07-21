@@ -41,12 +41,16 @@ fenix {
 }
 ```
 
-The plugin puts Minecraft and the whole Fenix API on the compile classpath. If
-you would rather depend on individual API modules, add them explicitly:
+That is the whole build file. The plugin puts Minecraft and the whole Fenix API
+both on the compile classpath *and* into `run/mods`, so what you write against
+is what is there when the game starts.
+
+To ship against fewer modules, say so and name them:
 
 ```kotlin
+fenix { api = false }
+
 dependencies {
-    // Only what you use, instead of the whole API:
     fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")
 }
 ```
@@ -253,6 +257,12 @@ public final class ModLanguage extends EmberLanguageProvider {
 
 `./gradlew ember` writes them into `src/main/generated`, which is part of your
 resources. Textures and ogg files are what you still supply yourself.
+
+Generators live in `src/main/java`, never in `src/client/java` — they describe
+files against registered content and their output lands under `src/main`, so a
+client-side one would be an inversion. Ember does not look there, and the
+annotation processor says so rather than letting it be discovered as a missing
+model in game.
 
 Without a loot table a block breaks into nothing, silently — so generate one
 for every block you add.

@@ -37,8 +37,10 @@ fenix {
 }
 ```
 
-The plugin puts Minecraft and the Fenix API on the compile classpath and adds
-the Fenix repository, so that is the entire build file.
+The plugin puts Minecraft and the Fenix API on the compile classpath *and* into
+`run/mods`, and adds the Fenix repository — so that really is the entire build
+file. Set `fenix { api = false }` and name modules with `fenixMod(…)` to ship
+against fewer.
 
 ## The mod class
 
