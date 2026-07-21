@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "fenix-api-core",
+  "version": "${version}",
+  "name": "Fenix API — Core",
+  "description": "The contracts every other module builds on: @Mod, Fenix, the lifecycle.",
+  "authors": [
+    "D4EMON"
+  ],
+  "license": "Apache-2.0",
+  "contact": {
+    "homepage": "https://github.com/D4EMONDEV/Fenix",
+    "issues": "https://github.com/D4EMONDEV/Fenix/issues"
+  },
+  "side": "both",
+  "depends": {
+    "fenix": ">=0.1.0"
+  }
+}

@@ -128,7 +128,11 @@ public final class Launch {
         }
 
         // 2. What is installed?
-        DiscoveryResult discovered = ModDiscoverer.scan(options.modsDir());
+        // Unpacked beside the mods rather than among them, so a player can
+        // delete the directory to force a clean re-unpack and cannot mistake
+        // its contents for something they installed.
+        DiscoveryResult discovered = ModDiscoverer.scan(options.modsDir(),
+                options.gameDir().resolve(".fenix").resolve("jars"));
         if (discovered.hasProblems()) {
             StringBuilder message = new StringBuilder("some files in ")
                     .append(options.modsDir()).append(" cannot be loaded:");

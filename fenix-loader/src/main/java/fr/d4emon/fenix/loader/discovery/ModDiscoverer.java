@@ -52,7 +52,20 @@ public final class ModDiscoverer {
      * @throws NullPointerException if the directory is {@code null}
      */
     public static DiscoveryResult scan(Path modsDirectory) {
+        return scan(modsDirectory, modsDirectory.resolve(".unpacked"));
+    }
+
+    /**
+     * Scans a mods directory, unpacking any jars the mods carry inside them.
+     *
+     * @param modsDirectory   the directory to scan
+     * @param unpackDirectory where nested jars are unpacked to
+     * @return what was found, and what could not be read
+     * @throws NullPointerException if either argument is {@code null}
+     */
+    public static DiscoveryResult scan(Path modsDirectory, Path unpackDirectory) {
         Objects.requireNonNull(modsDirectory, "modsDirectory");
+        Objects.requireNonNull(unpackDirectory, "unpackDirectory");
 
         if (!Files.exists(modsDirectory)) {
             return new DiscoveryResult(List.of(), List.of());
@@ -77,6 +90,11 @@ public final class ModDiscoverer {
         List<String> problems = new ArrayList<>();
         for (Path jar : jars) {
             readJar(jar, mods, problems);
+            // After the container, so a log reads in the order a person would
+            // explain it: here is the API, and here is what it holds.
+            for (Path nested : NestedJars.unpack(jar, unpackDirectory, problems)) {
+                readJar(nested, mods, problems);
+            }
         }
         return new DiscoveryResult(mods, problems);
     }

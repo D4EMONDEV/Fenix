@@ -42,6 +42,66 @@ class ModDiscovererTest {
                 """.formatted(id);
     }
 
+    /** A container jar carrying other mod jars under META-INF/jars. */
+    private void writeBundle(String fileName, String id, String... nestedIds) throws IOException {
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(modsDir.resolve(fileName)))) {
+            out.putNextEntry(new ZipEntry("fenix.mod.json"));
+            out.write(metadata(id).getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+            for (String nested : nestedIds) {
+                out.putNextEntry(new ZipEntry("META-INF/jars/" + nested + ".jar"));
+                out.write(jarBytes(metadata(nested)));
+                out.closeEntry();
+            }
+        }
+    }
+
+    private static byte[] jarBytes(String metadataJson) throws IOException {
+        var bytes = new java.io.ByteArrayOutputStream();
+        try (ZipOutputStream out = new ZipOutputStream(bytes)) {
+            out.putNextEntry(new ZipEntry("fenix.mod.json"));
+            out.write(metadataJson.getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+        }
+        return bytes.toByteArray();
+    }
+
+    @Nested
+    @DisplayName("jars carried inside jars")
+    class Nested_ {
+
+        @TempDir
+        Path unpackDir;
+
+        @Test
+        @DisplayName("a bundle is found, and so is everything it carries")
+        void unpacksNestedJars() throws IOException {
+            writeBundle("fenix-api.jar", "fenix-api", "fenix-api-event", "fenix-api-registry");
+
+            DiscoveryResult result = ModDiscoverer.scan(modsDir, unpackDir);
+
+            assertEquals(List.of("fenix-api", "fenix-api-event", "fenix-api-registry"),
+                    result.mods().stream().map(ModCandidate::id).sorted().toList());
+            assertEquals(List.of(), result.problems());
+        }
+
+        @Test
+        @DisplayName("unpacking twice reuses what is already there")
+        void reusesWhatIsUnpacked() throws IOException {
+            writeBundle("fenix-api.jar", "fenix-api", "fenix-api-event");
+
+            ModDiscoverer.scan(modsDir, unpackDir);
+            Path unpacked = unpackDir.resolve("fenix-api").resolve("fenix-api-event.jar");
+            long first = Files.getLastModifiedTime(unpacked).toMillis();
+
+            ModDiscoverer.scan(modsDir, unpackDir);
+
+            // Rewriting on every launch would mean copying the whole API before
+            // the game starts, every time, for nothing.
+            assertEquals(first, Files.getLastModifiedTime(unpacked).toMillis());
+        }
+    }
+
     @Nested
     @DisplayName("the happy path")
     class Valid {
