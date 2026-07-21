@@ -6,6 +6,13 @@ name: Publish
 # Runs on a version tag (v1.2.3), or on demand from the Actions tab. The version
 # published is whatever is set in gradle.properties — tag and property should
 # match; the tag is just the trigger.
+#
+# A Maven repository accumulates. Every version ever published has to stay
+# reachable, because somewhere a mod's build file names it and will keep naming
+# it for years. A Pages deployment, though, replaces the whole site — so the
+# repository is kept on a branch of its own, the new version is added to it, and
+# the branch is what gets published. The branch is also the durable copy: if
+# Pages were ever wiped, nothing would be lost.
 
 on:
   push:
@@ -18,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -44,11 +51,73 @@ jobs:
       - name: Build the Maven repository
         run: ./gradlew publishFenixRepo --stacktrace
 
-      - name: Upload the repository as a Pages artifact
+      - name: Check out everything published so far
+        uses: actions/checkout@v4
+        with:
+          ref: maven-repo
+          path: published
+        # Absent the first time, and that is not a failure: the branch is
+        # created by the step below.
+        continue-on-error: true
+
+      - name: Add this version to it
+        run: |
+          mkdir -p published
+          cd published
+          if [ ! -d .git ]; then
+            git init -q
+            git checkout -q --orphan maven-repo
+          fi
+          # Copied over, never cleared: an artifact that disappears is a mod
+          # that stops building, and its author has no way to bring it back.
+          cp -r ../build/fenix-maven-repo/. .
+          git add -A
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -q -m "Publish ${GITHUB_REF_NAME}" || echo "nothing new to publish"
+          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" \
+              HEAD:maven-repo
+
+      - name: Upload the whole repository as a Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build/fenix-maven-repo
+          path: published
 
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
+
+  installer:
+    # Windows, because jpackage builds for the platform it runs on and the
+    # installer carries a Java runtime with it.
+    runs-on: windows-latest
+    needs: publish
+    # A release needs a tag to attach to; a manual run has none, and the Maven
+    # half above is useful on its own.
+    if: startsWith(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build the installer application
+        run: ./gradlew :fenix-installer:distInstaller --stacktrace
+
+      - name: Attach it to the release
+        # Without this a player has nothing to download: the Maven repository
+        # serves mod authors, and nobody else.
+        uses: softprops/action-gh-release@v2
+        with:
+          files: fenix-installer/build/distributions/*.zip
+          generate_release_notes: true
