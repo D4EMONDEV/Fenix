@@ -9,6 +9,30 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The API ships as one jar.** `fenix-api-<version>+mc<game>.jar` carries its
+  modules under `META-INF/jars/`, and the loader unpacks anything it finds there
+  and treats each as the mod it is. A player installing the API drops in one
+  file rather than four — and rather than five once the next module lands, or
+  keeping their versions in step by hand. The modules stay independently
+  versioned and independently publishable; only what you install changes.
+
+  Nothing lists the nested jars: a manifest that can disagree with the archive
+  eventually does, and the directory is already the truth. They are unpacked
+  beside the mods rather than among them, into `.fenix/jars`, so the directory
+  can be deleted to force a clean unpack and its contents cannot be mistaken for
+  something a player installed. An unpacked jar is reused when its size matches,
+  which catches a version change without reading every jar in full on every
+  launch.
+- **A versioning scheme**, in [docs/versioning.md](docs/versioning.md). The
+  loader, the API set and each API module now carry their own version, because
+  they mean different things and move at different speeds — a fix in the
+  registry should not make every mod that only uses events look out of date.
+  Anything built against Minecraft carries the game version as build metadata
+  (`0.1.0+mc26.2`): those artifacts only work with the game they were built for,
+  and a coordinate that does not say so invites finding out at run time. A
+  module's version is derived from its project name, so adding one means adding
+  a line to `gradle.properties` and nothing else.
+
 - **Registry sync.** The server states what it has as each player joins, the
   client compares, and a client missing one of the server's mods is disconnected
   with a sentence naming it. Without it such a client is admitted and then falls

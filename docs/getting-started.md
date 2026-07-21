@@ -45,6 +45,11 @@ That is the whole build file. The plugin puts Minecraft and the whole Fenix API
 both on the compile classpath *and* into `run/mods`, so what you write against
 is what is there when the game starts.
 
+The API arrives as **one jar** — `fenix-api-<version>+mc<game>.jar` — carrying
+its modules inside it. The loader unpacks them and treats each as the mod it is,
+so the modules stay independently versioned while the thing you install stays a
+single file. See [versioning.md](versioning.md).
+
 To ship against fewer modules, say so and name them:
 
 ```kotlin
