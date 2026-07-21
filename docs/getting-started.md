@@ -131,6 +131,44 @@ A `Holder` stands in until registration happens, so content can live in
 `static final` fields. That `apply()` call is also what loads the class holding
 them — content declared in a class nobody loads is content that never appears.
 
+## Blocks that remember something
+
+A block that stores state needs a block entity. The block implements
+`EntityBlock`, and the type is declared alongside it:
+
+```java
+public static final Holder<BlockEntityType<TallyBlockEntity>> TALLY =
+        REGISTRAR.blockEntity("tally", TallyBlockEntity::new, ModBlocks.TALLY);
+```
+
+Declare it before or after the block, whichever reads better — block entity
+types are registered in a pass of their own, once every block exists.
+
+A block that does not implement `EntityBlock` is refused here rather than
+silently never creating its block entity.
+
+## Sounds
+
+```java
+public static final Holder<SoundEvent> CHIME = REGISTRAR.sound("chime");
+```
+
+That is only half a sound. The other half is `sounds.json`, which
+`EmberSoundProvider` writes:
+
+```java
+@Generator
+public final class ModSounds extends EmberSoundProvider {
+    @Override
+    protected void sounds() {
+        add(ModContent.CHIME, "chime");
+    }
+}
+```
+
+The `.ogg` files themselves go in `assets/<mod id>/sounds/`, alongside your
+textures — those two are what Ember cannot generate for you.
+
 ## Reacting to the game
 
 ```java
@@ -156,7 +194,7 @@ public final class ModLanguage extends EmberLanguageProvider {
 ```
 
 `./gradlew ember` writes them into `src/main/generated`, which is part of your
-resources. Textures are the one thing you still draw yourself.
+resources. Textures and ogg files are what you still supply yourself.
 
 Without a loot table a block breaks into nothing, silently — so generate one
 for every block you add.

@@ -9,6 +9,15 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Block entities** (`Registrar.blockEntity`). Getting the valid-blocks set
+  wrong is silent: the type registers, the block places, and the game simply
+  never creates the block entity, so whatever it stored is never there. A block
+  that does not implement `EntityBlock` is now refused at startup for the same
+  reason. Block entity types register in a second pass, after everything else,
+  so a mod can declare a type and its block in whichever order reads best
+  instead of ordering its fields to suit the registrar.
+- **Sounds** (`Registrar.sound`) and `EmberSoundProvider`, which writes the
+  `sounds.json` half — a sound event without it plays nothing, silently.
 - **Creative tabs**, with pages. `CreativeTabs.addTo` puts content in vanilla's
   tabs and `Registrar.creativeTab` gives a mod one of its own — without either,
   registered content is reachable only through `/give`, which is the difference
