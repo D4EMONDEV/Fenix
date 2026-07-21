@@ -3,10 +3,12 @@ package fr.d4emon.fenix.example;
 import fr.d4emon.fenix.api.Fenix;
 import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Mod;
+import fr.d4emon.fenix.config.Config;
 import fr.d4emon.fenix.event.BlockEvents;
 import fr.d4emon.fenix.event.EntityEvents;
 import fr.d4emon.fenix.event.PlayerEvents;
 import fr.d4emon.fenix.example.content.ModCommands;
+import fr.d4emon.fenix.example.content.ModConfig;
 import fr.d4emon.fenix.example.content.ModContent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Difficulty;
@@ -25,6 +27,9 @@ import fr.d4emon.fenix.example.content.ModContent;
 @Mod("example-mod")
 public final class ExampleMod implements FenixMod {
 
+    /** Read once in onInit, and never null after it. */
+    private Config<ModConfig> config;
+
     /** Instantiated by the loader from the compile-time index. */
     public ExampleMod() {
     }
@@ -40,6 +45,10 @@ public final class ExampleMod implements FenixMod {
         // Commands are announced through the event bus, so registering the
         // listener once here is enough — the server fires it on start and on
         // every datapack reload.
+        // Loaded once, here: the file exists by now and reading it is cheap
+        // enough to do at startup rather than on every use.
+        config = Config.of(fenix, ModConfig.DEFAULTS);
+
         ModCommands.register();
 
         fenix.logger().info("Example mod loaded — Fenix {}, {} side",
@@ -63,7 +72,7 @@ public final class ExampleMod implements FenixMod {
         // something, which is what JOINED means and why it is not the same as
         // the server having started.
         PlayerEvents.JOINED.register(joined -> joined.player().sendSystemMessage(
-                Component.literal("This world runs the Fenix example mod.")));
+                Component.literal(config.get().greeting())));
 
         // A player who died lost their tally blocks' contents to nobody in
         // particular; this is only here to show the event carries the cause.
@@ -74,7 +83,8 @@ public final class ExampleMod implements FenixMod {
         // Cancelling a spawn keeps the entity out of the world entirely, rather
         // than removing it a tick later once everyone has seen it.
         EntityEvents.SPAWNING.register(spawning ->
-                spawning.entity().getType() == ModContent.RUBY_WISP.get()
+                !config.get().spawnWispsOnPeaceful()
+                        && spawning.entity().getType() == ModContent.RUBY_WISP.get()
                         && spawning.level().getDifficulty() == Difficulty.PEACEFUL
                         ? Flow.CANCEL
                         : Flow.CONTINUE);
