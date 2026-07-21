@@ -113,8 +113,17 @@ CreativeTabs.addTo(TAB, ModBlocks.RUBY_BLOCK, ModItems.RUBY);
 ```
 
 Vanilla's tab strip is two rows of seven and vanilla fills all fourteen, so mod
-tabs land on a second page. Arrows appear at the top right of the panel to move
-between pages, and stay hidden while there is only one.
+tabs land on a second page. Arrows appear at the top right of the panel, Page Up
+and Page Down do the same, and both stay hidden while there is only one page.
+
+Search, the inventory, saved hotbars and operator blocks follow the player to
+every page, leaving ten slots a page for mod tabs.
+
+Name the tab from the key itself so the two cannot drift apart:
+
+```java
+add(ModContent.TAB, "Example Mod");
+```
 
 ## Reacting to the game
 

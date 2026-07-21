@@ -72,7 +72,9 @@ proves the loader works.
   its models, textures and translations are actually read.
 - **Creative tabs** ✅ — content goes into vanilla's tabs, or into a tab of the
   mod's own. Vanilla's strip holds exactly fourteen and vanilla fills all
-  fourteen, so Fenix adds pages, with arrows at the top right of the panel.
+  fourteen, so Fenix adds pages, with arrows at the top right of the panel and
+  on Page Up/Page Down. Search, inventory, hotbars and op blocks travel to
+  every page.
 
 Still missing, and wanted: more events (player, entity, world), and more
 registries (entities, block entities, sounds).

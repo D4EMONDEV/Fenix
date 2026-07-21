@@ -22,7 +22,18 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   start when two tabs share a row and column — true of every mod tab, since all
   fourteen squares are taken — so that check is widened to include the page
   rather than dropped: two tabs actually drawn on top of each other still refuse
-  to load.
+  to load. Search, the inventory, saved hotbars and operator blocks travel to
+  every page — they are tools rather than categories, and losing the search box
+  to reach a mod's blocks is what makes paging feel bad elsewhere; that is also
+  why a page holds ten mod tabs and not fourteen. The arrows are real widgets
+  with Fenix's own sprites, drawn in the palette the panel already uses, so
+  hovering, focus, narration and the `Page 1/2` tooltip come from the screen
+  rather than from hand-rolled hit-testing. Page Up and Page Down do the same.
+- `EmberLanguageProvider.add(ResourceKey<CreativeModeTab>, String)`, which
+  derives the translation key from the tab instead of taking it as a string.
+  `CreativeTabs.titleKey` is now the single place that key is worked out, so a
+  renamed tab cannot leave its translation behind — which in game reads as a tab
+  titled `itemGroup.your-mod.something`.
 - Ember is now a set of providers rather than one method: `EmberModelProvider`,
   `EmberLanguageProvider`, `EmberLootTableProvider`, `EmberRecipeProvider` and
   `EmberTagsProvider.BlockTagsProvider`/`.ItemTagsProvider`. A single `collect`

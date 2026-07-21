@@ -112,10 +112,20 @@ public static final ResourceKey<CreativeModeTab> TAB =
 
 Vanilla's tab strip is two rows of seven and vanilla fills all fourteen, so a
 mod tab lands on a second page. Arrows appear at the top right of the creative
-panel to move between pages; they are hidden while there is only one page, which
-is the case until a mod adds a tab.
+panel, and Page Up and Page Down do the same thing; both are hidden while there
+is only one page, which is the case until a mod adds a tab.
 
-Its title is `itemGroup.<mod id>.<name>` — translate it like anything else.
+Search, the inventory, saved hotbars and operator blocks come along to every
+page — they are tools rather than categories, and losing the search box to reach
+a mod's blocks is what makes paging feel bad elsewhere. That leaves ten slots a
+page for mod tabs.
+
+Translate the title from the tab itself, so renaming it cannot leave the
+translation behind:
+
+```java
+add(ModContent.TAB, "Example Mod");
+```
 
 A `Holder` stands in until registration happens, so content can live in
 `static final` fields. That `apply()` call is also what loads the class holding
