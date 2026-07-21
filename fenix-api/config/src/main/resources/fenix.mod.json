@@ -3,8 +3,10 @@
   "id": "fenix-api-config",
   "version": "${version}",
   "name": "Fenix API — Config",
-  "description": "Typed, reloadable mod configuration backed by records.",
-  "authors": ["D4EMON"],
+  "description": "Typed configuration, backed by records.",
+  "authors": [
+    "D4EMON"
+  ],
   "license": "Apache-2.0",
   "contact": {
     "homepage": "https://github.com/D4EMONDEV/Fenix",
@@ -12,7 +14,6 @@
   },
   "side": "both",
   "depends": {
-    "fenix": ">=0.1.0",
-    "minecraft": "~${minecraft_version}"
+    "fenix": ">=0.1.0"
   }
 }
