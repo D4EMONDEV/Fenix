@@ -20,7 +20,17 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   answers air and caches that answer. Each of those is a crash that surfaces far
   from its cause, inside vanilla code. Verified by registering a block and an
   item through a real `Bootstrap.bootStrap()` under the loader and checking all
-  three passes took effect.
+  three passes took effect — now a conformance check, driving the whole
+  pipeline: a mod jar in a mods directory, the loader discovering it, mixins
+  firing `onRegister` while the registries are open, and a probe running as the
+  game to inspect the result.
+- Fluent builders for content: `newBlock("ruby_block").strength(3f)
+  .requiresTool().withItem().register()`, and the same for items. They cover
+  what most content needs, and `properties(…)` hands you vanilla's own builder
+  for anything else — a shortcut over that API, never a wall in front of it.
+- `examples/example-mod` now adds real content, laid out the way a mod would:
+  `ModBlocks`, `ModItems` and a shared `ModContent`, rather than everything in
+  the mod class.
 - **The event bus** (`fenix-api-event`), the foundation the rest of the API
   hangs off. An event carries a context — normally a record — so declaring one
   is two lines instead of a hand-written functional interface and a combiner

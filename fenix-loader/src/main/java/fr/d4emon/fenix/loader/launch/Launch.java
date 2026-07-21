@@ -75,8 +75,16 @@ public final class Launch {
 
     /**
      * The pipeline, separated from {@link #main} so failures stay throwable.
+     *
+     * <p>Public because {@link #main} is a dead end for anything that wants to
+     * know how the launch went: it prints and calls {@link System#exit}. Fenix's
+     * own conformance tests drive this instead, and so could anything embedding
+     * the loader.
+     *
+     * @param args the same arguments {@link #main} takes
+     * @throws Throwable whatever the launch, or the game itself, threw
      */
-    static void run(String[] args) throws Throwable {
+    public static void run(String[] args) throws Throwable {
         Options options = Options.parse(args);
         ConsoleLogger log = new ConsoleLogger("fenix");
         Version loaderVersion = FenixVersion.current();
