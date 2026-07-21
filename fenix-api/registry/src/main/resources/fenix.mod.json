@@ -4,7 +4,9 @@
   "version": "${version}",
   "name": "Fenix API — Registry",
   "description": "Content registration: blocks, items, and the vanilla bookkeeping around them.",
-  "authors": ["D4EMON"],
+  "authors": [
+    "D4EMON"
+  ],
   "license": "Apache-2.0",
   "contact": {
     "homepage": "https://github.com/D4EMONDEV/Fenix",
@@ -17,5 +19,10 @@
   },
   "mixins": [
     "fenix-api-registry.mixins.json"
+  ],
+  "accessible": [
+    "class net.minecraft.world.inventory.MenuType$MenuSupplier",
+    "method net.minecraft.world.inventory.MenuType <init>",
+    "class net.minecraft.client.gui.screens.MenuScreens$ScreenConstructor"
   ]
 }

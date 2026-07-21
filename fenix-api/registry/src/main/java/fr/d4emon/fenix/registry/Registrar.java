@@ -16,6 +16,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -431,6 +434,54 @@ public final class Registrar {
         // holders that are still unbound while a mod registers, so nothing is
         // resolved until the game first asks for them.
         deferLate(() -> EntityAttributes.declare(type.get(), attributes));
+    }
+
+    // ------------------------------------------------------------------
+    // Menus
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a menu type — the thing a block opens.
+     *
+     * <pre>{@code
+     * public static final Holder<MenuType<SafeMenu>> SAFE =
+     *         REGISTRAR.menu("safe", SafeMenu::new);
+     * }</pre>
+     *
+     * <p>The factory runs on the <em>client</em>, when the server says a window
+     * has opened, and is given only the window id and the player's inventory —
+     * because that is all the client is told. A menu showing a block's contents
+     * therefore builds an empty container here and lets the sync fill it, which
+     * is exactly what vanilla's chests do.
+     *
+     * <p>Opening one is the server's job:
+     *
+     * <pre>{@code
+     * player.openMenu(new SimpleMenuProvider(
+     *         (id, inventory, who) -> new SafeMenu(id, inventory, contents),
+     *         Component.translatable("container.mymod.safe")));
+     * }</pre>
+     *
+     * @param <T>     the menu class
+     * @param name    the path part of its id
+     * @param factory builds one on the client
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public <T extends AbstractContainerMenu> Holder<MenuType<T>> menu(
+            String name, MenuFactory<T> factory) {
+        Objects.requireNonNull(factory, "factory");
+        Identifier id = identifier(name);
+        Holder<MenuType<T>> holder = new Holder<>(id);
+
+        defer(() -> {
+            ResourceKey<MenuType<?>> key = ResourceKey.create(Registries.MENU, id);
+            // Both the constructor and its parameter type are private in
+            // vanilla; this module declares them accessible, which is why the
+            // mod above never has to know they exist.
+            holder.bind(Registry.register(BuiltInRegistries.MENU, key,
+                    new MenuType<>(factory::create, FeatureFlags.VANILLA_SET)));
+        });
+        return holder;
     }
 
     // ------------------------------------------------------------------

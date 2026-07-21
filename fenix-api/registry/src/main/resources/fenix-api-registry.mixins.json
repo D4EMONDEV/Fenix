@@ -14,6 +14,7 @@
   "client": [
     "CreativeModeTabsMixin",
     "CreativeScreenMixin",
-    "EntityRenderersAccessor"
+    "EntityRenderersAccessor",
+    "MenuScreensAccessor"
   ]
 }
