@@ -1,0 +1,95 @@
+---
+title: Fenix
+description: Un chargeur de mods Minecraft moderne pour la 26.2, sur Java 25.
+template: splash
+hero:
+  tagline: Des mods qui refusent de compiler plutôt que de refuser de démarrer.
+  actions:
+    - text: Télécharger l'installeur
+      link: /fr/0.1/play/install/
+      icon: down-caret
+    - text: Écrire un mod
+      link: /fr/0.1/guides/getting-started/
+      icon: right-arrow
+      variant: minimal
+slug: fr/0.1
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+Fenix charge des mods dans Minecraft 26.2, sur Java 25. Le jeu est livré
+déobfusqué depuis la 26.1, alors une bonne part de ce que les autres chargeurs
+doivent faire — remapping, refmaps, scan au démarrage — Fenix ne le fait
+simplement pas.
+
+:::caution[Tout début]
+Avant la 1.0. L'API change sans préavis, et rien n'est encore publié.
+:::
+
+## Ce qui change
+
+<CardGrid>
+  <Card title="Des erreurs à la compilation" icon="approve-check">
+    Les mods sont indexés pendant qu'ils compilent : une faute de frappe dans
+    une classe de mod devient une erreur `javac` avec un numéro de ligne, pas un
+    mod qui ne se charge jamais en silence. Toucher une classe client depuis du
+    code commun, pareil — une erreur au build, pas un plantage sur le serveur
+    de quelqu'un d'autre.
+  </Card>
+
+  <Card title="Aucun mapping" icon="rocket">
+    Pas d'étape de remapping, nulle part, et pas de refmaps qui se périment. Tu
+    écris `BlockBehaviour.Properties` et c'est ce que ça veut dire.
+  </Card>
+
+  <Card title="Du contenu qui marche" icon="seti:db">
+    Enregistrer un bloc rejoue la comptabilité que vanilla fait autour des
+    siens — ids d'états, association à l'item, validité des block entities. Les
+    plantages qui viennent de l'oublier ne sont pas à toi de les découvrir.
+  </Card>
+
+  <Card title="Les ressources depuis Java" icon="document">
+    Modèles, traductions, tables de butin, recettes, tags et sons sont décrits
+    en code contre le contenu enregistré : renommer un bloc ne laisse pas cinq
+    fichiers JSON derrière.
+  </Card>
+
+  <Card title="Des paquets typés" icon="random">
+    Un canal transporte une charge dans un sens, et le sens est dans le type.
+    Envoyer un paquet client-vers-serveur à un client ne compile pas.
+  </Card>
+
+  <Card title="Un seul fichier à installer" icon="puzzle">
+    L'API est un jeu de petits modules aux versions indépendantes, transportés
+    dans un seul jar. Installer, c'est un fichier ; mettre à jour aussi.
+  </Card>
+</CardGrid>
+
+## Un mod, de bout en bout
+
+```java
+@Mod("example-mod")
+public final class ExampleMod implements FenixMod {
+
+    @Override
+    public void onRegister(Fenix fenix) {
+        ModContent.REGISTRAR.apply();
+        CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS, ModBlocks.RUBY_BLOCK);
+    }
+}
+```
+
+```java
+public static final Holder<Block> RUBY_BLOCK = REGISTRAR
+        .newBlock("ruby_block")
+        .strength(3f)
+        .requiresTool()
+        .withItem()          // enregistre aussi l'item qui le pose
+        .register();
+```
+
+Rien dans les métadonnées ne pointe vers la classe du mod — le processeur
+d'annotations la trouve pendant que ton code compile. Le fichier de build tient
+en une ligne de plugin.
+
+[Installer Fenix](/fr/0.1/play/install/) ou [écrire un mod](/fr/0.1/guides/getting-started/).

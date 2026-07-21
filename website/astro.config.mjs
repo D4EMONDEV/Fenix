@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightVersions from 'starlight-versions';
 
 export default defineConfig({
   // Canonical URLs and the sitemap.
@@ -37,15 +38,17 @@ export default defineConfig({
         fr: { label: 'Français', lang: 'fr' },
       },
 
-      // Versioned docs, when there is a version to keep.
+      // Versioned docs.
       //
-      // starlight-versions is installed and snapshots the current docs into
-      // /v<x>/ on demand. It refuses an empty version list, and rightly: there
-      // is no release yet, so there is nothing older for anyone to be reading.
-      // At the first release, uncomment this and run
-      // `npx starlight-versions create 0.1`.
+      // The pages at the root describe what is being written now; each entry
+      // here is a snapshot of what a release actually shipped. Somebody playing
+      // 0.1 and following instructions written for 0.3 is worse served than
+      // somebody reading something honestly older.
       //
-      // plugins: [starlightVersions({ versions: [{ slug: '0.1' }] })],
+      // A new release is one line here plus
+      // `npx starlight-versions create <slug>`, which copies the current docs
+      // into a folder of their own and leaves them alone from then on.
+      plugins: [starlightVersions({ versions: [{ slug: '0.1' }] })],
 
       social: [
         {
