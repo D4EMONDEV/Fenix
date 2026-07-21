@@ -51,32 +51,30 @@ jobs:
       - name: Build the Maven repository
         run: ./gradlew publishFenixRepo --stacktrace
 
-      - name: Check out everything published so far
-        uses: actions/checkout@v4
-        with:
-          ref: maven-repo
-          path: published
-        # Absent the first time, and that is not a failure: the branch is
-        # created by the step below.
-        continue-on-error: true
-
-      - name: Add this version to it
+      - name: Add this version to everything published so far
+        env:
+          REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
         run: |
-          mkdir -p published
+          set -e
+          # Built by hand rather than with actions/checkout: the branch does not
+          # exist on the first run, and a checkout that fails still leaves a
+          # half-made .git behind for every later command to trip over.
+          rm -rf published
+          mkdir published
           cd published
-          if [ ! -d .git ]; then
-            git init -q
-            git checkout -q --orphan maven-repo
-          fi
+          git init -q -b maven-repo
+          git remote add origin "$REMOTE"
+          # Absent the first time, present every time after. Both are fine.
+          git fetch -q --depth 1 origin maven-repo && git reset -q --hard FETCH_HEAD || true
           # Copied over, never cleared: an artifact that disappears is a mod
-          # that stops building, and its author has no way to bring it back.
+          # that stops building, and its author cannot bring it back.
           cp -r ../build/fenix-maven-repo/. .
           git add -A
-          git -c user.name='github-actions[bot]' \
-              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-              commit -q -m "Publish ${GITHUB_REF_NAME}" || echo "nothing new to publish"
-          git push -q "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" \
-              HEAD:maven-repo
+          git -c user.name='github-actions[bot]'               -c user.email='41898282+github-actions[bot]@users.noreply.github.com'               commit -q -m "Publish ${GITHUB_REF_NAME}" || echo "nothing new to publish"
+          git push -q origin HEAD:maven-repo
+          # The branch is pushed; what Pages serves should be the artifacts and
+          # nothing else, least of all the git objects behind them.
+          rm -rf .git
 
       - name: Upload the whole repository as a Pages artifact
         uses: actions/upload-pages-artifact@v3
