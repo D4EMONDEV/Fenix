@@ -3,8 +3,10 @@
   "id": "fenix-api-command",
   "version": "${version}",
   "name": "Fenix API — Commands",
-  "description": "Registration of Brigadier commands from mods.",
-  "authors": ["D4EMON"],
+  "description": "Brigadier commands, without the parts nobody enjoys.",
+  "authors": [
+    "D4EMON"
+  ],
   "license": "Apache-2.0",
   "contact": {
     "homepage": "https://github.com/D4EMONDEV/Fenix",
@@ -13,6 +15,10 @@
   "side": "both",
   "depends": {
     "fenix": ">=0.1.0",
-    "minecraft": "~${minecraft_version}"
-  }
+    "minecraft": "~${minecraft_version}",
+    "fenix-api-event": ">=0.1.0"
+  },
+  "mixins": [
+    "fenix-api-command.mixins.json"
+  ]
 }
