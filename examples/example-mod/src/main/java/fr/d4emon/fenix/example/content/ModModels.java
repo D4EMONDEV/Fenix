@@ -15,6 +15,7 @@ public final class ModModels extends EmberModelProvider {
     protected void models() {
         cubeAll(ModBlocks.RUBY_BLOCK);
         cubeAll(ModBlocks.GLOWING_RUBY_BLOCK);
+        cubeAll(ModBlocks.RUBY_TALLY);
 
         flatItem(ModItems.RUBY);
         flatItem(ModItems.RUBY_HAMMER);

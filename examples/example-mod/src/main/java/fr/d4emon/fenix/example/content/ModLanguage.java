@@ -15,6 +15,7 @@ public final class ModLanguage extends EmberLanguageProvider {
     protected void translations() {
         add(ModBlocks.RUBY_BLOCK, "Ruby Block");
         add(ModBlocks.GLOWING_RUBY_BLOCK, "Glowing Ruby Block");
+        add(ModBlocks.RUBY_TALLY, "Ruby Tally");
 
         add(ModItems.RUBY, "Ruby");
         add(ModItems.RUBY_HAMMER, "Ruby Hammer");

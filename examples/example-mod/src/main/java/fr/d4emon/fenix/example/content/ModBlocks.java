@@ -31,6 +31,15 @@ public final class ModBlocks {
             .withItem()
             .register();
 
+    /** Counts how often it is used, which is what its block entity stores. */
+    public static final Holder<Block> RUBY_TALLY = ModContent.REGISTRAR.newBlock("ruby_tally")
+            .strength(3f, 6f)
+            .requiresTool()
+            .sound(SoundType.METAL)
+            .from(RubyTallyBlock::new)
+            .withItem()
+            .register();
+
     private ModBlocks() {
     }
 
