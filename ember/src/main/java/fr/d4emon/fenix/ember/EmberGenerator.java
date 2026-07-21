@@ -1,19 +1,19 @@
 package fr.d4emon.fenix.ember;
 
 /**
- * Describes what a mod's resource files should contain.
+ * Something that writes part of a mod's resource files.
  *
- * <p>Implemented by a class marked {@link Generator}. It runs at build time,
- * inside a real game, so registered content can be referred to directly rather
- * than by repeating its name as a string.
+ * <p>Normally implemented by extending one of the providers —
+ * {@link EmberLanguageProvider}, {@link EmberModelProvider} and the rest —
+ * rather than directly. Implement this only for output none of them covers.
  */
 @FunctionalInterface
 public interface EmberGenerator {
 
     /**
-     * Describes this mod's assets and data.
+     * Writes this generator's files.
      *
-     * @param ember what to write them with
+     * @param output where they go
      */
-    void collect(Ember ember);
+    void generate(EmberOutput output);
 }

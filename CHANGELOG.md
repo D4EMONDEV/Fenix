@@ -9,6 +9,14 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Ember is now a set of providers rather than one method: `EmberModelProvider`,
+  `EmberLanguageProvider`, `EmberLootTableProvider`, `EmberRecipeProvider` and
+  `EmberTagsProvider.BlockTagsProvider`/`.ItemTagsProvider`. A single `collect`
+  becomes a dumping ground as a mod grows, and each domain wants a different
+  shape — a language provider wants `add(key, value)`, a recipe provider wants a
+  builder. Loot tables, recipes and tags are new capabilities, not just moved
+  code. Tag files are written under the *tag's* namespace, so a mod joins
+  `minecraft:mineable/pickaxe` rather than replacing it.
 - **The content registrar** (`fenix-api-registry`). A mod declares blocks and
   items in fields and registers them with one call from `onRegister`; a
   `Holder` stands in until then, and reading it too early says so rather than

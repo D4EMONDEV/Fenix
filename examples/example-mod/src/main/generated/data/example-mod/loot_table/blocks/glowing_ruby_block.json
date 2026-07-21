@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "example-mod:glowing_ruby_block"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "example-mod:blocks/glowing_ruby_block"
+}

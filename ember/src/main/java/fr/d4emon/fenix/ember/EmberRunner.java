@@ -56,12 +56,11 @@ public final class EmberRunner {
 
         int generated = 0;
         for (ModIndex index : readIndexes()) {
-            EmberWriter writer = new EmberWriter(index.modId(), output);
+            EmberOutput target = new EmberOutput(index.modId(), output);
             for (String className : index.generators()) {
-                generatorFor(className).collect(writer);
+                generatorFor(className).generate(target);
                 generated++;
             }
-            writer.finish();
         }
         System.out.println("Ember: ran " + generated + " generator(s) into " + output.toAbsolutePath());
     }

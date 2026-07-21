@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "#": "example-mod:ruby",
+    "|": "minecraft:stick"
+  },
+  "pattern": [
+    "###",
+    " | ",
+    " | "
+  ],
+  "result": {
+    "id": "example-mod:ruby_hammer"
+  }
+}
