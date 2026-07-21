@@ -7,6 +7,9 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.CreativeModeTab;
@@ -59,6 +62,7 @@ public final class RegistryProbe {
         checkCreativePage();
         checkBlockEntity();
         checkSound();
+        checkEntity();
 
         System.out.println("registry conformance: all checks passed");
     }
@@ -131,6 +135,27 @@ public final class RegistryProbe {
         }
         require(refused, "a block that is not an EntityBlock should be refused, loudly, "
                 + "rather than never creating its block entity");
+    }
+
+    /**
+     * A living entity has to have attributes.
+     *
+     * <p>LivingEntity's constructor asks vanilla's table for them, and an
+     * entity that is not in it dies right there with a null map — inside
+     * vanilla, nowhere near the mod that registered it. So the check is not
+     * that the table contains an entry but that one can actually be built.
+     */
+    private static void checkEntity() {
+        EntityType<?> type =
+                BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse("probemod:critter"));
+        require(type != null, "the entity type should be in the registry");
+        require(type == ProbeContent.CRITTER.get(), "the handle should be bound to it");
+
+        require(DefaultAttributes.hasSupplier(type),
+                "a living entity without attributes cannot be constructed at all");
+        require(DefaultAttributes.getSupplier(ProbeContent.CRITTER.get())
+                        .getValue(Attributes.MAX_HEALTH) == 8,
+                "the attributes registered should be the ones asked for");
     }
 
     private static void checkSound() {

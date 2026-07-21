@@ -41,6 +41,7 @@ class RegistryConformanceTest {
     private static final List<String> PROBE_CLASSES = List.of(
             "fr/d4emon/fenix/probe/ProbeBlockEntity.class",
             "fr/d4emon/fenix/probe/ProbeContent.class",
+            "fr/d4emon/fenix/probe/ProbeCritter.class",
             "fr/d4emon/fenix/probe/ProbeMachineBlock.class",
             "fr/d4emon/fenix/probe/ProbeMod.class",
             "fr/d4emon/fenix/probe/RegistryProbe.class");
