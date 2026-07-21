@@ -7,6 +7,11 @@
     "defaultRequire": 1
   },
   "mixins": [
-    "CreativeModeTabMixin"
+    "CreativeModeTabMixin",
+    "CreativeTabValidationMixin"
+  ],
+  "client": [
+    "CreativeModeTabsMixin",
+    "CreativeScreenMixin"
   ]
 }

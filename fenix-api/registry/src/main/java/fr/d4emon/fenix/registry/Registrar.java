@@ -3,10 +3,13 @@ package fr.d4emon.fenix.registry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -219,6 +222,67 @@ public final class Registrar {
             item.registerBlocks(Item.BY_BLOCK, item);
         });
         return block;
+    }
+
+    // ------------------------------------------------------------------
+    // Creative tabs
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a creative tab of the mod's own.
+     *
+     * <pre>{@code
+     * public static final ResourceKey<CreativeModeTab> TAB =
+     *         REGISTRAR.creativeTab("example_mod", ModItems.RUBY);
+     * }</pre>
+     *
+     * <p>Fill it the same way as any other tab:
+     * {@code CreativeTabs.addTo(TAB, ModItems.RUBY)}.
+     *
+     * <p>Vanilla's fourteen slots are all taken, so the tab lands on a page of
+     * its own — see {@link CreativePages}. Its position within that page is
+     * assigned in declaration order, which is why nothing here asks for a row
+     * or a column.
+     *
+     * <p>Its title is {@code itemGroup.<mod id>.<name>}, which
+     * {@code EmberLanguageProvider} can translate like anything else.
+     *
+     * @param name the path part of its id
+     * @param icon the block or item shown on the tab itself
+     * @return its key, usable immediately
+     */
+    public ResourceKey<CreativeModeTab> creativeTab(String name, Holder<?> icon) {
+        Objects.requireNonNull(icon, "icon");
+        Identifier id = identifier(name);
+        ResourceKey<CreativeModeTab> key = ResourceKey.create(Registries.CREATIVE_MODE_TAB, id);
+
+        defer(() -> {
+            int slot = CreativePages.claimSlot();
+            CreativeModeTab tab = CreativeModeTab
+                    .builder(slot < 7 ? CreativeModeTab.Row.TOP : CreativeModeTab.Row.BOTTOM, slot % 7)
+                    .title(Component.translatable("itemGroup." + modId + "." + name))
+                    .icon(() -> new ItemStack(itemOf(icon)))
+                    // No displayItems: the builder defaults to generating
+                    // nothing, and CreativeTabs.addTo is the one way content
+                    // reaches a tab, vanilla's or this mod's alike, so there is
+                    // only ever one thing to learn.
+                    .build();
+            Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, key, tab);
+        });
+        return key;
+    }
+
+    /**
+     * A block stands in for the item that places it, so an icon can be either.
+     */
+    private static Item itemOf(Holder<?> holder) {
+        Object value = holder.get();
+        return switch (value) {
+            case Item item -> item;
+            case Block block -> block.asItem();
+            default -> throw new IllegalArgumentException(
+                    holder.id() + " is neither a block nor an item, so it cannot be a tab icon");
+        };
     }
 
     // ------------------------------------------------------------------
