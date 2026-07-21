@@ -9,6 +9,24 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Player, entity and level events.** `PlayerEvents` (joined, left, died,
+  respawned), `EntityEvents` (spawning — cancellable — and died) and
+  `LevelEvents` (loaded, saving). The module had ticks and blocks, which made it
+  a demonstration rather than an API.
+
+  Where each fires is the whole design. `LEFT` fires while the player is still
+  readable, because a moment later there is no inventory and no position to look
+  at. `RESPAWNED` carries the *new* player, since respawning replaces the object
+  rather than resetting it — anything a mod attached to the old one is gone.
+  `SPAWNING` cancels before the entity joins the level, so a refused spawn never
+  existed rather than being removed a tick after everyone saw it. `LOADED` fires
+  once per level rather than once per server, which is what a mod keeping
+  per-world state actually wants.
+
+  Player death and entity death fire from one injection rather than two, because
+  a player is a living entity and two sites would eventually disagree about
+  that.
+
 - **Commands** (`fenix-api-command`). `CommandEvents.REGISTER` hands a listener
   the dispatcher, and `Commands` covers what Brigadier makes tedious: `run(…)`
   takes a body returning nothing, since `executes` wants an int nobody reads and

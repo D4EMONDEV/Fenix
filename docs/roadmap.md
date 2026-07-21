@@ -63,8 +63,10 @@ repository (see below), so a mod's whole build file is one plugin line.
 proves the loader works.
 
 - **Events** ✅ — `Event`/`CancellableEvent` carrying a context record,
-  priorities, first-class unsubscription, lock-free dispatch. Client and server
-  ticks, server lifecycle, and cancellable block break/use on both sides.
+  priorities, first-class unsubscription, lock-free dispatch. Server and client
+  ticks, server lifecycle, levels loading and saving, players joining, leaving,
+  dying and respawning, entities spawning (cancellable) and dying, and
+  cancellable block break/use on both sides.
 - **Registry** ✅ — a deferred `Registrar` with `Holder`s and fluent builders,
   absorbing the vanilla bookkeeping that a mod otherwise skips and crashes on.
   Blocks, items, block entities, sounds and entities — with their default
@@ -77,8 +79,8 @@ proves the loader works.
   on Page Up/Page Down. Search, inventory, hotbars and op blocks travel to
   every page.
 
-Still missing, and wanted: more events (player, entity, world), spawn eggs and
-spawn rules, and menus — which want networking first.
+Still missing, and wanted: spawn eggs and spawn rules, and menus — which now
+only want writing, since networking is in.
 
 ## Phase 6 — Ember ✅
 

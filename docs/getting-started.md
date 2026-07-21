@@ -1,7 +1,7 @@
 # Getting started
 
 > This workflow works today. What is still missing is listed in
-> [roadmap.md](roadmap.md) — networking, config and commands, mainly.
+> [roadmap.md](roadmap.md) — config and menus, mainly.
 
 ## Building this repository
 
@@ -310,6 +310,24 @@ BlockEvents.BREAK.register(event -> isProtected(event.pos()) ? Flow.CANCEL : Flo
 `BlockEvents` is the server's, which is where cancelling actually holds.
 `ClientBlockEvents` exists only to make a refusal feel immediate — never as the
 enforcement point.
+
+| Event | Fires |
+|---|---|
+| `ServerEvents` | Started, and each tick |
+| `LevelEvents` | A level loaded, a level saving — once **per level**, not per server |
+| `PlayerEvents` | Joined, left, died, respawned |
+| `EntityEvents` | Spawning (cancellable), died |
+| `BlockEvents` | Break, use — cancellable, server-side |
+| `ClientEvents` | Client tick |
+
+Two that are easy to get wrong:
+
+**`PlayerEvents.LEFT`** fires while the player is still readable. A moment later
+there is no inventory and no position to look at.
+
+**`PlayerEvents.RESPAWNED`** carries a *new* player object. Respawning replaces
+it rather than resetting it, so anything a mod attached to the old one is gone
+and has to be put back here.
 
 ## Generating resources
 
