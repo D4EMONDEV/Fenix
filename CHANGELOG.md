@@ -19,11 +19,27 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Found by writing the demo. Nothing had ever called the method from outside the
   module that declares it, which is the one place the mistake was invisible.
 
+- The example mod declared three API modules while using six, and had for
+  weeks. Nothing complained, because `depends` asserts presence and all six
+  were present anyway — which is the argument for naming the bundle instead of
+  keeping a list by hand. It now depends on `fenix-api` alone.
+
 - Blocks in the example mod declaring `requiresTool()` without a
   `mineable/pickaxe` tag. No tool is the correct one for such a block, so it
   broke without ever dropping.
 
 ### Added
+
+- `fenix-api` declares the modules it carries, so one line in `depends` is now
+  enough for the whole API. Carrying a module and depending on it are not the
+  same thing, and the gap was invisible until looked at: a mod naming only
+  `fenix-api` was placed *before* `fenix-api-registry` in the load order,
+  because nothing tied the two together and unconstrained mods fall back to
+  alphabetical. Nothing breaks today — no API module has an entrypoint to run —
+  but the first one that does would have broken a mod that did nothing wrong.
+
+  The list is generated from the same one the jar-in-jar packaging uses, so a
+  module cannot be carried without also being declared.
 
 - A working menu in the example mod — the ruby safe: a block entity holding
   twenty-seven slots, opened server-side, drawn client-side.

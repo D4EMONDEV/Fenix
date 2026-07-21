@@ -23,6 +23,7 @@ point at code — that is what `@Mod` and the compile-time index are for.
 | `side`        | no       | `both` (default), `client`, or `server`.                   |
 | `depends`     | no       | Map of mod id to version constraint.                       |
 | `mixins`      | no       | Mixin config files to load.                                |
+| `accessible`  | no       | Vanilla members to raise to public. See below.              |
 
 ## Version constraints
 
@@ -48,3 +49,48 @@ it, so `^1.0.0` accepts `1.5.0-rc.1`.
 
 `depends` also drives **initialisation order**: a mod is always initialised
 after everything it depends on.
+
+## Depending on the API
+
+One line is enough:
+
+```json
+"depends": {
+  "fenix": ">=0.1.0",
+  "minecraft": "~26.2",
+  "fenix-api": ">=0.1.0"
+}
+```
+
+`fenix-api` is a mod in its own right — the bundle jar — and it declares every
+module it carries, so this also orders your mod after all of them.
+
+Naming individual modules (`fenix-api-registry`, `fenix-api-event`, …) is
+allowed and says something narrower: *this* module has to be present. It buys
+little in practice, because the modules travel inside the bundle and arrive
+together, and it costs something real — the list is written once and then goes
+quietly stale. The example mod declared three modules while using six, for
+weeks, and nothing complained: `depends` asserts presence, and all six were
+present anyway.
+
+Prefer `fenix-api` unless you genuinely ship against one module alone.
+
+## Reaching what vanilla keeps shut
+
+`accessible` raises vanilla members to public — for the cases no mixin can
+reach, where a type cannot even be *named*:
+
+```json
+"accessible": [
+  "class net.minecraft.world.inventory.MenuType$MenuSupplier",
+  "method net.minecraft.world.inventory.MenuType <init>",
+  "field net.minecraft.client.Minecraft instance"
+]
+```
+
+Names are dotted, without descriptors. The loader applies them before anything
+loads, and the Gradle plugin applies the same declarations to the copy of
+Minecraft you compile against, so `javac` and the game cannot disagree.
+
+Reach for it only when a mixin cannot do the job: `@Accessor` and `@Invoker`
+already cover a private field or method.

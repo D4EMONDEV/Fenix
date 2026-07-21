@@ -68,10 +68,16 @@ while your mod compiles.
   "name": "Example Mod",
   "depends": {
     "fenix": ">=0.1.0",
-    "minecraft": "~26.2"
+    "minecraft": "~26.2",
+    "fenix-api": ">=0.1.0"
   }
 }
 ```
+
+One line covers the whole API. `fenix-api` is a mod in its own right — the
+bundle jar — and it declares every module it carries, so this also orders your
+mod after all of them. Naming individual modules works too and says something
+narrower; it mostly just goes stale.
 
 See the [metadata reference](/reference/mod-metadata/) for every field.
 

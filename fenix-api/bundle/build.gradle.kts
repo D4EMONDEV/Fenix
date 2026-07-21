@@ -42,3 +42,38 @@ tasks.jar {
         }
     }
 }
+
+/**
+ * Declares the modules carried, so that depending on the bundle also orders a
+ * mod after every one of them.
+ *
+ * Carrying them is not the same as depending on them, and the difference stays
+ * invisible until it bites: a mod naming only `fenix-api` was placed *before*
+ * `fenix-api-registry` in the load order, because nothing tied the two together
+ * and unconstrained mods fall back to alphabetical. Nothing breaks today — no
+ * API module has an entrypoint to run — but the first one that does would break
+ * a mod that had done nothing wrong.
+ *
+ * Generated from the same list the packaging above uses, so a module cannot be
+ * carried without also being declared. Build metadata is dropped from the
+ * range: `+mc26.2` says which game a jar was compiled for, not which versions
+ * satisfy a dependency.
+ */
+tasks.processResources {
+    // A key rather than a bare marker, so the manifest in `src` stays valid
+    // JSON — the Gradle plugin reads that file for `accessible` declarations.
+    val token = "\"\${modules}\""
+    val carried = apiModules.associate { it.name to it.version.toString().substringBefore('+') }
+    inputs.property("carried", carried)
+    filesMatching("fenix.mod.json") {
+        filter { line ->
+            if (line.contains(token)) {
+                carried.entries.joinToString(",\n") { (id, version) ->
+                    """    "$id": ">=$version""""
+                }
+            } else {
+                line
+            }
+        }
+    }
+}

@@ -24,6 +24,7 @@ point at code — that is what `@Mod` and the compile-time index are for.
 | `side`        | no       | `both` (default), `client`, or `server`.                   |
 | `depends`     | no       | Map of mod id to version constraint.                       |
 | `mixins`      | no       | Mixin config files to load.                                |
+| `accessible`  | no       | Vanilla members to raise to public. See below.              |
 
 ## Version constraints
 

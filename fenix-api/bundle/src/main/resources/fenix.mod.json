@@ -15,6 +15,7 @@
   "side": "both",
   "depends": {
     "fenix": ">=0.1.0",
-    "minecraft": "~${minecraft_version}"
+    "minecraft": "~${minecraft_version}",
+    "${modules}": ""
   }
 }

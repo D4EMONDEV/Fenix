@@ -251,8 +251,10 @@ A mod has two source directories:
 
 ```
 src/main/java/…          common — the mod itself
+src/main/resources/…     fenix.mod.json, mixin configs, textures, models
 src/main/generated/…     what Ember writes
 src/client/java/…        client only — mostly how it looks
+src/client/resources/…   optional, and rarely needed — see below
 ```
 
 `src/client` may use `src/main`. **The reverse is a compile error**, on purpose:
@@ -279,6 +281,34 @@ why the client half can rely on content it registered.
 
 The source set appears on its own the moment `src/client/java` exists. There is
 nothing to switch on and no entry point to declare anywhere.
+
+### Client resources
+
+`src/client/resources` works — whatever is in it ships in the jar, the same as
+`src/main/resources`. It is simply rarely worth using, because the two files
+you might expect to put there both belong in `src/main/resources`:
+
+**`fenix.mod.json`** — there is one manifest, not two. It is also the only file
+`${version}` is substituted in, and that substitution runs on the common half.
+
+**The mixin config** — one config already covers both sides. Client mixin
+*classes* live in `src/client/java`, but they are listed in the config's
+`client` array, which Mixin only reads in a client environment:
+
+```json title="src/main/resources/mymod.mixins.json"
+{
+  "package": "com.example.mixin",
+  "mixins": ["BlockMixin"],
+  "client": ["ScreenMixin"]
+}
+```
+
+A dedicated server never loads what is under `client`. Splitting that into a
+second config file, as some loaders do, buys nothing here.
+
+What is left for `src/client/resources` is client-only *assets* — a GUI texture,
+a sound. They cost a server nothing either way, since both halves ship in one
+jar. Use it if you like the tidiness; nothing depends on it.
 
 ## Commands
 
