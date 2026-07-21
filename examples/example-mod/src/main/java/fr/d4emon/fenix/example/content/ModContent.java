@@ -2,6 +2,8 @@ package fr.d4emon.fenix.example.content;
 
 import fr.d4emon.fenix.registry.CreativeTabs;
 import fr.d4emon.fenix.registry.Registrar;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.CreativeModeTab;
 
 /**
  * The mod's one registrar, shared by {@link ModBlocks} and {@link ModItems}.
@@ -14,6 +16,15 @@ public final class ModContent {
 
     /** Everything this mod adds is namespaced under its id. */
     public static final Registrar REGISTRAR = Registrar.of("example-mod");
+
+    /**
+     * A tab of the mod's own, on its own page of the creative menu.
+     *
+     * <p>Declared here rather than in {@link ModBlocks} or {@link ModItems}
+     * because both put content in it.
+     */
+    public static final ResourceKey<CreativeModeTab> TAB =
+            REGISTRAR.creativeTab("example_mod", ModItems.RUBY);
 
     private ModContent() {
     }
@@ -35,5 +46,10 @@ public final class ModContent {
                 ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK);
         CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
         CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES, ModItems.RUBY_HAMMER);
+
+        // And again in the mod's own tab, where a player looking for this mod
+        // in particular will go. Content belongs in both.
+        CreativeTabs.addTo(TAB, ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK,
+                ModItems.RUBY, ModItems.RUBY_HAMMER);
     }
 }

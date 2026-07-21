@@ -18,5 +18,9 @@ public final class ModLanguage extends EmberLanguageProvider {
 
         add(ModItems.RUBY, "Ruby");
         add(ModItems.RUBY_HAMMER, "Ruby Hammer");
+
+        // The mod's creative tab. Untranslated it shows as its raw key, which
+        // is the sort of thing that ships by accident.
+        add("itemGroup.example-mod.example_mod", "Example Mod");
     }
 }

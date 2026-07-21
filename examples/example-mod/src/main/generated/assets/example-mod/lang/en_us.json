@@ -2,5 +2,6 @@
   "block.example-mod.glowing_ruby_block": "Glowing Ruby Block",
   "block.example-mod.ruby_block": "Ruby Block",
   "item.example-mod.ruby": "Ruby",
-  "item.example-mod.ruby_hammer": "Ruby Hammer"
+  "item.example-mod.ruby_hammer": "Ruby Hammer",
+  "itemGroup.example-mod.example_mod": "Example Mod"
 }
