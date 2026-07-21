@@ -168,16 +168,7 @@ Pass a lambda rather than a built value: the attribute holders are still
 unbound while your mod registers, so Fenix resolves them the first time the
 game asks.
 
-Anything **visible** needs a renderer, which is client-only:
-
-```java
-EntityRendering.register(ModContent.WISP, ThrownItemRenderer::new);
-```
-
-Keep that call in a `.client` package and behind `fenix.side() == Side.CLIENT`.
-The guard has to be a method boundary — a class naming `net.minecraft.client`
-types cannot even load on a dedicated server. An entity with no renderer is not
-an error, just invisible, which is worse.
+Anything **visible** needs a renderer, which is client-only — see below.
 
 ## Sounds
 
@@ -200,6 +191,41 @@ public final class ModSounds extends EmberSoundProvider {
 
 The `.ogg` files themselves go in `assets/<mod id>/sounds/`, alongside your
 textures — those two are what Ember cannot generate for you.
+
+## The two sides
+
+A mod has two source directories:
+
+```
+src/main/java/…          common — the mod itself
+src/main/generated/…     what Ember writes
+src/client/java/…        client only — mostly how it looks
+```
+
+`src/client` may use `src/main`. **The reverse is a compile error**, on purpose:
+common code compiles against Minecraft with the client half removed, so naming
+`net.minecraft.client.Minecraft` from `src/main` fails with a line number rather
+than at run time on somebody else's dedicated server.
+
+Both halves get a `@Mod` class, the same annotation and the same interface —
+what makes one client-only is where it lives:
+
+```java title="src/client/java/com/example/client/ExampleModClient.java"
+@Mod("example-mod")
+public final class ExampleModClient implements FenixMod {
+    @Override
+    public void onRegister(Fenix fenix) {
+        EntityRendering.register(ModContent.WISP, ThrownItemRenderer::new);
+    }
+}
+```
+
+They ship in one jar but are indexed separately, so a dedicated server is never
+even told the client class exists. The common half always runs first, which is
+why the client half can rely on content it registered.
+
+The source set appears on its own the moment `src/client/java` exists. There is
+nothing to switch on and no entry point to declare anywhere.
 
 ## Reacting to the game
 

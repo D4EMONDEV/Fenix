@@ -9,6 +9,30 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Split source sets.** A mod is now written in `src/main/java`, with an
+  optional `src/client/java` beside it. Common code compiles against Minecraft
+  with the client half stripped out, so naming a `net.minecraft.client` type
+  from common code is a `javac` error with a line number instead of a
+  `NoClassDefFoundError` on somebody else's dedicated server — which is the
+  worst place to find it, because a mod author develops on a client and never
+  sees it. This was the last place where Fenix asked for a convention where it
+  could have asked the compiler.
+
+  Client code may use common code; the reverse cannot compile, which is both
+  the useful direction and the only one that can be enforced. Each half gets a
+  `@Mod` class — the same annotation, the same `FenixMod` interface; what makes
+  one client-only is where the file lives. They ship in one jar but are indexed
+  separately (`fenix.index.client.json`), so a server is never told the client
+  class exists. The common half runs first, so the client half can rely on what
+  it registered.
+
+  Nothing to switch on: the source set appears when `src/client/java` does. The
+  common jar is derived from the client jar by removing the four roots a
+  dedicated server does not ship, so it costs one pass over a file already on
+  disk rather than another download. `fenix-api-event`, `fenix-api-registry`,
+  `testmod` and the example mod are all split this way — the API lives by the
+  rule it asks for.
+
 - **Block entities** (`Registrar.blockEntity`). Getting the valid-blocks set
   wrong is silent: the type registers, the block places, and the game simply
   never creates the block entity, so whatever it stored is never there. A block
