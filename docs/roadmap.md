@@ -57,15 +57,32 @@ through Fenix.
 Third parties can use it: the artifacts are published to a public Maven
 repository (see below), so a mod's whole build file is one plugin line.
 
-## Phase 5 — The API
+## Phase 5 — The API 🚧
 
 `fenix-api-event`, then `registry`, then `resource`. Each one is a real mod that
 proves the loader works.
 
-## Phase 6 — Ember
+- **Events** ✅ — `Event`/`CancellableEvent` carrying a context record,
+  priorities, first-class unsubscription, lock-free dispatch. Client and server
+  ticks, server lifecycle, and cancellable block break/use on both sides.
+- **Registry** ✅ — a deferred `Registrar` with `Holder`s and fluent builders,
+  absorbing the vanilla bookkeeping that a mod otherwise skips and crashes on.
+  Blocks and items today.
+- **Resources** ✅ — every mod jar is handed to the game as a resource pack, so
+  its models, textures and translations are actually read.
 
-Assets and data generated from Java: models, translations, loot tables, recipes,
-tags.
+Still missing, and wanted: **creative tabs** (content is currently only
+reachable with `/give`), more events (player, entity, world), and more
+registries (entities, block entities, sounds).
+
+## Phase 6 — Ember ✅
+
+Assets and data generated from Java, as a set of providers:
+`EmberModelProvider`, `EmberLanguageProvider`, `EmberLootTableProvider`,
+`EmberRecipeProvider` and `EmberTagsProvider.BlockTagsProvider`/`.ItemTagsProvider`.
+Run with `gradlew ember`; output lands in `src/main/generated`.
+
+Textures are the one thing not generated.
 
 ## Phase 7 — Networking
 
@@ -73,6 +90,9 @@ Typed custom payloads, then registry sync — detection and a clear refusal
 first, never live remapping.
 
 ## Phase 8 — Commands and config
+
+Brigadier registration, and typed configuration backed by records — something
+Fabric leaves to third-party libraries.
 
 ## Phase 9 — Shipping
 

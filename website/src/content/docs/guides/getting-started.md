@@ -6,9 +6,10 @@ sidebar:
 ---
 
 :::caution
-Fenix is not released yet. This page describes the intended workflow; follow the
-[roadmap](https://github.com/D4EMONDEV/Fenix/blob/main/docs/roadmap.md) for what
-actually works today.
+Fenix is pre-1.0 and the API will change. This workflow works today; the
+[roadmap](https://github.com/D4EMONDEV/Fenix/blob/main/docs/roadmap.md) lists
+what is still missing — notably creative tabs, so new content is reachable with
+`/give` but does not yet appear in the creative menu.
 :::
 
 ## Requirements
@@ -79,3 +80,43 @@ See the [metadata reference](/reference/mod-metadata/) for every field.
 ./gradlew runClient
 ./gradlew runServer
 ```
+
+## Adding content
+
+```java title="ModBlocks.java"
+public static final Holder<Block> RUBY_BLOCK = ModContent.REGISTRAR
+        .newBlock("ruby_block")
+        .strength(3f)
+        .requiresTool()
+        .withItem()          // also registers the item that places it
+        .register();
+```
+
+Registered with one call from `onRegister`. A `Holder` stands in until then, so
+content can live in `static final` fields.
+
+## Reacting to the game
+
+```java
+BlockEvents.BREAK.register(event ->
+        isProtected(event.pos()) ? Flow.CANCEL : Flow.CONTINUE);
+```
+
+`BlockEvents` is the server's, where cancelling actually holds.
+`ClientBlockEvents` only makes a refusal feel immediate — it is never the
+enforcement point.
+
+## Generating resources
+
+```java title="ModLanguage.java"
+@Generator
+public final class ModLanguage extends EmberLanguageProvider {
+    @Override
+    protected void translations() {
+        add(ModBlocks.RUBY_BLOCK, "Ruby Block");
+    }
+}
+```
+
+`./gradlew ember` writes models, translations, loot tables, recipes and tags
+into `src/main/generated`. Textures are the one thing you still draw yourself.

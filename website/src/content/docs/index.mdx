@@ -40,4 +40,16 @@ Fenix is under construction. The API will change without warning until `1.0`.
     Minecraft has shipped unobfuscated since 26.1, so there is no remapping
     step anywhere. You write against real names.
   </Card>
+
+  <Card title="Content that just works" icon="seti:db">
+    Registering a block means the bookkeeping vanilla does around its own —
+    state ids, item mapping — happens for yours too. The crashes that come from
+    skipping it are not yours to discover.
+  </Card>
+
+  <Card title="Resources from Java" icon="document">
+    Models, translations, loot tables, recipes and tags are described in code
+    against the content you registered, so renaming a block does not leave five
+    JSON files behind.
+  </Card>
 </CardGrid>

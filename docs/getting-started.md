@@ -1,7 +1,8 @@
 # Getting started
 
-> Fenix is scaffolding right now — the workflow below is the target, not
-> something that runs today. Track progress in [roadmap.md](roadmap.md).
+> This workflow works today. What is still missing is listed in
+> [roadmap.md](roadmap.md) — most notably creative tabs, so new content is
+> reachable with `/give` but does not yet appear in the creative menu.
 
 ## Building this repository
 
@@ -71,10 +72,67 @@ There is no entry in the metadata pointing at `ExampleMod`. The annotation
 processor finds the class while it compiles and writes the index into your jar,
 so a typo is a compile error rather than a mod that silently never loads.
 
+## Adding content
+
+Declare it in fields and register it once, from `onRegister`:
+
+```java
+public final class ModBlocks {
+    public static final Holder<Block> RUBY_BLOCK = ModContent.REGISTRAR
+            .newBlock("ruby_block")
+            .strength(3f)
+            .requiresTool()
+            .withItem()          // also registers the item that places it
+            .register();
+}
+```
+
+```java
+@Override
+public void onRegister(Fenix fenix) {
+    ModContent.REGISTRAR.apply();
+}
+```
+
+A `Holder` stands in until registration happens, so content can live in
+`static final` fields. That `apply()` call is also what loads the class holding
+them — content declared in a class nobody loads is content that never appears.
+
+## Reacting to the game
+
+```java
+BlockEvents.BREAK.register(event -> isProtected(event.pos()) ? Flow.CANCEL : Flow.CONTINUE);
+```
+
+`BlockEvents` is the server's, which is where cancelling actually holds.
+`ClientBlockEvents` exists only to make a refusal feel immediate — never as the
+enforcement point.
+
+## Generating resources
+
+Models, translations, loot tables, recipes and tags are described in Java:
+
+```java
+@Generator
+public final class ModLanguage extends EmberLanguageProvider {
+    @Override
+    protected void translations() {
+        add(ModBlocks.RUBY_BLOCK, "Ruby Block");
+    }
+}
+```
+
+`./gradlew ember` writes them into `src/main/generated`, which is part of your
+resources. Textures are the one thing you still draw yourself.
+
+Without a loot table a block breaks into nothing, silently — so generate one
+for every block you add.
+
 ## Running it
 
 ```bash
 ./gradlew runClient
 ./gradlew runServer
+./gradlew ember        # regenerate assets and data
 ./gradlew genSources   # decompile Minecraft for navigation
 ```

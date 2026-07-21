@@ -2,11 +2,13 @@
 
 A modern Minecraft mod loader, and the toolchain around it.
 
-> **Status: anyone can build a Fenix mod.** The loader, the API and the Gradle
-> plugin are published to a [public Maven repository](docs/publishing.md), so a
-> mod's whole build file is `id("fr.d4emon.fenix.dev")`. The plugin fetches
-> Minecraft, compiles the mod against it, and `runClient` / `runServer` launch
-> through the loader with Mixin wired in. See [the roadmap](docs/roadmap.md).
+> **Status: a mod can add content, react to the game, and ship its own
+> resources.** The loader, the API and the Gradle plugin are published to a
+> [public Maven repository](docs/publishing.md), so a mod's whole build file is
+> `id("fr.d4emon.fenix.dev")`. Blocks and items register through a typed
+> registrar, events are cancellable on the side that can enforce them, and
+> Ember generates models, translations, loot tables, recipes and tags. See
+> [the roadmap](docs/roadmap.md) for what is not there yet.
 
 Fenix targets **Minecraft 26.2** on **Java 25**. Since Minecraft 26.1 the game
 ships unobfuscated, so there is no mapping or remapping step anywhere in this
@@ -50,7 +52,38 @@ it does it the way it would be designed today.
 | `build-logic/`         | Convention plugins for building Fenix itself                         |
 
 The API modules are `fenix-api-{core,event,registry,resource,network,command,config}`,
-and `fenix-api` aggregates them.
+and `fenix-api` aggregates them. Today `core`, `event`, `registry` and
+`resource` carry code; the rest are placeholders.
+
+## What a mod looks like
+
+```java
+@Mod("example-mod")
+public final class ExampleMod implements FenixMod {
+
+    @Override
+    public void onRegister(Fenix fenix) {
+        ModContent.register();
+    }
+
+    @Override
+    public void onInit(Fenix fenix) {
+        // On the server, so cancelling actually holds.
+        BlockEvents.BREAK.register(event ->
+                event.level().getBlockState(event.pos()).is(ModBlocks.RUBY_BLOCK.get())
+                        ? Flow.CANCEL : Flow.CONTINUE);
+    }
+}
+```
+
+```java
+public final class ModBlocks {
+    public static final Holder<Block> RUBY_BLOCK = ModContent.REGISTRAR
+            .newBlock("ruby_block").strength(3f).requiresTool().withItem().register();
+}
+```
+
+`examples/example-mod` is the whole of it, working.
 
 ## Building
 

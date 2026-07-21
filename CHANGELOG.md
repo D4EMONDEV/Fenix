@@ -69,22 +69,6 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ticks and block breaking, including cancelling it. `testing/demo-mod` is a new
   Minecraft-free mod so the fake-game smoke test still exercises mod loading now
   that the other two need the real game.
-
-### Fixed
-
-- The dev plugin no longer copies non-mods into `run/mods`. A `fenixMod`
-  dependency brings its own dependencies, and a plain library among them —
-  `fenix-api-core`, which the loader supplies on the parent classpath — made the
-  loader refuse to start.
-
-### Changed
-
-- The version is now `0.1.0`, not `0.1.0-SNAPSHOT`: a statically hosted
-  repository serves releases, and a pre-release sorts below its release so
-  `>=0.1.0` would otherwise reject the loader.
-
-### Added
-
 - **A public Maven repository.** Fenix publishes to a plain Maven repository
   hosted on GitHub Pages — free and login-free to consume — so a mod's whole
   build file is `id("fr.d4emon.fenix.dev")` after adding the repository to
@@ -126,19 +110,6 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The installer now ships Mixin and ASM alongside the loader, listed as
   libraries in the version manifest, so the launcher puts the whole
   transformation stack on the classpath.
-
-### Fixed
-
-- Launch time: the classloader was reopening and reparsing the game jar's
-  31,000-entry central directory for **every class it defined** — the
-  uncached-connection fix for Windows file locks, applied per read. Real
-  Minecraft took minutes to reach the title screen. Jars added to the child
-  scope are now opened once, kept open, and read through their in-memory
-  index; `close()` still releases the locks, and every classloader test passes
-  unchanged. Loading 2000 real game classes: 163.9 s before, 0.4 s after.
-
-### Added
-
 - `fenix-installer`: writes a Fenix profile into `.minecraft` — the loader jars
   Maven-style under `libraries/`, a version manifest inheriting from vanilla
   with `Launch` as the main class, and a launcher profile entry. The loader
@@ -187,3 +158,23 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   plugins in `build-logic`, version catalogue, and the module boundaries for the
   loader, the split API, the annotation processor, the installer, Ember, the
   Gradle plugin, the test harness, the conformance suite and the website.
+
+### Changed
+
+- The version is now `0.1.0`, not `0.1.0-SNAPSHOT`: a statically hosted
+  repository serves releases, and a pre-release sorts below its release so
+  `>=0.1.0` would otherwise reject the loader.
+
+### Fixed
+
+- The dev plugin no longer copies non-mods into `run/mods`. A `fenixMod`
+  dependency brings its own dependencies, and a plain library among them —
+  `fenix-api-core`, which the loader supplies on the parent classpath — made the
+  loader refuse to start.
+- Launch time: the classloader was reopening and reparsing the game jar's
+  31,000-entry central directory for **every class it defined** — the
+  uncached-connection fix for Windows file locks, applied per read. Real
+  Minecraft took minutes to reach the title screen. Jars added to the child
+  scope are now opened once, kept open, and read through their in-memory
+  index; `close()` still releases the locks, and every classloader test passes
+  unchanged. Loading 2000 real game classes: 163.9 s before, 0.4 s after.

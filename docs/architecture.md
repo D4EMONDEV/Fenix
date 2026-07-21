@@ -75,6 +75,35 @@ disagree with the game the player sees. This is why Ember ships as a mod.
 | `ember`              | `fr.d4emon.fenix.ember`     | child (a mod) |
 | all mixins           | `fr.d4emon.fenix.mixin.*`   | child         |
 
+`network`, `command` and `config` are reserved but empty; see
+[roadmap.md](roadmap.md).
+
+Every module that names a `net.minecraft` type is built with the dev plugin in
+**library mode** — Minecraft on the compile classpath and nothing else. They
+*are* the API, so depending on it would be circular, and there is nothing in
+them to launch.
+
+## Resources
+
+Minecraft reads assets and data only from packs, and a mod jar is not one: it
+has no `pack.mcmeta`. Without something in between, a mod's models, textures
+and translations sit in its jar and are never looked at — the difference
+between a block that is *registered* and one that is *visible*.
+
+`fenix-api-resource` closes that by handing every mod jar to the game as a pack,
+built in code rather than read from the jar, so mod authors never write a
+`pack.mcmeta` or track its format version. Packs go on top and are forced on: a
+mod's own resources are not something a player should have to enable, while a
+pack they *do* enable still sits above and can override them.
+
+The injection point is `PackRepository`'s constructor — the one place both the
+client's resource packs and the server's datapacks go through. The constructor
+never says which kind it is building, and the obvious test,
+`instanceof ClientPackSource`, is a trap: naming that client-only class there
+would be a `NoClassDefFoundError` on a dedicated server. The type is read
+instead off the `FolderRepositorySource` that every repository is built with,
+which exists on both sides.
+
 ## Sidedness
 
 **A class that so much as mentions a `net.minecraft.client.*` type will throw
