@@ -9,6 +9,18 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The content registrar** (`fenix-api-registry`). A mod declares blocks and
+  items in fields and registers them with one call from `onRegister`; a
+  `Holder` stands in until then, and reading it too early says so rather than
+  handing back null. What it really buys is the vanilla bookkeeping that
+  happens *around* registration and that a mod otherwise bypasses: ids set on
+  properties before construction, block-state network ids and caches redone
+  (vanilla assigns those in one pass that has already run by the time a mod can
+  register), and the `Item.BY_BLOCK` mapping without which `Block.asItem()`
+  answers air and caches that answer. Each of those is a crash that surfaces far
+  from its cause, inside vanilla code. Verified by registering a block and an
+  item through a real `Bootstrap.bootStrap()` under the loader and checking all
+  three passes took effect.
 - **The event bus** (`fenix-api-event`), the foundation the rest of the API
   hangs off. An event carries a context — normally a record — so declaring one
   is two lines instead of a hand-written functional interface and a combiner
