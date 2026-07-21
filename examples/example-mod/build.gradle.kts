@@ -21,4 +21,5 @@ dependencies {
     // is actually there at run time.
     fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")
     fenixMod("fr.d4emon.fenix:fenix-api-registry:0.1.0")
+    fenixMod("fr.d4emon.fenix:fenix-api-resource:0.1.0")
 }

@@ -1,5 +1,10 @@
 package fr.d4emon.fenix.loader.launch;
 
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * The game's way back into the loader.
  *
@@ -39,6 +44,28 @@ public final class FenixHooks {
      */
     public static void onGameInit() {
         active().fireInit();
+    }
+
+    /**
+     * {@return every loaded mod's jar, keyed by mod id, in load order}
+     *
+     * <p>For the parts of Fenix that have to treat a mod as a <em>file</em>
+     * rather than as code — resource loading above all, which hands the jars to
+     * the game as resource packs.
+     *
+     * <p>Empty when no game is running, rather than throwing: something asking
+     * for mod files outside a launch should get "there are none", not a crash.
+     */
+    public static Map<String, Path> modJars() {
+        FenixRuntime current = runtime;
+        if (current == null) {
+            return Map.of();
+        }
+        Map<String, Path> jars = new LinkedHashMap<>();
+        for (LoadedMod mod : current.mods()) {
+            jars.put(mod.id(), mod.path());
+        }
+        return Collections.unmodifiableMap(jars);
     }
 
     private static FenixRuntime active() {

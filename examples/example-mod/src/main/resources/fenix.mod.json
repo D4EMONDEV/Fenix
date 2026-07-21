@@ -15,6 +15,7 @@
     "fenix": ">=0.1.0",
     "minecraft": "~${minecraft_version}",
     "fenix-api-event": ">=0.1.0",
-    "fenix-api-registry": ">=0.1.0"
+    "fenix-api-registry": ">=0.1.0",
+    "fenix-api-resource": ">=0.1.0"
   }
 }
