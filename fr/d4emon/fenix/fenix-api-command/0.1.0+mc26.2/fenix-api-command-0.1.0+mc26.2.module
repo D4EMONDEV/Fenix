@@ -1,0 +1,132 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api-command",
+    "version": "0.1.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-event",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-command-0.1.0+mc26.2.jar",
+          "url": "fenix-api-command-0.1.0+mc26.2.jar",
+          "size": 6155,
+          "sha512": "5d5f0fab872e1da1b41ae15fd0f3d75c43f92fa44572552b228bb110b5e466442963c7b43594471e720f94a2441975600d9ae546271e47e8ef3b28fca3eec119",
+          "sha256": "4e5ec80a7452d1eafc1481488af222a7de3e1a51fc32615be46f2e034ebf5191",
+          "sha1": "617977083e62e5585c33649c6f5275f3f2e34dcd",
+          "md5": "7cd28613a021df0cb142850341fbeaa5"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-event",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-command-0.1.0+mc26.2.jar",
+          "url": "fenix-api-command-0.1.0+mc26.2.jar",
+          "size": 6155,
+          "sha512": "5d5f0fab872e1da1b41ae15fd0f3d75c43f92fa44572552b228bb110b5e466442963c7b43594471e720f94a2441975600d9ae546271e47e8ef3b28fca3eec119",
+          "sha256": "4e5ec80a7452d1eafc1481488af222a7de3e1a51fc32615be46f2e034ebf5191",
+          "sha1": "617977083e62e5585c33649c6f5275f3f2e34dcd",
+          "md5": "7cd28613a021df0cb142850341fbeaa5"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-command-0.1.0+mc26.2-sources.jar",
+          "url": "fenix-api-command-0.1.0+mc26.2-sources.jar",
+          "size": 5053,
+          "sha512": "7ede5e206e4eaba68179f7a30cdb4eb0136cc65629af15b120a88de6958486aa908f722dc93764f2fea94c5cbb5a4baf504c755387192c352c6fd59ef1b102b2",
+          "sha256": "92cc740fd20bffd6d383ca4715a1caa04218032931ff80e67fc450345e9e363e",
+          "sha1": "878a9c7e00183d9a364808819ec4c5c3b730ed19",
+          "md5": "c5c6eddbf42aa5e26609080b705633d5"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-command-0.1.0+mc26.2-javadoc.jar",
+          "url": "fenix-api-command-0.1.0+mc26.2-javadoc.jar",
+          "size": 4165323,
+          "sha512": "f395e082f2889e3946afcd7bd0a77e7484109a2fc7e38117ac8968fb358316230f4a00626ec1bf90e727d594288acaf6c6bd52a4837a34345e6a915c39c130fd",
+          "sha256": "b299eba22a568f39eccea50877d3572c4b6d6f374323b40ccd4486210f897d08",
+          "sha1": "5e75fa8db22917952a1a3a3cba62aa77745582b9",
+          "md5": "0ea86dfa04057b8470e290e281cc55ad"
+        }
+      ]
+    }
+  ]
+}

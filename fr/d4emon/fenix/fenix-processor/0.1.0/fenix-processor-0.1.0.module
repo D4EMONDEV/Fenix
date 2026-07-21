@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-processor",
+    "version": "0.1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "fenix-processor-0.1.0.jar",
+          "url": "fenix-processor-0.1.0.jar",
+          "size": 7542,
+          "sha512": "7e5620889fd3141df63921cd8aa929b1023145674131269c84ceed93278ea6263e26c0c8dbab667be3471930c68f65f268879fc2f8c3a843a5dc4c15f04d424b",
+          "sha256": "a62ee87bba74eb55c2d7e1ee682c24fdc7fd3b4d16ea75bc32da5c93bca9a046",
+          "sha1": "20af92f647c511ef9816b871e3b80a705aa68212",
+          "md5": "c9dbb3b46b63b41f76b29e6444761a2b"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-processor-0.1.0.jar",
+          "url": "fenix-processor-0.1.0.jar",
+          "size": 7542,
+          "sha512": "7e5620889fd3141df63921cd8aa929b1023145674131269c84ceed93278ea6263e26c0c8dbab667be3471930c68f65f268879fc2f8c3a843a5dc4c15f04d424b",
+          "sha256": "a62ee87bba74eb55c2d7e1ee682c24fdc7fd3b4d16ea75bc32da5c93bca9a046",
+          "sha1": "20af92f647c511ef9816b871e3b80a705aa68212",
+          "md5": "c9dbb3b46b63b41f76b29e6444761a2b"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-processor-0.1.0-sources.jar",
+          "url": "fenix-processor-0.1.0-sources.jar",
+          "size": 5322,
+          "sha512": "9f6a2cd83474586a2017cd092d75da93bcc9851398c7566a7130e3e44c1ca6ba7c101a2c0c4d00f5fa6092be2b6104f82315f8e4c6cbd802cba1665d348345cf",
+          "sha256": "bb16559b3172be47e6da5b883b3c202a1ebe7092fd213e42b6e7f53aae351226",
+          "sha1": "37aa66403b35d275fa8ee5d6efd935a8ed6699e5",
+          "md5": "47e08b36856859bedf0f904ffc6f1dba"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-processor-0.1.0-javadoc.jar",
+          "url": "fenix-processor-0.1.0-javadoc.jar",
+          "size": 4147626,
+          "sha512": "81ebc3127ca539b40b2a7a164eda7f8a2ad3c9665c7409f5bb11b7f6dfbb1122277669ae47b6be6500739ff52c7313b281f5b99cdd0a4f13f41391e83f7d6906",
+          "sha256": "3aee48304ef72041f8c490607bfd4d47a40c028c1c7739d0659c881fcad793ff",
+          "sha1": "1a559bb970cc4854e09e5f255f5e65ff9f981e7d",
+          "md5": "8488650203bf703d461766531a91ec36"
+        }
+      ]
+    }
+  ]
+}

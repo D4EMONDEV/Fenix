@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api-network",
+    "version": "0.1.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-network-0.1.0+mc26.2.jar",
+          "url": "fenix-api-network-0.1.0+mc26.2.jar",
+          "size": 24178,
+          "sha512": "6201f7b5107546b3590b19da4f9bc2dd5c0a96e44059be8484e4da9e9810f5d1cb76580460468b929c307f009cd50460b59107702673c3e5f124f713cf2f41f4",
+          "sha256": "d24c20308b0f00820ab544c5d54adcd27aefc9e528693af06462dd4be63315aa",
+          "sha1": "0c4fb5ab97824ab984706518cdb64626fb3c7982",
+          "md5": "072e83109f953a74832b567a930a8f6e"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-network-0.1.0+mc26.2.jar",
+          "url": "fenix-api-network-0.1.0+mc26.2.jar",
+          "size": 24178,
+          "sha512": "6201f7b5107546b3590b19da4f9bc2dd5c0a96e44059be8484e4da9e9810f5d1cb76580460468b929c307f009cd50460b59107702673c3e5f124f713cf2f41f4",
+          "sha256": "d24c20308b0f00820ab544c5d54adcd27aefc9e528693af06462dd4be63315aa",
+          "sha1": "0c4fb5ab97824ab984706518cdb64626fb3c7982",
+          "md5": "072e83109f953a74832b567a930a8f6e"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-network-0.1.0+mc26.2-sources.jar",
+          "url": "fenix-api-network-0.1.0+mc26.2-sources.jar",
+          "size": 14995,
+          "sha512": "147db6d798a56c116ec9daecbc6e99f210259f21578fdee76138aad96a0307568ac953b77bb4e3302ea2ecae36bfb1ee632a2bd2c77218ee2e9abb0043f3cf89",
+          "sha256": "c0c173c2ff0f118d4d89b7ec9807680786bdaf19e0535e195228d40831a3c7ef",
+          "sha1": "068fcc3ca2b6ed28452a1c974f3f481eaad1ec6b",
+          "md5": "b664b3c2019a4e308e5eab923dc4a207"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-network-0.1.0+mc26.2-javadoc.jar",
+          "url": "fenix-api-network-0.1.0+mc26.2-javadoc.jar",
+          "size": 4187435,
+          "sha512": "2fb1a3b3ad602d397efe66ffd6aee21053db3ad79ee70f5f4391890738826d445b0acb73ad4bbfdbe8a2abf7692a542f2b795175fc653bc16a1028df5b87aae9",
+          "sha256": "c2e1d5d5e9473a83750489c2080f4c00e2561143e6aec9bd45684e7c975d73db",
+          "sha1": "0c93b7434c0f71008b659251d7201cddbeada43d",
+          "md5": "b44e6117e659fea68f533b1c248fc663"
+        }
+      ]
+    }
+  ]
+}

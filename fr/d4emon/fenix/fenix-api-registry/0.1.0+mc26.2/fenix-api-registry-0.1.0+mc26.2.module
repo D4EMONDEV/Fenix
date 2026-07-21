@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api-registry",
+    "version": "0.1.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.0+mc26.2.jar",
+          "url": "fenix-api-registry-0.1.0+mc26.2.jar",
+          "size": 39359,
+          "sha512": "9d16e995b0065c54d9d3f7300c4307bd8150b058f62e48a16e032554dc614b01ef2c9ecf16cb8608c74a357b8d9145b56741529b406e84363a7c4d8220e218c0",
+          "sha256": "321ba1ef2d4786ae576745248c56d1c3a04aa1f108eaca0690310bb638278bff",
+          "sha1": "74edfc3a07932c99af840b1ac9be0e96676d3251",
+          "md5": "8dcb939c1adbd2e1b9f6cee2a85f330f"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.0+mc26.2.jar",
+          "url": "fenix-api-registry-0.1.0+mc26.2.jar",
+          "size": 39359,
+          "sha512": "9d16e995b0065c54d9d3f7300c4307bd8150b058f62e48a16e032554dc614b01ef2c9ecf16cb8608c74a357b8d9145b56741529b406e84363a7c4d8220e218c0",
+          "sha256": "321ba1ef2d4786ae576745248c56d1c3a04aa1f108eaca0690310bb638278bff",
+          "sha1": "74edfc3a07932c99af840b1ac9be0e96676d3251",
+          "md5": "8dcb939c1adbd2e1b9f6cee2a85f330f"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.0+mc26.2-sources.jar",
+          "url": "fenix-api-registry-0.1.0+mc26.2-sources.jar",
+          "size": 25461,
+          "sha512": "32ef170818423c247f03e432c1151210c7f0ea461b9e6e8398ebd069773de6af66326f7f8ef64599560d31b5ad2f6d34f5491e7b3570ce0fda08c15f8791e133",
+          "sha256": "458239d7b4267624727a2d3db220e3bcce5b2ae82de48df1bf69dcc89e0a5337",
+          "sha1": "93af19307975071684af0a294cb84dbf5822d49c",
+          "md5": "cb1aeaadab4d291910632beed2d1404f"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.0+mc26.2-javadoc.jar",
+          "url": "fenix-api-registry-0.1.0+mc26.2-javadoc.jar",
+          "size": 4199711,
+          "sha512": "313bf483e56ca688ea638612c9b046a8303bc26ad513937e05484a9d4ce2781f66886bece399478f7a86d30d4d2bbd5fc17b0b3b1b16b37479e2f9209c2bc6a7",
+          "sha256": "0a5b76fd0e654c8f65f78a11f03e88c54c8ff8da97da0c26ea7ca824cf2e351d",
+          "sha1": "25274f9a8a009e2f7b231ac59d336d2ed23d07bf",
+          "md5": "eafc34aa256d7df0d2ecfd1f0f54aa23"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api-core",
+    "version": "0.1.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "fenix-api-core-0.1.0+mc26.2.jar",
+          "url": "fenix-api-core-0.1.0+mc26.2.jar",
+          "size": 11574,
+          "sha512": "d12aa7cbe410613893e7c3943e60ca6aaa084278821489bdad0f25cd5ffd54270a202e50ef07908ee339a3ce940c4c2f4999783c89a88737a5e5bd2b8ac64a6a",
+          "sha256": "b82d9872910d3bd4edba21e561dcf82de92f6b3f8a053408daadff8095066120",
+          "sha1": "d228e1072a5394124d91673cfc6c1f3f66221b6f",
+          "md5": "47fe87df76808f290e7dfda1dd55e6a7"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-core-0.1.0+mc26.2.jar",
+          "url": "fenix-api-core-0.1.0+mc26.2.jar",
+          "size": 11574,
+          "sha512": "d12aa7cbe410613893e7c3943e60ca6aaa084278821489bdad0f25cd5ffd54270a202e50ef07908ee339a3ce940c4c2f4999783c89a88737a5e5bd2b8ac64a6a",
+          "sha256": "b82d9872910d3bd4edba21e561dcf82de92f6b3f8a053408daadff8095066120",
+          "sha1": "d228e1072a5394124d91673cfc6c1f3f66221b6f",
+          "md5": "47fe87df76808f290e7dfda1dd55e6a7"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-core-0.1.0+mc26.2-sources.jar",
+          "url": "fenix-api-core-0.1.0+mc26.2-sources.jar",
+          "size": 11469,
+          "sha512": "ad1dcf03b37fba187740614f422b3a4a1250f29c8802a16bd075c1f91ff79b287ae1df48b4d71b9b3c52a060dc0a84170cbd576b2ee37105023349baa295b96d",
+          "sha256": "446de3e3f26c36f14cd6e02a73ab48aa743d3daf455ede5de056315383e9d633",
+          "sha1": "2c1ea2e0164760f385042a7e5c3d499733d3c5ca",
+          "md5": "9d5ebddc058d388fbcd631cb7aa487aa"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-core-0.1.0+mc26.2-javadoc.jar",
+          "url": "fenix-api-core-0.1.0+mc26.2-javadoc.jar",
+          "size": 4184443,
+          "sha512": "ce9580aa5d40dee1a5af4bc1757c5b79a83826ce6d7f4708f8d9e9d77abb054b1bc82a6bcec3e49541068754d11f87bf6be8449e99920de323a95c62cde5d2b5",
+          "sha256": "67f28cc488a92eaeeb8c328c06df3d4020de4951e2da8353ad1df2651ccfe637",
+          "sha1": "82af5aa18e5301e066c0520c9341256bc4ee6582",
+          "md5": "be3c78300cefa5dd59a561b12eb736e8"
+        }
+      ]
+    }
+  ]
+}

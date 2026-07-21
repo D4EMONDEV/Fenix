@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api-config",
+    "version": "0.1.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-config-0.1.0+mc26.2.jar",
+          "url": "fenix-api-config-0.1.0+mc26.2.jar",
+          "size": 10100,
+          "sha512": "3fc708264dc4083d6b642664e3e6483ea5c4b173bb1d5cafeac953ba9c178a0120a736bc67bc7ac6d34221ae6611d113ecd1bd3c4f14d026114e1d55cb868387",
+          "sha256": "317c23b158bc57753b866fca83bc8d86427e9efab2d5af872d6d92e340b672f8",
+          "sha1": "afe1098462d490de9610a6dfb0108e1b043fff8f",
+          "md5": "6df5789d64a7d6a817d807f452b64636"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-config-0.1.0+mc26.2.jar",
+          "url": "fenix-api-config-0.1.0+mc26.2.jar",
+          "size": 10100,
+          "sha512": "3fc708264dc4083d6b642664e3e6483ea5c4b173bb1d5cafeac953ba9c178a0120a736bc67bc7ac6d34221ae6611d113ecd1bd3c4f14d026114e1d55cb868387",
+          "sha256": "317c23b158bc57753b866fca83bc8d86427e9efab2d5af872d6d92e340b672f8",
+          "sha1": "afe1098462d490de9610a6dfb0108e1b043fff8f",
+          "md5": "6df5789d64a7d6a817d807f452b64636"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-config-0.1.0+mc26.2-sources.jar",
+          "url": "fenix-api-config-0.1.0+mc26.2-sources.jar",
+          "size": 6779,
+          "sha512": "96957d608327659d277ec5d66b28a19695025897f3118991c09cfa1356c0246fa58187621b0f02bdbe8396832a7ab856d79dbf06717ee5c887964585296135fd",
+          "sha256": "120c842115543277693952c48dc9a4cadd36b96b17084c1b54720e2fd515aaf4",
+          "sha1": "4845c8b21de876e9cbb47fbb89490b263af5b7aa",
+          "md5": "b7512949a307cd4029628f3a33f0fc4d"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-config-0.1.0+mc26.2-javadoc.jar",
+          "url": "fenix-api-config-0.1.0+mc26.2-javadoc.jar",
+          "size": 4153100,
+          "sha512": "2d68327b3a918ab8d7067fb5dac117218aef92141f2be3aafd122e4f47f69c4728586593a99858f9607c5ff4e427661b9f8faac9bb973def3e1037009db9851c",
+          "sha256": "a6e6d8d9d48391d085ef0d3ffdda57da568644afc23b9e6725183fe7cff4bb1b",
+          "sha1": "898456ec3212b205fa59ae875f3acefa278bb6fd",
+          "md5": "d22798c8b0a7c7724b340eb74e6d2b50"
+        }
+      ]
+    }
+  ]
+}
