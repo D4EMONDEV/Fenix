@@ -99,12 +99,8 @@ Textures and ogg files are what it cannot generate.
   depend on vanilla's own class-loading order, and would vanish silently when
   that order changed. Two constant types carry no such bet, and an unknown
   channel can be named in a log instead of discarded without a word.
-- Registry sync — still to do.
-
-## Phase 7 (original) — Networking
-
-Typed custom payloads, then registry sync — detection and a clear refusal
-first, never live remapping.
+- Registry sync — still to do: detection and a clear refusal first, never live
+  remapping.
 
 ## Phase 8 — Commands and config
 
