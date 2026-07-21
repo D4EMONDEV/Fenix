@@ -8,10 +8,12 @@
   },
   "mixins": [
     "CreativeModeTabMixin",
-    "CreativeTabValidationMixin"
+    "CreativeTabValidationMixin",
+    "DefaultAttributesMixin"
   ],
   "client": [
     "CreativeModeTabsMixin",
-    "CreativeScreenMixin"
+    "CreativeScreenMixin",
+    "EntityRenderersAccessor"
   ]
 }

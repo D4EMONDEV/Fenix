@@ -11,6 +11,11 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -24,6 +29,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Where a mod declares its content.
@@ -351,6 +358,79 @@ public final class Registrar {
                     + " but does not implement EntityBlock, so the game would never create one");
         }
         return block;
+    }
+
+    // ------------------------------------------------------------------
+    // Entities
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares an entity type.
+     *
+     * <pre>{@code
+     * public static final Holder<EntityType<RubyBolt>> BOLT = REGISTRAR.entity(
+     *         "ruby_bolt", RubyBolt::new, MobCategory.MISC,
+     *         builder -> builder.sized(0.25f, 0.25f));
+     * }</pre>
+     *
+     * <p>Anything that lives needs attributes too — see {@link #attributes} —
+     * and anything visible needs a renderer, which is the client's business.
+     *
+     * @param <T>      the entity class
+     * @param name     the path part of its id
+     * @param factory  builds one, given its type and the level it is in
+     * @param category what kind of thing it is; drives spawning and despawning
+     * @param step     further shaping of the type, most often {@code sized}
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public <T extends Entity> Holder<EntityType<T>> entity(
+            String name, EntityType.EntityFactory<T> factory, MobCategory category,
+            UnaryOperator<EntityType.Builder<T>> step) {
+        Objects.requireNonNull(factory, "factory");
+        Objects.requireNonNull(category, "category");
+        Objects.requireNonNull(step, "step");
+        Identifier id = identifier(name);
+        Holder<EntityType<T>> holder = new Holder<>(id);
+
+        defer(() -> {
+            ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, id);
+            // The key goes into build(), not just into the registry: the type
+            // keeps it for its translation key and its save id.
+            holder.bind(Registry.register(BuiltInRegistries.ENTITY_TYPE, key,
+                    step.apply(EntityType.Builder.of(factory, category)).build(key)));
+        });
+        return holder;
+    }
+
+    /**
+     * Gives a living entity its default attributes — health, speed and the
+     * rest.
+     *
+     * <pre>{@code
+     * REGISTRAR.attributes(ModEntities.SPRITE, () -> Mob.createMobAttributes()
+     *         .add(Attributes.MAX_HEALTH, 8)
+     *         .add(Attributes.MOVEMENT_SPEED, 0.25));
+     * }</pre>
+     *
+     * <p>Not optional for anything living. A {@code LivingEntity} asks vanilla
+     * for its attributes while it is being constructed, and an entity that is
+     * not in that table dies there with a null map — inside vanilla, nowhere
+     * near the mod that registered it.
+     *
+     * @param <T>        the entity class
+     * @param type       the type to describe
+     * @param attributes builds the attribute set; called once, during
+     *                   {@link #apply()}
+     */
+    public <T extends LivingEntity> void attributes(Holder<EntityType<T>> type,
+                                                    Supplier<AttributeSupplier.Builder> attributes) {
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(attributes, "attributes");
+
+        // Recorded, not built: the values are written against attribute
+        // holders that are still unbound while a mod registers, so nothing is
+        // resolved until the game first asks for them.
+        deferLate(() -> EntityAttributes.declare(type.get(), attributes));
     }
 
     // ------------------------------------------------------------------
