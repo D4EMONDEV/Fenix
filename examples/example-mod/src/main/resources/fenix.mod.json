@@ -12,7 +12,7 @@
   },
   "side": "both",
   "depends": {
-    "fenix": ">=0.1.0-SNAPSHOT",
+    "fenix": ">=0.1.0",
     "minecraft": "~${minecraft_version}"
   }
 }

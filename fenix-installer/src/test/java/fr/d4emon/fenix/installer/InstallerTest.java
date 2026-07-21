@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InstallerTest {
 
     private static final String MC = "26.2";
-    private static final String FENIX = "0.1.0-SNAPSHOT";
+    private static final String FENIX = "0.1.0";
 
     @TempDir
     Path minecraftDir;
