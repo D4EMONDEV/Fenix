@@ -1,13 +1,17 @@
 package fr.d4emon.fenix.probe;
 
+import fr.d4emon.fenix.registry.CreativePages;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.List;
 
 /**
  * Runs as the game: boots the registries, which fires onRegister, then checks
@@ -47,7 +51,34 @@ public final class RegistryProbe {
         require(block.asItem() == BuiltInRegistries.ITEM.getValue(blockId),
                 "asItem() should be the block's own item");
 
+        checkCreativePage();
+
         System.out.println("registry conformance: all checks passed");
+    }
+
+    /**
+     * The mod's tab has to land somewhere reachable.
+     *
+     * <p>Getting this far already proves the harder half: vanilla's bootstrap
+     * refuses to start when two tabs share a square, and a mod tab always does
+     * — every one of vanilla's fourteen slots is taken.
+     */
+    private static void checkCreativePage() {
+        CreativeModeTab tab = BuiltInRegistries.CREATIVE_MODE_TAB.getValue(ProbeContent.TAB);
+        require(tab != null, "the mod's creative tab should be in the registry");
+
+        require(CreativePages.pageOf(tab) == 1,
+                "the first mod tab belongs on page 1, since vanilla fills page 0");
+        require(CreativePages.count() == 2, "one mod tab means one page beyond vanilla's");
+
+        List<CreativeModeTab> all = BuiltInRegistries.CREATIVE_MODE_TAB.stream().toList();
+        require(!CreativePages.onCurrentPage(all).contains(tab),
+                "page 0 is vanilla's alone — a mod tab there would push one of vanilla's out");
+
+        CreativePages.turn(1);
+        require(CreativePages.onCurrentPage(all).equals(List.of(tab)),
+                "page 1 should hold the mod tab and nothing else");
+        CreativePages.turn(-1);
     }
 
     private static void require(boolean condition, String what) {

@@ -2,6 +2,8 @@ package fr.d4emon.fenix.probe;
 
 import fr.d4emon.fenix.registry.Holder;
 import fr.d4emon.fenix.registry.Registrar;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
@@ -17,6 +19,13 @@ public final class ProbeContent {
             .register();
 
     public static final Holder<Item> RUBY = REGISTRAR.newItem("ruby").register();
+
+    /**
+     * A tab of the mod's own. Registering one is enough to make vanilla's
+     * bootstrap validation throw, so this field alone is half the check.
+     */
+    public static final ResourceKey<CreativeModeTab> TAB =
+            REGISTRAR.creativeTab("probemod", RUBY);
 
     private ProbeContent() {
     }
