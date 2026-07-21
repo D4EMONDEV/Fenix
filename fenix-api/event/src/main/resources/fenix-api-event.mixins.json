@@ -9,7 +9,10 @@
   },
   "mixins": [
     "MinecraftServerMixin",
-    "ServerPlayerGameModeMixin"
+    "ServerPlayerGameModeMixin",
+    "PlayerListMixin",
+    "LivingEntityDeathMixin",
+    "ServerLevelMixin"
   ],
   "client": [
     "MinecraftTickMixin",

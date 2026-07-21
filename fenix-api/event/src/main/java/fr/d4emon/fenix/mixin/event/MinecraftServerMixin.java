@@ -1,6 +1,8 @@
 package fr.d4emon.fenix.mixin.event;
 
+import fr.d4emon.fenix.event.LevelEvents;
 import fr.d4emon.fenix.event.ServerEvents;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -34,6 +36,12 @@ public class MinecraftServerMixin {
         if (!fenix$started) {
             fenix$started = true;
             ServerEvents.STARTED.fire(new ServerEvents.Started(server));
+            // Every level exists by the first tick, and none is added later:
+            // dimensions come from the datapacks the server already read. So
+            // this is where a level is genuinely ready to be used.
+            for (ServerLevel level : server.getAllLevels()) {
+                LevelEvents.LOADED.fire(new LevelEvents.Of(level));
+            }
         }
         ServerEvents.TICK_START.fire(new ServerEvents.Tick(server));
     }
