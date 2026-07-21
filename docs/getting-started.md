@@ -280,6 +280,27 @@ why the client half can rely on content it registered.
 The source set appears on its own the moment `src/client/java` exists. There is
 nothing to switch on and no entry point to declare anywhere.
 
+## Commands
+
+```java
+CommandEvents.REGISTER.register(registration -> registration.dispatcher().register(
+        literal("wisp")
+                .requires(operator())
+                .then(argument("count", IntegerArgumentType.integer(1, 20))
+                        .executes(run(context -> spawn(context, …))))));
+```
+
+Fenix's `Commands` replaces vanilla's — use it and you never need the other. It
+is a shortcut over Brigadier, never a wall in front of it: every builder it
+returns is Brigadier's own.
+
+What it removes is the `return 1` nobody reads, and the `hasPermission(2)` that
+means nothing on sight — Minecraft 26.2 replaced numeric levels with named
+permissions, so `operator()` is the one `/gamemode` asks for.
+
+The event fires on server start *and* on every datapack reload, so add rather
+than accumulate.
+
 ## Reacting to the game
 
 ```java

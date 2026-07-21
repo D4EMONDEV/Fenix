@@ -9,6 +9,15 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Commands** (`fenix-api-command`). `CommandEvents.REGISTER` hands a listener
+  the dispatcher, and `Commands` covers what Brigadier makes tedious: `run(…)`
+  takes a body returning nothing, since `executes` wants an int nobody reads and
+  forgetting it is a compile error whose message says nothing about commands.
+  `operator()` is the permission `/gamemode` asks for — Minecraft 26.2 replaced
+  numeric levels with named permissions, so the `hasPermission(2)` in every
+  older mod is both obsolete and meaningless on sight. Every builder returned is
+  Brigadier's own: a shortcut over that API, never a wall in front of it.
+
 - **The installer is an application.** `Fenix Installer.exe`, built with
   jpackage, with a window that asks two questions it has already answered and a
   button. Installing a mod loader is something people do once, often before they

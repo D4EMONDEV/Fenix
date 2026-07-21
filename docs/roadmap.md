@@ -107,10 +107,13 @@ Textures and ogg files are what it cannot generate.
   per registry keep it to a few hundred bytes; the mod namespaces travel in
   full, which is what lets the refusal be specific.
 
-## Phase 8 — Commands and config
+## Phase 8 — Commands and config 🚧
 
-Brigadier registration, and typed configuration backed by records — something
-Fabric leaves to third-party libraries.
+- **Commands** ✅ — `CommandEvents.REGISTER` hands out the dispatcher, and
+  `Commands` covers the Brigadier boilerplate: `run(…)` swallows the `return 1`,
+  and `operator()` names the permission that 26.2's `PermissionLevel` rework
+  replaced numeric levels with.
+- Config — still to do: typed, backed by records.
 
 ## Phase 9 — Shipping
 
