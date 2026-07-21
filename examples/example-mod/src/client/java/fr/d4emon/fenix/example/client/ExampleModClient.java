@@ -8,6 +8,7 @@ import fr.d4emon.fenix.example.content.ModPayloads;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import fr.d4emon.fenix.registry.client.EntityRendering;
+import fr.d4emon.fenix.registry.client.MenuScreens;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 
 /**
@@ -34,6 +35,10 @@ public final class ExampleModClient implements FenixMod {
         // Runs after the common half, so the entity type is already bound.
         // Vanilla's item renderer is all a wisp needs — no model file.
         EntityRendering.register(ModContent.RUBY_WISP, ThrownItemRenderer::new);
+
+        // The other half of a menu: the server opens the window, this says what
+        // the player sees when it opens.
+        MenuScreens.register(ModContent.RUBY_SAFE_MENU, RubySafeScreen::new);
 
         // The other half of the tally block. Showing it needs the client, so
         // the handler belongs here rather than beside the channel.

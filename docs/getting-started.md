@@ -331,14 +331,51 @@ and has to be put back here.
 
 ## Menus
 
-A block that opens a screen needs a menu type, a menu, and a screen.
+A block that opens a screen needs a menu type, a menu, and a screen. The
+example mod has a working one — `RubySafe*` in `examples/example-mod`.
 
-```java title="common"
+The menu says which slots exist and where. Two constructors, and the difference
+between them is the whole client-server story: the server builds one over the
+block's real contents, while the client is only told a window opened, so it
+builds one over an empty container of the right size and lets the sync fill it.
+
+```java title="src/main/java"
 public static final Holder<MenuType<SafeMenu>> SAFE = REGISTRAR.menu("safe", SafeMenu::new);
 
 public final class SafeMenu extends SimpleMenu {
+
+    /** Built by the client, from the registered type. */
     public SafeMenu(int id, Inventory player) {
-        super(ModContent.SAFE.get(), id, player, new SimpleContainer(27), 9, 3);
+        this(id, player, new SimpleContainer(27));
+    }
+
+    /** Built by the server, over what the block actually holds. */
+    public SafeMenu(int id, Inventory player, Container contents) {
+        super(ModContent.SAFE.get(), id, player, contents, 9, 3);
+    }
+}
+```
+
+`SimpleMenu` lays the slots out and writes `quickMoveStack` for you — the
+shift-click handler, which is the single most copied-and-broken method in
+Minecraft modding. The usual version moves stacks into the wrong half, loops
+forever, or deletes items when the destination is full.
+
+The screen says what the panel behind those slots looks like. Borrowing
+vanilla's chest texture is usually right: a mod that ships its own identical
+copy is a mod that stops matching the resource pack the player chose.
+
+```java title="src/client/java"
+public final class SafeScreen extends AbstractContainerScreen<SafeMenu> {
+
+    public SafeScreen(SafeMenu menu, Inventory inventory, Component title) {
+        super(menu, inventory, title, 176, 114 + 3 * 18);
+        inventoryLabelY = imageHeight - 94;
+    }
+
+    @Override
+    public void extractBackground(GuiGraphicsExtractor graphics, int x, int y, float partial) {
+        // …blit the background here
     }
 }
 ```
@@ -347,18 +384,36 @@ public final class SafeMenu extends SimpleMenu {
 MenuScreens.register(ModContent.SAFE, SafeScreen::new);
 ```
 
-Open it from the server:
+A menu type with no screen registered fails quietly and confusingly: the server
+opens the window, the client finds nothing to draw, and the player watches
+their inventory close again with no error anywhere.
+
+Opening it is the server's job. If the contents live in a block entity, make
+that the `MenuProvider` — extending `BaseContainerBlockEntity` gives you one,
+along with the fifteen answers a container owes vanilla:
+
+```java
+protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                           Player player, BlockHitResult hit) {
+    if (level.isClientSide()) {
+        // Opening one here would show contents nobody else has.
+        return InteractionResult.SUCCESS;
+    }
+    if (level.getBlockEntity(pos) instanceof SafeBlockEntity safe) {
+        player.openMenu(safe);
+    }
+    return InteractionResult.SUCCESS;
+}
+```
+
+For a menu with nowhere to store anything — a crafting-table-like screen that
+closes empty — there is no block entity to hand over, so name it inline:
 
 ```java
 player.openMenu(new SimpleMenuProvider(
         (id, inventory, who) -> new SafeMenu(id, inventory),
         Component.translatable("container.mymod.safe")));
 ```
-
-`SimpleMenu` lays the slots out and writes `quickMoveStack` for you — the
-shift-click handler, which is the single most copied-and-broken method in
-Minecraft modding. The usual version moves stacks into the wrong half, loops
-forever, or deletes items when the destination is full.
 
 ## Reaching what vanilla keeps shut
 

@@ -7,6 +7,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 
 /**
@@ -44,6 +45,20 @@ public final class ModContent {
     public static final Holder<EntityType<RubyWisp>> RUBY_WISP = REGISTRAR.entity(
             "ruby_wisp", RubyWisp::new, MobCategory.MISC, builder -> builder.sized(0.25f, 0.25f));
 
+    /** The type behind {@link ModBlocks#RUBY_SAFE}. */
+    public static final Holder<BlockEntityType<RubySafeBlockEntity>> RUBY_SAFE_ENTITY =
+            REGISTRAR.blockEntity("ruby_safe", RubySafeBlockEntity::new, ModBlocks.RUBY_SAFE);
+
+    /**
+     * The window the safe opens.
+     *
+     * <p>The factory here is the client's: the server builds its menu from the
+     * block entity, which already knows what it holds, while the client only
+     * learns that a window of this type opened and builds an empty one to fill.
+     */
+    public static final Holder<MenuType<RubySafeMenu>> RUBY_SAFE_MENU =
+            REGISTRAR.menu("ruby_safe", RubySafeMenu::new);
+
     private ModContent() {
     }
 
@@ -62,7 +77,7 @@ public final class ModContent {
         // through /give.
         CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS,
                 ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK);
-        CreativeTabs.addTo(CreativeTabs.FUNCTIONAL_BLOCKS, ModBlocks.RUBY_TALLY);
+        CreativeTabs.addTo(CreativeTabs.FUNCTIONAL_BLOCKS, ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE);
         ModPayloads.listen();
 
         CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
@@ -71,6 +86,6 @@ public final class ModContent {
         // And again in the mod's own tab, where a player looking for this mod
         // in particular will go. Content belongs in both.
         CreativeTabs.addTo(TAB, ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK,
-                ModBlocks.RUBY_TALLY, ModItems.RUBY, ModItems.RUBY_HAMMER);
+                ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE, ModItems.RUBY, ModItems.RUBY_HAMMER);
     }
 }

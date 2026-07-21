@@ -12,6 +12,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.Items;
@@ -63,6 +64,7 @@ public final class RegistryProbe {
         checkBlockEntity();
         checkSound();
         checkEntity();
+        checkMenu();
 
         System.out.println("registry conformance: all checks passed");
     }
@@ -156,6 +158,22 @@ public final class RegistryProbe {
         require(DefaultAttributes.getSupplier(ProbeContent.CRITTER.get())
                         .getValue(Attributes.MAX_HEALTH) == 8,
                 "the attributes registered should be the ones asked for");
+    }
+
+    /**
+     * A menu type has to be registered, and reaching this far is most of it.
+     *
+     * <p>{@code MenuType}'s constructor is private and so is the interface it
+     * takes, so a mod cannot build one — Fenix widens both, in the jar the game
+     * actually loads. If that transformation ever stops firing, the failure is
+     * an {@code IllegalAccessError} thrown out of the mod's field initialiser
+     * during bootstrap, which is exactly the kind of thing that is easy to
+     * break and impossible to notice until a player opens a chest.
+     */
+    private static void checkMenu() {
+        MenuType<?> type = BuiltInRegistries.MENU.getValue(Identifier.parse("probemod:chest"));
+        require(type != null, "the menu type should be in the registry");
+        require(type == ProbeContent.CHEST_MENU.get(), "the handle should be bound to it");
     }
 
     private static void checkSound() {

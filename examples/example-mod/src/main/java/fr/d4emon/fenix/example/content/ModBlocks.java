@@ -40,6 +40,15 @@ public final class ModBlocks {
             .withItem()
             .register();
 
+    /** Holds things, which is the point of a menu. */
+    public static final Holder<Block> RUBY_SAFE = ModContent.REGISTRAR.newBlock("ruby_safe")
+            .strength(4f, 12f)
+            .requiresTool()
+            .sound(SoundType.METAL)
+            .from(RubySafeBlock::new)
+            .withItem()
+            .register();
+
     private ModBlocks() {
     }
 

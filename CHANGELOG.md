@@ -7,6 +7,32 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `MenuScreens.register` could not be called by a mod. It took vanilla's
+  `ScreenConstructor`, which is private, so `javac` refused the method reference
+  at the call site — the same trap `MenuFactory` was written to avoid on the
+  other half of the API, missed here. It now takes Fenix's own `ScreenFactory`
+  and adapts internally, where naming vanilla's type is this module's privilege
+  rather than a mod's problem.
+
+  Found by writing the demo. Nothing had ever called the method from outside the
+  module that declares it, which is the one place the mistake was invisible.
+
+- Blocks in the example mod declaring `requiresTool()` without a
+  `mineable/pickaxe` tag. No tool is the correct one for such a block, so it
+  broke without ever dropping.
+
+### Added
+
+- A working menu in the example mod — the ruby safe: a block entity holding
+  twenty-seven slots, opened server-side, drawn client-side.
+- A menu in the registry conformance check. `MenuType`'s constructor and the
+  interface it takes are both private, so registering one at all only works if
+  the loader really widened them in the jar the game loads. That transformation
+  had no end-to-end test; disabling it now fails the check with the
+  `IllegalAccessError` a player would otherwise meet on opening a chest.
+
 ### Changed
 
 - The installer offers the game versions it finds rather than asking for one to

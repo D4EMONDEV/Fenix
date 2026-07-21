@@ -25,9 +25,14 @@ public final class ModTags {
 
         @Override
         protected void tags() {
+            // Every one of these declares requiresTool(), and without a
+            // mineable tag no tool is the right one — so they would break
+            // without ever dropping.
             tag("minecraft:mineable/pickaxe")
                     .add(ModBlocks.RUBY_BLOCK)
-                    .add(ModBlocks.GLOWING_RUBY_BLOCK);
+                    .add(ModBlocks.GLOWING_RUBY_BLOCK)
+                    .add(ModBlocks.RUBY_TALLY)
+                    .add(ModBlocks.RUBY_SAFE);
 
             tag("minecraft:needs_iron_tool")
                     .add(ModBlocks.RUBY_BLOCK)

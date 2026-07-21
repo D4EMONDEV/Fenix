@@ -8,6 +8,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -49,6 +50,16 @@ public final class ProbeContent {
     /** A living entity, which needs attributes or it dies while being built. */
     public static final Holder<EntityType<ProbeCritter>> CRITTER = REGISTRAR.entity(
             "critter", ProbeCritter::new, MobCategory.CREATURE, builder -> builder.sized(0.6f, 0.9f));
+
+    /**
+     * A menu type.
+     *
+     * <p>Registering one at all is the check: {@code MenuType}'s constructor
+     * and the interface it takes are both private in vanilla, so this line only
+     * runs if the loader really widened them in the jar the game is using.
+     */
+    public static final Holder<MenuType<ProbeMenu>> CHEST_MENU =
+            REGISTRAR.menu("chest", ProbeMenu::new);
 
     /** A sound event, which is half of a sound; sounds.json is the other half. */
     public static final Holder<SoundEvent> CHIME = REGISTRAR.sound("chime");

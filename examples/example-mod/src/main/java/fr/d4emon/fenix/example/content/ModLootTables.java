@@ -20,5 +20,6 @@ public final class ModLootTables extends EmberLootTableProvider {
         dropsSelf(ModBlocks.RUBY_BLOCK);
         dropsSelf(ModBlocks.GLOWING_RUBY_BLOCK);
         dropsSelf(ModBlocks.RUBY_TALLY);
+        dropsSelf(ModBlocks.RUBY_SAFE);
     }
 }

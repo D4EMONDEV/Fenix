@@ -36,10 +36,14 @@ public final class MenuScreens {
      * @param screen builds the screen from the menu, the inventory and a title
      */
     public static <M extends AbstractContainerMenu, S extends Screen & MenuAccess<M>> void register(
-            Holder<MenuType<M>> type,
-            net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor<M, S> screen) {
+            Holder<MenuType<M>> type, ScreenFactory<M, S> screen) {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(screen, "screen");
-        MenuScreensAccessor.fenix$screens().put(type.get(), screen);
+
+        // Adapted here rather than taken directly: vanilla's ScreenConstructor
+        // is private, and a mod passing a method reference for it would not
+        // compile. Naming it is this module's privilege, not a mod's problem.
+        net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor<M, S> vanilla = screen::create;
+        MenuScreensAccessor.fenix$screens().put(type.get(), vanilla);
     }
 }
