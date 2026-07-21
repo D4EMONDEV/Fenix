@@ -1,7 +1,7 @@
 # Roadmap
 
-Phases are ordered so that each one is verifiable on its own. Nothing after
-phase 0 is implemented yet.
+Phases are ordered so that each one is verifiable on its own. Phases 0 to 4 and
+6 are done; phase 5 is in progress and phases 7 onward are not started.
 
 ## Phase 0 — Scaffolding ✅
 
