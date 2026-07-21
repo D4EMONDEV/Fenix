@@ -4,6 +4,10 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.Directory;
+import org.gradle.api.attributes.LibraryElements;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.jvm.tasks.Jar;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.JavaExec;
 
@@ -78,14 +82,19 @@ public final class FenixDevPlugin implements Plugin<Project> {
 
         extension.getClientJar().fileValue(game.clientJar().toFile());
 
-        // The mod compiles against real Minecraft names.
-        dependencies.add("compileOnly", project.files(game.clientJar()));
+        // Common code compiles against Minecraft with the client half removed,
+        // which is what makes reaching for a client class from src/main a
+        // javac error rather than a NoClassDefFoundError on somebody else's
+        // dedicated server. Client code gets the whole jar, in its own source
+        // set — see clientSourceSet below.
+        dependencies.add("compileOnly", project.files(CommonJar.of(game.clientJar(), minecraft)));
         game.compileLibs().forEach(lib -> dependencies.add("compileOnly", lib));
 
         // A library is a piece of Fenix itself: it gets Minecraft and stops
         // there. Depending on the API from inside the API would be circular, and
         // there is no mod here to index or launch.
         boolean library = extension.getLibrary().get();
+        clientSourceSet(project, game, loaderVersion, library);
         if (!library) {
             dependencies.add("compileOnly", "fr.d4emon.fenix:fenix-api:" + loaderVersion);
             dependencies.add("annotationProcessor", "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
@@ -137,6 +146,78 @@ public final class FenixDevPlugin implements Plugin<Project> {
         registerRunServer(project, minecraft, cacheRoot, serverClasspath, fenixMod);
         registerGenSources(project, game, vineflower);
         writeRunConfigs(project);
+    }
+
+    /**
+     * Adds the {@code client} source set, when the project has one.
+     *
+     * <p>The arrangement is one-way on purpose: client code sees common code,
+     * common code cannot see client code. That is what a mod author actually
+     * wants — write the mod in {@code src/main}, reach into {@code src/client}
+     * only to draw it — and it is also the only arrangement the compiler can
+     * enforce, since the reverse would need the client jar on the common
+     * classpath and the enforcement would evaporate.
+     *
+     * <p>Its entry class is indexed into a file of its own, so a dedicated
+     * server is never told to load a class it cannot resolve.
+     */
+    private void clientSourceSet(Project project, MinecraftLibraries game, String loaderVersion,
+                                 boolean library) {
+        Directory clientJava = project.getLayout().getProjectDirectory().dir("src/client/java");
+        if (!clientJava.getAsFile().isDirectory()) {
+            // Nothing to configure for a mod with no client half, which is most
+            // of them. Creating an empty source set would only slow the build.
+            return;
+        }
+
+        var sourceSets = project.getExtensions().getByType(org.gradle.api.tasks.SourceSetContainer.class);
+        SourceSet main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+        SourceSet client = sourceSets.create("client");
+
+        // Whatever common code compiles against, client code compiles against
+        // too — Mixin, the mod's own library dependencies, all of it. The
+        // client half is a superset of the common half, never a sibling.
+        project.getConfigurations().getByName(client.getCompileOnlyConfigurationName())
+                .extendsFrom(project.getConfigurations().getByName(main.getCompileOnlyConfigurationName()));
+        project.getConfigurations().getByName(client.getImplementationConfigurationName())
+                .extendsFrom(project.getConfigurations().getByName(main.getImplementationConfigurationName()));
+
+        var dependencies = project.getDependencies();
+        dependencies.add(client.getCompileOnlyConfigurationName(), project.files(game.clientJar()));
+        game.compileLibs().forEach(lib ->
+                dependencies.add(client.getCompileOnlyConfigurationName(), lib));
+        if (!library) {
+            dependencies.add(client.getCompileOnlyConfigurationName(),
+                    "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+            dependencies.add(client.getAnnotationProcessorConfigurationName(),
+                    "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
+        }
+
+        client.setCompileClasspath(client.getCompileClasspath().plus(main.getOutput()));
+        client.setRuntimeClasspath(client.getOutput()
+                .plus(main.getOutput())
+                .plus(client.getRuntimeClasspath()));
+
+        project.getTasks().named(client.getCompileJavaTaskName(), JavaCompile.class, task ->
+                task.getOptions().getCompilerArgs().add("-Afenix.indexFile=fenix.index.client.json"));
+
+        // Both halves ship in the one jar, and both are visible to whatever
+        // depends on this project. The server simply never loads the client
+        // half, which is what the separate index arranges.
+        //
+        project.getTasks().named("jar", Jar.class, task -> task.from(client.getOutput()));
+
+        // Resolve dependencies as jars rather than as classes directories, but
+        // only here. Gradle hands a project dependency its main classes
+        // directory by default, which is faster and which would hide the client
+        // half of another Fenix module entirely — the client classes live in
+        // that module's jar, not in its main output. Common compilation keeps
+        // the fast path, and keeps not seeing the client half, which is the
+        // whole point of the split.
+        project.getConfigurations().getByName(client.getCompileClasspathConfigurationName())
+                .getAttributes()
+                .attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                        project.getObjects().named(LibraryElements.class, LibraryElements.JAR));
     }
 
     private void registerRunClient(Project project, MinecraftLibraries game,

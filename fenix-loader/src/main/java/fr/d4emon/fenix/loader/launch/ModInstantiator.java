@@ -1,6 +1,7 @@
 package fr.d4emon.fenix.loader.launch;
 
 import fr.d4emon.fenix.api.FenixMod;
+import fr.d4emon.fenix.api.Side;
 import fr.d4emon.fenix.loader.classloader.FenixClassLoader;
 import fr.d4emon.fenix.loader.discovery.ModCandidate;
 
@@ -32,24 +33,37 @@ public final class ModInstantiator {
      * @param loader     the classloader mods run inside; their jars must
      *                   already have been added to it
      * @param loadOrder  the resolved mods, dependencies first
+     * @param side       which side is running; a server skips client entry classes
      * @return the loaded mods, in the same order
      * @throws LaunchException      if an entry class cannot be loaded or instantiated
      * @throws NullPointerException if either argument is {@code null}
      */
-    public static List<LoadedMod> instantiate(FenixClassLoader loader, List<ModCandidate> loadOrder) {
+    public static List<LoadedMod> instantiate(FenixClassLoader loader, List<ModCandidate> loadOrder, Side side) {
         Objects.requireNonNull(loader, "loader");
         Objects.requireNonNull(loadOrder, "loadOrder");
+        Objects.requireNonNull(side, "side");
+
+        // A mod's client entry class is indexed apart from its common one, and
+        // a server never even hears about it. That is the whole point: the
+        // class names types a server jar does not contain, so being told to
+        // load it would be fatal rather than merely wrong.
+        List<String> indexes = side == Side.CLIENT
+                ? List.of(ModIndexReader.FILE_NAME, ModIndexReader.CLIENT_FILE_NAME)
+                : List.of(ModIndexReader.FILE_NAME);
 
         List<LoadedMod> mods = new ArrayList<>(loadOrder.size());
         for (ModCandidate candidate : loadOrder) {
             List<FenixMod> entries = new ArrayList<>();
-            for (Map.Entry<String, String> indexed : ModIndexReader.readFromJar(candidate.path()).entrySet()) {
-                if (!indexed.getKey().equals(candidate.id())) {
-                    throw new LaunchException(candidate.fileName() + " indexes mod '" + indexed.getKey()
-                            + "' but its fenix.mod.json declares '" + candidate.id()
-                            + "' — the jar was assembled inconsistently");
+            for (String index : indexes) {
+                for (Map.Entry<String, String> indexed
+                        : ModIndexReader.readFromJar(candidate.path(), index).entrySet()) {
+                    if (!indexed.getKey().equals(candidate.id())) {
+                        throw new LaunchException(candidate.fileName() + " indexes mod '" + indexed.getKey()
+                                + "' but its fenix.mod.json declares '" + candidate.id()
+                                + "' — the jar was assembled inconsistently");
+                    }
+                    entries.add(instantiate(candidate, indexed.getValue(), loader));
                 }
-                entries.add(instantiate(candidate, indexed.getValue(), loader));
             }
             mods.add(new LoadedMod(candidate.metadata(), candidate.path(), entries));
         }

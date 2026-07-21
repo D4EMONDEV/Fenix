@@ -168,7 +168,7 @@ public final class Launch {
         MixinSetup.bootstrap(loader, side, mixinConfigs);
 
         // 6. Wake the mods up, before any game class exists.
-        List<LoadedMod> mods = ModInstantiator.instantiate(loader, resolved.loadOrder());
+        List<LoadedMod> mods = ModInstantiator.instantiate(loader, resolved.loadOrder(), side);
         FenixRuntime runtime = new FenixRuntime(side, options.gameDir(), mods);
         FenixHooks.bind(runtime);
         runtime.firePreLaunch();

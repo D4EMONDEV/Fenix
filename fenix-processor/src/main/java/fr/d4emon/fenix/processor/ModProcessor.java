@@ -3,6 +3,7 @@ package fr.d4emon.fenix.processor;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -38,6 +39,7 @@ import java.util.regex.Pattern;
  * on theirs. Annotations are matched by fully qualified name.
  */
 @SupportedAnnotationTypes({ModProcessor.MOD_ANNOTATION, ModProcessor.GENERATOR_ANNOTATION})
+@SupportedOptions(ModProcessor.INDEX_FILE_OPTION)
 public final class ModProcessor extends AbstractProcessor {
 
     static final String MOD_ANNOTATION = "fr.d4emon.fenix.api.Mod";
@@ -48,6 +50,15 @@ public final class ModProcessor extends AbstractProcessor {
 
     /** Written to the jar root; read by the loader's {@code ModIndexReader}. */
     static final String INDEX_FILE = "fenix.index.json";
+
+    /**
+     * Names the index file, so a second compilation in the same jar does not
+     * overwrite the first.
+     *
+     * <p>Set by the Gradle plugin for the client source set, whose entry class
+     * has to be indexed separately — the server must never be told to load it.
+     */
+    static final String INDEX_FILE_OPTION = "fenix.indexFile";
 
     /** Mirrors the rule in {@code fr.d4emon.fenix.api.ModInfo}. */
     private static final Pattern ID_PATTERN = Pattern.compile("[a-z][a-z0-9-]{1,63}");
@@ -235,13 +246,18 @@ public final class ModProcessor extends AbstractProcessor {
         json.append("\n}\n");
 
         try (Writer writer = processingEnv.getFiler()
-                .createResource(StandardLocation.CLASS_OUTPUT, "", INDEX_FILE)
+                .createResource(StandardLocation.CLASS_OUTPUT, "", indexFile())
                 .openWriter()) {
             writer.write(json.toString());
         } catch (IOException e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                    "could not write " + INDEX_FILE + ": " + e.getMessage());
+                    "could not write " + indexFile() + ": " + e.getMessage());
         }
+    }
+
+    /** {@return the file to write, {@value #INDEX_FILE} unless told otherwise} */
+    private String indexFile() {
+        return processingEnv.getOptions().getOrDefault(INDEX_FILE_OPTION, INDEX_FILE);
     }
 
     /**

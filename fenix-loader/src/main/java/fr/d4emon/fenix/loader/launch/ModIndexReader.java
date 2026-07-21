@@ -32,6 +32,16 @@ public final class ModIndexReader {
     /** The index file, at the root of the jar. Written by {@code fenix-processor}. */
     public static final String FILE_NAME = "fenix.index.json";
 
+    /**
+     * The client-only index, written from a mod's client source set.
+     *
+     * <p>Kept apart rather than merged so a dedicated server is never even told
+     * that the class exists. Nothing there can load on a server: a class naming
+     * {@code net.minecraft.client} types has no chance of resolving against a
+     * jar that ships none of them.
+     */
+    public static final String CLIENT_FILE_NAME = "fenix.index.client.json";
+
     /** The index schema this loader understands. */
     public static final int SUPPORTED_SCHEMA = 1;
 
@@ -47,11 +57,25 @@ public final class ModIndexReader {
      * @throws NullPointerException     if the jar is {@code null}
      */
     public static Map<String, String> readFromJar(Path jar) {
+        return readFromJar(jar, FILE_NAME);
+    }
+
+    /**
+     * Reads one of a jar's indexes.
+     *
+     * @param jar  the mod jar
+     * @param file {@link #FILE_NAME} or {@link #CLIENT_FILE_NAME}
+     * @return mod id to entry class binary name; empty if the jar has no such index
+     * @throws InvalidMetadataException if the jar or its index cannot be read
+     * @throws NullPointerException     if either argument is {@code null}
+     */
+    public static Map<String, String> readFromJar(Path jar, String file) {
         Objects.requireNonNull(jar, "jar");
+        Objects.requireNonNull(file, "file");
         String source = jar.getFileName().toString();
 
         try (JarFile jarFile = new JarFile(jar.toFile())) {
-            JarEntry entry = jarFile.getJarEntry(FILE_NAME);
+            JarEntry entry = jarFile.getJarEntry(file);
             if (entry == null) {
                 return Map.of();
             }
