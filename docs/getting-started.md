@@ -196,6 +196,39 @@ public final class ModSounds extends EmberSoundProvider {
 The `.ogg` files themselves go in `assets/<mod id>/sounds/`, alongside your
 textures — those two are what Ember cannot generate for you.
 
+## Talking between client and server
+
+A channel carries one kind of payload one way, and which way is in its type —
+a `ToServer` cannot be sent to a client, and that is a compile error rather
+than a packet nobody handles.
+
+```java title="common"
+public static final ToServer<OpenSafe> OPEN_SAFE =
+        ToServer.of(Identifier.parse("mymod:open_safe"), OpenSafe.CODEC);
+public static final ToClient<SafeContents> CONTENTS =
+        ToClient.of(Identifier.parse("mymod:contents"), SafeContents.CODEC);
+```
+
+```java
+// server, once
+OPEN_SAFE.receive((open, player) -> CONTENTS.send(player, contentsAt(open.pos())));
+
+// client, once
+CONTENTS.receive(contents -> show(contents));
+
+// either, whenever
+OPEN_SAFE.send(new OpenSafe(pos));
+CONTENTS.sendAll(server, everything());
+```
+
+Handlers run on the game thread of their side, so anything they reach is safe
+to touch. **Treat what arrives on the server as untrusted**: a client can send
+anything at any time, so check that the player is actually near the block they
+claim to be opening.
+
+A client with no handler for a channel drops it, which is what lets a server
+run a mod its players do not have.
+
 ## The two sides
 
 A mod has two source directories:

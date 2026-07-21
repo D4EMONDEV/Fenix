@@ -9,6 +9,24 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Typed payloads** (`fenix-api-network`). `ToServer` and `ToClient` carry a
+  `StreamCodec` and put the direction in the type, so sending one the wrong way
+  is a compile error rather than a packet nobody handles. Server handlers are
+  given the player who sent it; a client with no handler for a channel drops it,
+  which is what lets a server run a mod its players do not have.
+
+  Every mod payload travels inside one of two envelopes Fenix registers with
+  vanilla, and that is the load-bearing decision. Vanilla builds its payload
+  table once, eagerly, from a list captured when the packet class is first
+  loaded — so a mod type in that table would have to be registered before a
+  moment decided by vanilla's own class-loading order, which could change on any
+  update and whose failure is silent: the packet decodes as a discarded payload
+  and is never heard from again. Two constant types carry no such bet, since the
+  injection that adds them runs at transform time, always before any static
+  initialiser. Mods then register whenever they like, and the ordering question
+  disappears rather than being answered. The cost is one identifier per packet;
+  the gain is that an unknown channel gets named instead of vanishing.
+
 - The Fenix API is a `fenixMod` dependency by default rather than a compile-only
   one, so a mod's build file needs no `dependencies` block at all. The two
   disagreeing was how you got a mod that compiled and then could not find, at
