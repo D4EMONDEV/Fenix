@@ -1,7 +1,6 @@
 package fr.d4emon.fenix.example.content;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -35,16 +34,20 @@ public final class RubyTallyBlock extends Block implements EntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
         if (level.isClientSide()) {
-            // The count lives on the server. Answering SUCCESS here is what
-            // makes the arm swing without the client guessing at a number.
+            if (player.isShiftKeyDown()) {
+                // The client cannot reset anything itself — it asks, and the
+                // server decides. Sending from here is fine: only the reply
+                // needs the client, and that lives in the client source set.
+                ModPayloads.RESET.send(new ModPayloads.Reset(pos));
+            }
+            // The count lives on the server. Answering SUCCESS makes the arm
+            // swing without the client guessing at a number.
             return InteractionResult.SUCCESS;
         }
-        if (level.getBlockEntity(pos) instanceof RubyTallyBlockEntity tally
+        if (!player.isShiftKeyDown()
+                && level.getBlockEntity(pos) instanceof RubyTallyBlockEntity tally
                 && player instanceof ServerPlayer serverPlayer) {
-            // true: shown above the hotbar rather than in chat, which is where
-            // a running count belongs.
-            serverPlayer.sendSystemMessage(
-                    Component.literal("Used " + tally.tally() + " time(s)"), true);
+            ModPayloads.TALLY.send(serverPlayer, new ModPayloads.Tally(pos, tally.tally()));
         }
         return InteractionResult.SUCCESS;
     }

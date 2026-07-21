@@ -36,6 +36,17 @@ public final class RubyTallyBlockEntity extends BlockEntity {
         return count;
     }
 
+    /**
+     * Puts the count back to zero.
+     *
+     * @return the new total, which is always zero
+     */
+    public int reset() {
+        count = 0;
+        setChanged();
+        return count;
+    }
+
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);

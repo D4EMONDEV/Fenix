@@ -63,6 +63,8 @@ public final class ModContent {
         CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS,
                 ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK);
         CreativeTabs.addTo(CreativeTabs.FUNCTIONAL_BLOCKS, ModBlocks.RUBY_TALLY);
+        ModPayloads.listen();
+
         CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
         CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES, ModItems.RUBY_HAMMER);
 

@@ -4,6 +4,9 @@ import fr.d4emon.fenix.api.Fenix;
 import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Mod;
 import fr.d4emon.fenix.example.content.ModContent;
+import fr.d4emon.fenix.example.content.ModPayloads;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import fr.d4emon.fenix.registry.client.EntityRendering;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 
@@ -31,5 +34,15 @@ public final class ExampleModClient implements FenixMod {
         // Runs after the common half, so the entity type is already bound.
         // Vanilla's item renderer is all a wisp needs — no model file.
         EntityRendering.register(ModContent.RUBY_WISP, ThrownItemRenderer::new);
+
+        // The other half of the tally block. Showing it needs the client, so
+        // the handler belongs here rather than beside the channel.
+        ModPayloads.TALLY.receive(tally -> {
+            var player = Minecraft.getInstance().player;
+            if (player != null) {
+                player.sendSystemMessage(Component.literal(
+                        "Tally at " + tally.pos().toShortString() + ": " + tally.count()));
+            }
+        });
     }
 }
