@@ -48,14 +48,18 @@ public abstract class CreativeScreenMixin
     /**
      * Where the pair sits, measured from the panel's top right corner.
      *
-     * <p>Nudging the arrows is meant to be a one-number edit, which is why
-     * these are here and not spread through the code below.
+     * <p>These are not eyeballed. The panel is 195 by 136, its scrollbar sits
+     * at {@code leftPos + 175} with its track starting at {@code topPos + 18},
+     * and the search box — drawn only on the search tab, but drawn — ends at
+     * {@code leftPos + 162}. That leaves exactly one free strip: 24 pixels
+     * wide, 18 tall, above the scrollbar and right of the title. Two arrows
+     * fill it precisely.
      */
     private static final int RIGHT_INSET = 20;
-    private static final int TOP_INSET = 2;
+    private static final int TOP_INSET = 1;
 
-    /** Gap between the two, wide enough that a click cannot mean both. */
-    private static final int SPACING = 14;
+    /** Flush, so the pair reads as one control rather than two. */
+    private static final int SPACING = 12;
 
     private static final Identifier BACKWARD =
             Identifier.withDefaultNamespace("recipe_book/page_backward");
