@@ -54,9 +54,8 @@ Minecraft to be tested. `./gradlew :test-harness:runDemo` shows it end to end.
 `id("fr.d4emon.fenix.dev")`: it compiles against real Minecraft and runs
 through Fenix.
 
-The one thing left before third parties can use it: publishing the artifacts
-to a public Maven repository (see phase 9). Today an external mod resolves them
-from `mavenLocal()` after `installFenix`.
+Third parties can use it: the artifacts are published to a public Maven
+repository (see below), so a mod's whole build file is one plugin line.
 
 ## Phase 5 — The API
 
@@ -77,7 +76,8 @@ first, never live remapping.
 
 ## Phase 9 — Shipping
 
-- Publish to a public Maven repository, which is the real blocker for third
-  party mod authors
+- Publish to a public Maven repository ✅ — a plain Maven repo on GitHub Pages,
+  free and login-free to consume; see [publishing.md](publishing.md)
 - The website, with generated API documentation
 - A conformance suite broad enough to trust a release
+- Maven Central, once the API stabilises

@@ -22,25 +22,32 @@ plugin, so that a mod project outside this repository picks the change up.
 ```kotlin
 pluginManagement {
     repositories {
-        mavenLocal()          // until Fenix is on a public repository
+        maven("https://d4emondev.github.io/Fenix/")   // the Fenix plugin
         gradlePluginPortal()
     }
 }
 ```
 
-`build.gradle.kts`:
+`build.gradle.kts` — the plugin adds the Fenix repository itself, so this is the
+whole file:
 
 ```kotlin
 plugins {
-    id("fr.d4emon.fenix.dev") version "0.1.0-SNAPSHOT"
+    id("fr.d4emon.fenix.dev") version "0.1.0"
 }
 
-dependencies {
-    // Everything, in one line:
-    fenixMod("fr.d4emon.fenix:fenix-api:0.1.0-SNAPSHOT")
+fenix {
+    minecraft = "26.2"
+}
+```
 
-    // Or only what you use:
-    // fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0-SNAPSHOT")
+The plugin puts Minecraft and the whole Fenix API on the compile classpath. If
+you would rather depend on individual API modules, add them explicitly:
+
+```kotlin
+dependencies {
+    // Only what you use, instead of the whole API:
+    fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")
 }
 ```
 

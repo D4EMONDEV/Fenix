@@ -18,15 +18,27 @@ actually works today.
 
 ## A new mod project
 
+```kotlin title="settings.gradle.kts"
+pluginManagement {
+    repositories {
+        maven("https://d4emondev.github.io/Fenix/")
+        gradlePluginPortal()
+    }
+}
+```
+
 ```kotlin title="build.gradle.kts"
 plugins {
     id("fr.d4emon.fenix.dev") version "0.1.0"
 }
 
-dependencies {
-    fenixMod("fr.d4emon.fenix:fenix-api:0.1.0")
+fenix {
+    minecraft = "26.2"
 }
 ```
+
+The plugin puts Minecraft and the Fenix API on the compile classpath and adds
+the Fenix repository, so that is the entire build file.
 
 ## The mod class
 

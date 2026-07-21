@@ -7,8 +7,20 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The version is now `0.1.0`, not `0.1.0-SNAPSHOT`: a statically hosted
+  repository serves releases, and a pre-release sorts below its release so
+  `>=0.1.0` would otherwise reject the loader.
+
 ### Added
 
+- **A public Maven repository.** Fenix publishes to a plain Maven repository
+  hosted on GitHub Pages — free and login-free to consume — so a mod's whole
+  build file is `id("fr.d4emon.fenix.dev")` after adding the repository to
+  `pluginManagement`. `publishFenixRepo` builds the repository locally; a
+  `Publish` workflow deploys it to Pages on a version tag. Verified by building
+  a mod project from outside the repository against the published artifacts.
 - **The `fr.d4emon.fenix.dev` Gradle plugin** — a Fenix mod's entire build file
   is now `id("fr.d4emon.fenix.dev")`. It downloads and SHA-1-verifies the
   Minecraft client into the Fenix cache, puts the game and its libraries on the

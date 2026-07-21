@@ -2,12 +2,11 @@
 
 A modern Minecraft mod loader, and the toolchain around it.
 
-> **Status: there is a real mod-development workflow.** A mod's entire build
-> file is `id("fr.d4emon.fenix.dev")` — the plugin fetches Minecraft, compiles
-> the mod against it, and `runClient` launches the game through the loader with
-> the mod installed and Mixin wired in. `examples/example-mod` is a working mod;
-> `testmod` proves transformation by changing the window title. See
-> [the roadmap](docs/roadmap.md).
+> **Status: anyone can build a Fenix mod.** The loader, the API and the Gradle
+> plugin are published to a [public Maven repository](docs/publishing.md), so a
+> mod's whole build file is `id("fr.d4emon.fenix.dev")`. The plugin fetches
+> Minecraft, compiles the mod against it, and `runClient` / `runServer` launch
+> through the loader with Mixin wired in. See [the roadmap](docs/roadmap.md).
 
 Fenix targets **Minecraft 26.2** on **Java 25**. Since Minecraft 26.1 the game
 ships unobfuscated, so there is no mapping or remapping step anywhere in this
