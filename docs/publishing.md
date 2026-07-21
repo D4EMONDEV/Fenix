@@ -38,9 +38,25 @@ git tag v0.1.0
 git push origin main --tags
 ```
 
-The **Publish** workflow then builds the Maven repository and deploys it to
-Pages. You can also run it by hand from the **Actions** tab
-(`Publish → Run workflow`).
+The **Publish** workflow then builds the Maven repository, adds this version to
+everything published before it, and deploys the lot. It also builds the
+installer on Windows and attaches it to the GitHub release. You can run the
+Maven half by hand from the **Actions** tab (`Publish → Run workflow`); the
+installer half needs a tag, since a release needs something to attach to.
+
+## Why a `maven-repo` branch
+
+A Maven repository accumulates. Every version ever published has to stay
+reachable, because somewhere a mod's build file names it and will keep naming it
+for years — an artifact that disappears is a mod that stops building, and its
+author has no way to bring it back.
+
+A Pages deployment replaces the whole site. So the repository lives on a branch
+of its own: the workflow checks it out, copies the new version in, pushes it
+back, and publishes the branch rather than the freshly built directory.
+
+The branch is also the durable copy. If Pages were wiped or reconfigured,
+nothing would be lost.
 
 To build the repository locally without deploying:
 

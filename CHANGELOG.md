@@ -7,6 +7,13 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.0] — 2026-07-22
+
+The first release: a loader that runs real Minecraft, an API a content mod can
+be written against, and an installer a player can double-click.
+
 ### Added
 
 - **Access widening**, and the menus it unblocked. Mixin already reaches a

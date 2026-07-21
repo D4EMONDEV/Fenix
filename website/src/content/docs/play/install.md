@@ -4,15 +4,15 @@ description: Install Fenix into the Minecraft Launcher.
 tableOfContents: false
 ---
 
-:::caution[Nothing to download yet]
-Fenix is pre-1.0 and has not had a release. This page describes what the first
-one will look like; until then, build the installer yourself — see
-[from source](#from-source) below.
+:::caution[Early days]
+Fenix is pre-1.0. It works, and the API will still change without warning.
 :::
 
 ## Players
 
-Download the installer, unzip it, and run **Fenix Installer**.
+Download the latest **fenix-installer-…-windows.zip** from
+[the releases page](https://github.com/D4EMONDEV/Fenix/releases), unzip it, and
+run **Fenix Installer**.
 
 It adds a Fenix profile to the Minecraft Launcher. Open the launcher, pick the
 profile, and press Play. Mods go in `.minecraft/mods`, as usual.
