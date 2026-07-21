@@ -91,6 +91,30 @@ public final class Registrar {
     }
 
     // ------------------------------------------------------------------
+    // Builders — the readable way in
+    // ------------------------------------------------------------------
+
+    /**
+     * Starts describing a block.
+     *
+     * @param name the path part of its id
+     * @return a builder; call {@code register()} when done
+     */
+    public BlockBuilder newBlock(String name) {
+        return new BlockBuilder(this, Objects.requireNonNull(name, "name"));
+    }
+
+    /**
+     * Starts describing an item.
+     *
+     * @param name the path part of its id
+     * @return a builder; call {@code register()} when done
+     */
+    public ItemBuilder newItem(String name) {
+        return new ItemBuilder(this, Objects.requireNonNull(name, "name"));
+    }
+
+    // ------------------------------------------------------------------
     // Items
     // ------------------------------------------------------------------
 
