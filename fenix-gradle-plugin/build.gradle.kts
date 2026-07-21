@@ -35,6 +35,8 @@ tasks.withType<JavaCompile>().configureEach {
 
 dependencies {
     implementation(libs.gson)
+    // Widening the compile-time copy of Minecraft is a bytecode edit.
+    implementation(libs.asm)
     implementation(libs.vineflower)
 }
 

@@ -72,7 +72,15 @@ tasks.named<ProcessResources>("processResources") {
         "minecraft_version" to providers.gradleProperty("minecraft_version").get(),
     )
     inputs.properties(tokens)
-    filesMatching("fenix.mod.json") { expand(tokens) }
+    // A literal replacement, not `expand`: that runs a Groovy template over the
+    // file, and a manifest naming a nested class -- `MenuType$MenuSupplier` --
+    // would have the `$` read as a variable and the build fail on it. Escaping
+    // would leave the source file invalid JSON, which everything else reads.
+    filesMatching("fenix.mod.json") {
+        filter { line ->
+            tokens.entries.fold(line) { text, (key, value) -> text.replace("\${$key}", value) }
+        }
+    }
 }
 
 dependencies {

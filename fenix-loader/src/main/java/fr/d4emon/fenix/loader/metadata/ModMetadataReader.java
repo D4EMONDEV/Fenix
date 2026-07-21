@@ -73,7 +73,8 @@ public final class ModMetadataReader {
                 readStringMap(root, "contact", source),
                 readSide(root, source),
                 readDepends(root, source),
-                readStringArray(root, "mixins", source));
+                readStringArray(root, "mixins", source),
+                readStringArray(root, "accessible", source));
     }
 
     /**

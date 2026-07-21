@@ -92,14 +92,19 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // javac error rather than a NoClassDefFoundError on somebody else's
         // dedicated server. Client code gets the whole jar, in its own source
         // set — see clientSourceSet below.
-        dependencies.add("compileOnly", project.files(CommonJar.of(game.clientJar(), minecraft)));
+        // A project that declares `accessible` compiles against a Minecraft
+        // with those doors already open, so what the loader will allow at run
+        // time and what javac allows now cannot disagree.
+        List<String> widen = Widening.declarations(project.file("src/main/resources/fenix.mod.json"));
+        dependencies.add("compileOnly",
+                project.files(CommonJar.of(game.clientJar(), minecraft, widen)));
         game.compileLibs().forEach(lib -> dependencies.add("compileOnly", lib));
 
         // A library is a piece of Fenix itself: it gets Minecraft and stops
         // there. Depending on the API from inside the API would be circular, and
         // there is no mod here to index or launch.
         boolean library = extension.getLibrary().get();
-        clientSourceSet(project, game, loaderVersion, apiVersion, library);
+        clientSourceSet(project, game, loaderVersion, apiVersion, library, minecraft, widen);
         if (!library) {
             if (extension.getApi().get()) {
                 // fenixMod and not compileOnly, so what a mod compiles against
@@ -120,7 +125,18 @@ public final class FenixDevPlugin implements Plugin<Project> {
                 "minecraft_version", minecraft);
         project.getTasks().named("processResources", Copy.class, task -> {
             task.getInputs().properties(tokens);
-            task.filesMatching("fenix.mod.json", copy -> copy.expand(tokens));
+            // A literal replacement rather than `expand`, which runs a Groovy
+            // template: a manifest naming a nested class — `MenuType$MenuSupplier`
+            // — would have its `$` read as a variable and fail the build.
+            // Escaping it would leave the source file invalid JSON, and
+            // everything else reads that file as JSON.
+            task.filesMatching("fenix.mod.json", copy -> copy.filter(line -> {
+                String text = line;
+                for (Map.Entry<String, String> token : tokens.entrySet()) {
+                    text = text.replace("${" + token.getKey() + "}", token.getValue());
+                }
+                return text;
+            }));
         });
 
         if (library) {
@@ -181,7 +197,8 @@ public final class FenixDevPlugin implements Plugin<Project> {
      * server is never told to load a class it cannot resolve.
      */
     private void clientSourceSet(Project project, MinecraftLibraries game, String loaderVersion,
-                                 String apiVersion, boolean library) {
+                                 String apiVersion, boolean library, String minecraft,
+                                 List<String> widen) {
         Directory clientJava = project.getLayout().getProjectDirectory().dir("src/client/java");
         if (!clientJava.getAsFile().isDirectory()) {
             // Nothing to configure for a mod with no client half, which is most
@@ -202,7 +219,8 @@ public final class FenixDevPlugin implements Plugin<Project> {
                 .extendsFrom(project.getConfigurations().getByName(main.getImplementationConfigurationName()));
 
         var dependencies = project.getDependencies();
-        dependencies.add(client.getCompileOnlyConfigurationName(), project.files(game.clientJar()));
+        dependencies.add(client.getCompileOnlyConfigurationName(),
+                project.files(CommonJar.widened(game.clientJar(), minecraft, widen)));
         game.compileLibs().forEach(lib ->
                 dependencies.add(client.getCompileOnlyConfigurationName(), lib));
         if (!library) {

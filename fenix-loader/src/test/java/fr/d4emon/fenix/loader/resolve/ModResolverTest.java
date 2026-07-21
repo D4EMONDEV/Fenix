@@ -29,7 +29,7 @@ class ModResolverTest {
 
     private static ModCandidate mod(String id, String version, ModSide side, ModDependency... depends) {
         ModMetadata metadata = new ModMetadata(
-                id, Version.parse(version), null, null, null, null, null, side, List.of(depends), null);
+                id, Version.parse(version), null, null, null, null, null, side, List.of(depends), null, null);
         return new ModCandidate(metadata, Path.of(id + ".jar"));
     }
 
@@ -166,7 +166,7 @@ class ModResolverTest {
         @Test
         void reportsDuplicateIdsWithBothFiles() {
             ModMetadata metadata = new ModMetadata(
-                    "twin", Version.parse("1.0.0"), null, null, null, null, null, ModSide.BOTH, null, null);
+                    "twin", Version.parse("1.0.0"), null, null, null, null, null, ModSide.BOTH, null, null, null);
 
             ResolutionException failure = assertThrows(ResolutionException.class, () -> ModResolver.resolve(
                     List.of(

@@ -2,7 +2,6 @@ package fr.d4emon.fenix.gradle;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,27 +50,54 @@ final class CommonJar {
      *
      * @param clientJar the full client jar
      * @param version   the Minecraft version, for the file name
+     * @param widen     what to make public, from the project's manifest
      */
-    static Path of(Path clientJar, String version) {
-        Path common = clientJar.getParent().resolve("common-" + version + ".jar");
+    static Path of(Path clientJar, String version, List<String> widen) {
+        return derive(clientJar, version, "common", true, widen);
+    }
+
+    /**
+     * {@return the whole client, with a project's declarations applied}
+     *
+     * <p>The client source set compiles against everything, so stripping is
+     * wrong here — but the doors a project asked to open have to be open on
+     * both sides of the split, or half its code would not compile.
+     *
+     * @param clientJar the full client jar
+     * @param version   the Minecraft version, for the file name
+     * @param widen     what to make public, from the project's manifest
+     */
+    static Path widened(Path clientJar, String version, List<String> widen) {
+        return widen.isEmpty() ? clientJar : derive(clientJar, version, "client", false, widen);
+    }
+
+    private static Path derive(Path clientJar, String version, String kind,
+                               boolean stripClient, List<String> widen) {
+        // The declarations are part of the identity of the result: two projects
+        // asking for different doors must not share one cached jar.
+        String suffix = widen.isEmpty() ? "" : "-aw" + Integer.toHexString(widen.hashCode());
+        Path common = clientJar.getParent().resolve(kind + "-" + version + suffix + ".jar");
         if (Files.isRegularFile(common)) {
             return common;
         }
         // Written beside and moved into place, so an interrupted build cannot
         // leave a half-written jar that every later build then trusts.
         Path partial = common.resolveSibling(common.getFileName() + ".partial");
+        Wideners wideners = new Wideners(widen);
+
         try (ZipFile source = new ZipFile(clientJar.toFile());
              ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(partial))) {
 
             for (Enumeration<? extends ZipEntry> entries = source.entries(); entries.hasMoreElements(); ) {
                 ZipEntry entry = entries.nextElement();
-                if (isClientOnly(entry.getName())) {
+                if (stripClient && isClientOnly(entry.getName())) {
                     continue;
                 }
                 out.putNextEntry(new ZipEntry(entry.getName()));
                 if (!entry.isDirectory()) {
                     try (InputStream in = source.getInputStream(entry)) {
-                        copy(in, out);
+                        byte[] bytes = in.readAllBytes();
+                        out.write(wideners.apply(entry.getName(), bytes));
                     }
                 }
                 out.closeEntry();
@@ -91,10 +117,4 @@ final class CommonJar {
         return CLIENT_ONLY.stream().anyMatch(entry::startsWith);
     }
 
-    private static void copy(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[16 * 1024];
-        for (int read = in.read(buffer); read >= 0; read = in.read(buffer)) {
-            out.write(buffer, 0, read);
-        }
-    }
 }

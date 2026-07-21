@@ -2,6 +2,8 @@ package fr.d4emon.fenix.loader.launch;
 
 import fr.d4emon.fenix.api.Side;
 import fr.d4emon.fenix.api.Version;
+import fr.d4emon.fenix.loader.access.AccessTransformer;
+import fr.d4emon.fenix.loader.access.AccessWidener;
 import fr.d4emon.fenix.loader.classloader.FenixClassLoader;
 import fr.d4emon.fenix.loader.discovery.DiscoveryResult;
 import fr.d4emon.fenix.loader.discovery.ModCandidate;
@@ -161,7 +163,19 @@ public final class Launch {
             loader.addPath(mod.path());
         }
 
-        // 5. Bring up Mixin and register every config, before any game class
+        // 5. Widen what mods asked to reach, before anything can load a class
+        // in a state they cannot use. Registered ahead of Mixin, which is what
+        // puts it first: a mixin targeting a widened member has to find it
+        // already widened.
+        AccessWidener widener = new AccessWidener();
+        for (ModCandidate mod : resolved.loadOrder()) {
+            widener.add(mod.metadata().accessible(), mod.fileName());
+        }
+        if (!widener.isEmpty()) {
+            loader.addTransformer(new AccessTransformer(widener));
+        }
+
+        // 6. Bring up Mixin and register every config, before any game class
         // can load. The loader's own config carries the lifecycle hooks; mods
         // add theirs. On a non-Minecraft game the configs are simply inert.
         List<String> mixinConfigs = new ArrayList<>();
@@ -171,7 +185,7 @@ public final class Launch {
         }
         MixinSetup.bootstrap(loader, side, mixinConfigs);
 
-        // 6. Wake the mods up, before any game class exists.
+        // 7. Wake the mods up, before any game class exists.
         List<LoadedMod> mods = ModInstantiator.instantiate(loader, resolved.loadOrder(), side);
         FenixRuntime runtime = new FenixRuntime(side, options.gameDir(), mods);
         FenixHooks.bind(runtime);

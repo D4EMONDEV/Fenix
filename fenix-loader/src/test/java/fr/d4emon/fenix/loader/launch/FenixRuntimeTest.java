@@ -55,7 +55,7 @@ class FenixRuntimeTest {
 
     private static LoadedMod mod(String id, FenixMod... entries) {
         ModMetadata metadata = new ModMetadata(id, Version.parse("1.0.0"),
-                null, null, null, null, null, ModSide.BOTH, null, null);
+                null, null, null, null, null, ModSide.BOTH, null, null, null);
         return new LoadedMod(metadata, Path.of(id + ".jar"), List.of(entries));
     }
 

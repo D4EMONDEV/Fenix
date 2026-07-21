@@ -24,6 +24,7 @@ import java.util.Objects;
  * @param contact     free-form links, such as {@code homepage} and {@code issues}
  * @param side        where the mod is allowed to run
  * @param depends     what has to be present, and in what versions
+ * @param accessible what the mod asked to reach inside the game
  * @param mixins      mixin configuration files to load from the jar
  */
 public record ModMetadata(
@@ -36,7 +37,8 @@ public record ModMetadata(
         Map<String, String> contact,
         ModSide side,
         List<ModDependency> depends,
-        List<String> mixins) {
+        List<String> mixins,
+        List<String> accessible) {
 
     /**
      * Applies the defaults for every optional field and copies the collections,
@@ -56,6 +58,7 @@ public record ModMetadata(
         side = side == null ? ModSide.BOTH : side;
         depends = depends == null ? List.of() : List.copyOf(depends);
         mixins = mixins == null ? List.of() : List.copyOf(mixins);
+        accessible = accessible == null ? List.of() : List.copyOf(accessible);
     }
 
     /**
