@@ -329,6 +329,50 @@ there is no inventory and no position to look at.
 it rather than resetting it, so anything a mod attached to the old one is gone
 and has to be put back here.
 
+## Configuration
+
+The record is the schema, the defaults and the documentation at once:
+
+```java
+public record ModConfig(boolean spawnWisps, int maxWisps, String greeting) {
+
+    public static final ModConfig DEFAULTS = new ModConfig(true, 20, "hello");
+
+    public ModConfig {
+        if (maxWisps < 1) {
+            throw new IllegalArgumentException("maxWisps must be at least 1");
+        }
+    }
+}
+```
+
+```java
+private Config<ModConfig> config;
+
+@Override
+public void onInit(Fenix fenix) {
+    config = Config.of(fenix, ModConfig.DEFAULTS);
+}
+```
+
+Then `config.get().maxWisps()`. Reading is a field read, safe from any thread.
+
+Validation goes in the compact constructor, which is the one place a value
+cannot get in without passing through. Its message reaches the player prefixed
+with the file and field, not as a stack trace.
+
+Three things it does that hand-rolled JSON does not:
+
+**A missing setting takes its default**, not `false` and `0`. Somebody who
+deletes a line, or updates to a version that added one, gets what you intended.
+
+**An unknown key is named in the log.** A mistyped setting that quietly does
+nothing is the configuration bug that costs an evening.
+
+**The file is rewritten complete after every load**, so a setting your update
+added shows up with its value rather than staying invisible until somebody reads
+a changelog.
+
 ## Generating resources
 
 Models, translations, loot tables, recipes and tags are described in Java:

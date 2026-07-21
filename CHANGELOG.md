@@ -9,6 +9,29 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Config** (`fenix-api-config`), the last of phase 8. A record is the schema,
+  the defaults and the documentation at once: its component names are the file's
+  keys, its types decide what a value may be, and the instance you pass is what a
+  missing setting falls back to. There is no separate spec to keep in step.
+
+  Gson can read records itself and does the one thing that matters wrongly: a
+  field missing from the file becomes `null` or zero, in silence. Somebody who
+  deletes a line, or who updates to a version that added one, gets a mod behaving
+  as though they had asked for nothing. So the record is built component by
+  component, taking the default for anything absent — which is also what makes it
+  possible to name an unknown key rather than drop it. A mistyped setting that
+  quietly does nothing is the configuration bug that costs an evening.
+
+  The file is rewritten complete after every load, so a setting an update added
+  appears with its value instead of staying invisible until somebody reads a
+  changelog. Validation belongs in the compact constructor, the one place a value
+  cannot get in without passing through, and the author's message reaches the
+  player prefixed with the file and field rather than as a stack trace.
+
+  Unlike the rest of the API this is pure logic, so it is the first module
+  covered by ordinary unit tests rather than by a conformance check that boots
+  the game.
+
 - **Player, entity and level events.** `PlayerEvents` (joined, left, died,
   respawned), `EntityEvents` (spawning — cancellable — and died) and
   `LevelEvents` (loaded, saving). The module had ticks and blocks, which made it
