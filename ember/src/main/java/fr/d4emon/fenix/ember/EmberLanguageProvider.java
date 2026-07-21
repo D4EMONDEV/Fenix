@@ -1,6 +1,9 @@
 package fr.d4emon.fenix.ember;
 
+import fr.d4emon.fenix.registry.CreativeTabs;
 import fr.d4emon.fenix.registry.Holder;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.CreativeModeTab;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -63,6 +66,20 @@ public abstract class EmberLanguageProvider extends EmberProvider {
      */
     protected final void add(Holder<?> content, String english) {
         add(EmberOutput.descriptionId(content.get()), english);
+    }
+
+    /**
+     * Names a creative tab.
+     *
+     * <p>The key comes from the tab itself rather than being written out, so a
+     * renamed tab cannot leave its translation behind — which in game shows up
+     * as a tab titled {@code itemGroup.your-mod.something}.
+     *
+     * @param tab     the tab, as returned by {@code Registrar.creativeTab}
+     * @param english what to call it
+     */
+    protected final void add(ResourceKey<CreativeModeTab> tab, String english) {
+        add(CreativeTabs.titleKey(tab), english);
     }
 
     /**
