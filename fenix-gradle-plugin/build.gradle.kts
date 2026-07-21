@@ -39,17 +39,22 @@ dependencies {
 }
 
 val minecraftVersion = rootProperties.getProperty("minecraft_version")
+// The API carries the game version; the loader does not. Both are baked in so a
+// mod's build file names neither.
+val apiVersion = rootProperties.getProperty("version_api") + "+mc" + minecraftVersion
 val vineflowerVersion = libs.versions.vineflower.get()
 
 tasks.processResources {
     // Declared as inputs so a version bump actually re-expands the file rather
     // than reusing a stale, cached result.
     inputs.property("version", version)
+    inputs.property("apiVersion", apiVersion)
     inputs.property("minecraftVersion", minecraftVersion)
     inputs.property("vineflowerVersion", vineflowerVersion)
     filesMatching("fenix-plugin.properties") {
         expand(
             "version" to version,
+            "api_version" to apiVersion,
             "minecraft_version" to minecraftVersion,
             "vineflower_version" to vineflowerVersion,
         )

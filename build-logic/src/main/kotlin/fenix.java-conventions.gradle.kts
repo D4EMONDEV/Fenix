@@ -12,6 +12,32 @@ plugins {
 
 val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
+/*
+ * A module's version, and whether the game version belongs in it.
+ *
+ * Derived from the project name rather than declared per module, so adding a
+ * module means adding one line to gradle.properties and nothing else. A module
+ * with no line of its own falls back to the repository version.
+ *
+ * `+mc<version>` is semver build metadata, and it goes on anything compiled
+ * against Minecraft: those artifacts are only usable with the game they were
+ * built for, and a coordinate that does not say so invites someone to find out
+ * at run time. The loader, the processor and the build tooling carry no such
+ * tie and stay plain.
+ */
+run {
+    val key = "version_" + project.name.removePrefix("fenix-").replace('-', '_')
+    val declared = providers.gradleProperty(key).orNull
+        ?: providers.gradleProperty("version").get()
+
+    val gameTied = project.name.startsWith("fenix-api") || project.name == "ember"
+    version = if (gameTied) {
+        declared + "+mc" + providers.gradleProperty("minecraft_version").get()
+    } else {
+        declared
+    }
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(libs.findVersion("java").get().requiredVersion)

@@ -21,7 +21,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Properties;
 import java.util.jar.JarFile;
 
@@ -50,6 +52,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         FenixExtension extension = project.getExtensions().create("fenix", FenixExtension.class);
         extension.getMinecraft().convention(pluginProperties.getProperty("minecraft"));
         extension.getLoaderVersion().convention(pluginProperties.getProperty("version"));
+        extension.getApiVersion().convention(pluginProperties.getProperty("api"));
         extension.getLibrary().convention(false);
         extension.getApi().convention(true);
 
@@ -70,6 +73,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
                            Configuration clientClasspath, Configuration fenixMod) {
         String minecraft = extension.getMinecraft().get();
         String loaderVersion = extension.getLoaderVersion().get();
+        String apiVersion = extension.getApiVersion().get();
 
         Path cacheRoot = project.getGradle().getGradleUserHomeDir().toPath().resolve("caches").resolve("fenix");
         MinecraftLibraries game = new MinecraftDownloader(cacheRoot).resolve(minecraft);
@@ -95,7 +99,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // there. Depending on the API from inside the API would be circular, and
         // there is no mod here to index or launch.
         boolean library = extension.getLibrary().get();
-        clientSourceSet(project, game, loaderVersion, library);
+        clientSourceSet(project, game, loaderVersion, apiVersion, library);
         if (!library) {
             if (extension.getApi().get()) {
                 // fenixMod and not compileOnly, so what a mod compiles against
@@ -103,7 +107,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
                 // how you get a mod that builds and then cannot find the class
                 // it was written against — the exact failure Fenix exists to
                 // move earlier. fenixMod feeds compileOnly, so this covers both.
-                dependencies.add(fenixMod.getName(), "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+                dependencies.add(fenixMod.getName(), "fr.d4emon.fenix:fenix-api:" + apiVersion);
             }
             dependencies.add("annotationProcessor", "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
         }
@@ -127,7 +131,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // The launch process needs the loader, the API and every Minecraft
         // library (natives included — LWJGL extracts them from the classpath).
         dependencies.add(clientClasspath.getName(), "fr.d4emon.fenix:fenix-loader:" + loaderVersion);
-        dependencies.add(clientClasspath.getName(), "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+        dependencies.add(clientClasspath.getName(), "fr.d4emon.fenix:fenix-api:" + apiVersion);
         game.compileLibs().forEach(lib -> dependencies.add(clientClasspath.getName(), lib));
         game.nativeLibs().forEach(lib -> dependencies.add(clientClasspath.getName(), lib));
 
@@ -136,7 +140,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // the 60 MB download is not paid on every configure.
         Configuration serverClasspath = project.getConfigurations().create("fenixServerClasspath");
         dependencies.add(serverClasspath.getName(), "fr.d4emon.fenix:fenix-loader:" + loaderVersion);
-        dependencies.add(serverClasspath.getName(), "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+        dependencies.add(serverClasspath.getName(), "fr.d4emon.fenix:fenix-api:" + apiVersion);
 
         Configuration vineflower = project.getConfigurations().create("fenixVineflower");
         dependencies.add(vineflower.getName(),
@@ -151,10 +155,10 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // own configuration keeps it out of run/mods, where it was being copied
         // into every client and server launch for nothing.
         Configuration ember = project.getConfigurations().create("fenixEmber");
-        dependencies.add(ember.getName(), "fr.d4emon.fenix:ember:" + loaderVersion);
+        dependencies.add(ember.getName(), "fr.d4emon.fenix:ember:" + apiVersion);
         // Still on the compile classpath: a mod writes @Generator classes
         // against it. It is only the runtime copy that was pointless.
-        dependencies.add("compileOnly", "fr.d4emon.fenix:ember:" + loaderVersion);
+        dependencies.add("compileOnly", "fr.d4emon.fenix:ember:" + apiVersion);
 
         registerRunClient(project, game, clientClasspath, fenixMod);
         registerEmber(project, game, clientClasspath, fenixMod, ember, generated);
@@ -177,7 +181,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
      * server is never told to load a class it cannot resolve.
      */
     private void clientSourceSet(Project project, MinecraftLibraries game, String loaderVersion,
-                                 boolean library) {
+                                 String apiVersion, boolean library) {
         Directory clientJava = project.getLayout().getProjectDirectory().dir("src/client/java");
         if (!clientJava.getAsFile().isDirectory()) {
             // Nothing to configure for a mod with no client half, which is most
@@ -203,7 +207,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
                 dependencies.add(client.getCompileOnlyConfigurationName(), lib));
         if (!library) {
             dependencies.add(client.getCompileOnlyConfigurationName(),
-                    "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+                    "fr.d4emon.fenix:fenix-api:" + apiVersion);
             dependencies.add(client.getAnnotationProcessorConfigurationName(),
                     "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
         }
@@ -246,7 +250,9 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.setDescription("Copies this mod and its Fenix mod dependencies into run/mods");
             task.from(jar);
             task.from(fenixMod);
-            task.exclude(element -> !isFenixMod(element.getFile()));
+            Set<String> carried = carriedInside(fenixMod);
+            task.exclude(element -> carried.contains(element.getName())
+                    || !isFenixMod(element.getFile()));
             task.into(runDir.dir("mods"));
         });
 
@@ -300,7 +306,9 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.from(fenixMod);
             // Only generation needs it, so only generation gets it.
             task.from(ember);
-            task.exclude(element -> !isFenixMod(element.getFile()));
+            Set<String> carried = carriedInside(fenixMod);
+            task.exclude(element -> carried.contains(element.getName())
+                    || !isFenixMod(element.getFile()));
             task.into(runDir.dir("mods"));
         });
 
@@ -329,7 +337,9 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.setDescription("Copies this mod and its Fenix mod dependencies into run-server/mods");
             task.from(jar);
             task.from(fenixMod);
-            task.exclude(element -> !isFenixMod(element.getFile()));
+            Set<String> carried = carriedInside(fenixMod);
+            task.exclude(element -> carried.contains(element.getName())
+                    || !isFenixMod(element.getFile()));
             task.into(runDir.dir("mods"));
         });
 
@@ -432,6 +442,34 @@ public final class FenixDevPlugin implements Plugin<Project> {
      * {@code fenix.mod.json}. Copying one into {@code mods/} makes the loader
      * refuse to start, so the sync filters them out.
      */
+    /**
+     * {@return the names of every jar carried inside the given jars}
+     *
+     * <p>The API resolves to its bundle <em>and</em> the modules the bundle
+     * already carries, because that is what a transitive dependency means to
+     * Gradle. Copying both would put each module in {@code mods} twice — once
+     * on its own and once unpacked out of the bundle — and the loader would
+     * rightly refuse two mods with one id.
+     */
+    private static Set<String> carriedInside(Iterable<File> candidates) {
+        Set<String> carried = new HashSet<>();
+        for (File file : candidates) {
+            if (!file.getName().endsWith(".jar")) {
+                continue;
+            }
+            try (JarFile jar = new JarFile(file)) {
+                jar.stream()
+                        .map(java.util.zip.ZipEntry::getName)
+                        .filter(name -> name.startsWith("META-INF/jars/") && name.endsWith(".jar"))
+                        .map(name -> name.substring("META-INF/jars/".length()))
+                        .forEach(carried::add);
+            } catch (IOException e) {
+                // Not readable as a jar, so it carries nothing we can miss.
+            }
+        }
+        return carried;
+    }
+
     private static boolean isFenixMod(File file) {
         if (!file.getName().endsWith(".jar")) {
             return false;

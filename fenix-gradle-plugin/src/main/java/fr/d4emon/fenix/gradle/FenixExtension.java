@@ -19,6 +19,19 @@ import org.gradle.api.provider.Property;
 public abstract class FenixExtension {
 
     /**
+     * The Fenix API version, defaulted from the plugin.
+     *
+     * <p>Separate from {@link #getLoaderVersion()} because they say different
+     * things and move at different speeds: the loader version is the platform
+     * contract a mod's {@code depends.fenix} names, while this one is a release
+     * of the API set — and unlike the loader, it carries the game version,
+     * because it is built against it.
+     *
+     * @return the property
+     */
+    public abstract Property<String> getApiVersion();
+
+    /**
      * Whether the whole API is a dependency of this mod, on by default.
      *
      * <p>Set it to {@code false} to name the modules you use instead:
