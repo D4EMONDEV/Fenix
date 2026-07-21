@@ -51,12 +51,15 @@ reachable, because somewhere a mod's build file names it and will keep naming it
 for years — an artifact that disappears is a mod that stops building, and its
 author has no way to bring it back.
 
-A Pages deployment replaces the whole site. So the repository lives on a branch
-of its own: the workflow checks it out, copies the new version in, pushes it
-back, and publishes the branch rather than the freshly built directory.
+So the repository lives on a branch of its own, and Pages is pointed straight at
+that branch (**Settings → Pages → Source: Deploy from a branch → **).
+Pushing is publishing: there is no artifact to upload and no deployment to wait
+for, and the branch is both what is served and the durable copy — the two cannot
+drift apart because there is only one of them.
 
-The branch is also the durable copy. If Pages were wiped or reconfigured,
-nothing would be lost.
+Deploying from the workflow instead would also have needed the 
+environment opened to tags, since by default only the default branch may deploy
+to it and releases are cut from tags.
 
 To build the repository locally without deploying:
 

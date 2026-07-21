@@ -9,10 +9,12 @@ name: Publish
 #
 # A Maven repository accumulates. Every version ever published has to stay
 # reachable, because somewhere a mod's build file names it and will keep naming
-# it for years. A Pages deployment, though, replaces the whole site — so the
-# repository is kept on a branch of its own, the new version is added to it, and
-# the branch is what gets published. The branch is also the durable copy: if
-# Pages were ever wiped, nothing would be lost.
+# it for years — an artifact that disappears is a mod that stops building.
+#
+# So the repository lives on a branch of its own, and Pages is pointed straight
+# at that branch. Pushing is publishing: there is no artifact to upload and no
+# deployment to wait for, the branch is both what is served and the durable
+# copy, and the two cannot drift apart because there is only one of them.
 
 on:
   push:
@@ -21,20 +23,15 @@ on:
 
 # One deployment at a time; let a running one finish rather than cancelling it.
 concurrency:
-  group: pages
+  group: publish
   cancel-in-progress: false
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -76,14 +73,6 @@ jobs:
           # nothing else, least of all the git objects behind them.
           rm -rf .git
 
-      - name: Upload the whole repository as a Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: published
-
-      - name: Deploy to GitHub Pages
-        id: deploy
-        uses: actions/deploy-pages@v4
 
   installer:
     # Windows, because jpackage builds for the platform it runs on and the
