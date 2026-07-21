@@ -10,6 +10,7 @@ import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.jar.JarFile;
 
 /**
  * The plugin a mod author applies: {@code id("fr.d4emon.fenix.dev")}.
@@ -73,6 +75,8 @@ public final class FenixDevPlugin implements Plugin<Project> {
         javaExtension.getToolchain().getLanguageVersion().set(JavaLanguageVersion.of(game.javaVersion()));
 
         var dependencies = project.getDependencies();
+
+        extension.getClientJar().fileValue(game.clientJar().toFile());
 
         // The mod compiles against real Minecraft names.
         dependencies.add("compileOnly", project.files(game.clientJar()));
@@ -138,6 +142,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.setDescription("Copies this mod and its Fenix mod dependencies into run/mods");
             task.from(jar);
             task.from(fenixMod);
+            task.exclude(element -> !isFenixMod(element.getFile()));
             task.into(runDir.dir("mods"));
         });
 
@@ -180,6 +185,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.setDescription("Copies this mod and its Fenix mod dependencies into run-server/mods");
             task.from(jar);
             task.from(fenixMod);
+            task.exclude(element -> !isFenixMod(element.getFile()));
             task.into(runDir.dir("mods"));
         });
 
@@ -272,6 +278,26 @@ public final class FenixDevPlugin implements Plugin<Project> {
 
     /** The public Fenix Maven repository, served from GitHub Pages. */
     private static final String FENIX_REPO = "https://d4emondev.github.io/Fenix/";
+
+    /**
+     * Whether a file is a Fenix mod, and so belongs in {@code mods/}.
+     *
+     * <p>A {@code fenixMod} dependency drags its own dependencies along, and
+     * some of those are plain libraries — {@code fenix-api-core} above all,
+     * which the loader supplies on the parent classpath and which carries no
+     * {@code fenix.mod.json}. Copying one into {@code mods/} makes the loader
+     * refuse to start, so the sync filters them out.
+     */
+    private static boolean isFenixMod(File file) {
+        if (!file.getName().endsWith(".jar")) {
+            return false;
+        }
+        try (JarFile jar = new JarFile(file)) {
+            return jar.getJarEntry("fenix.mod.json") != null;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
     private static void addRepositories(Project project) {
         var repositories = project.getRepositories();

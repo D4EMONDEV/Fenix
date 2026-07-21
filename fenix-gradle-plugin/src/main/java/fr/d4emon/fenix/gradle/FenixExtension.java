@@ -1,5 +1,6 @@
 package fr.d4emon.fenix.gradle;
 
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 
 /**
@@ -36,4 +37,13 @@ public abstract class FenixExtension {
      * circular, and there is nothing to launch. Defaults to {@code false}.
      */
     public abstract Property<Boolean> getLibrary();
+
+    /**
+     * {@return the Minecraft client jar the plugin resolved}
+     *
+     * <p>Set by the plugin, not by the build. Useful to a build that needs the
+     * game as a <em>file</em> rather than on a classpath — Fenix's own
+     * conformance tests hand it to the loader.
+     */
+    public abstract RegularFileProperty getClientJar();
 }
