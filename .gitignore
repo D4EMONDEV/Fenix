@@ -58,3 +58,6 @@ logs/
 
 # Ember's isolated game directory
 ember-run/
+
+# Claude Code: the launch config is shared, per-machine settings are not.
+.claude/settings.local.json

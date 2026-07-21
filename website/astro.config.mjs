@@ -3,8 +3,12 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 export default defineConfig({
-  // TODO: point at the real domain before the first deploy — Starlight uses it
-  // for canonical URLs and the sitemap.
+  // Canonical URLs and the sitemap.
+  //
+  // Not on GitHub Pages under this repository: that URL is the Maven repository
+  // already (https://d4emondev.github.io/Fenix/), and the two cannot share it.
+  // The site wants its own home -- a custom domain, or a user Pages site with
+  // the Maven repo staying where it is.
   site: 'https://fenix.d4emon.fr',
 
   integrations: [
@@ -22,8 +26,9 @@ export default defineConfig({
       ],
 
       sidebar: [
-        { label: 'Guides', autogenerate: { directory: 'guides' } },
-        { label: 'Reference', autogenerate: { directory: 'reference' } },
+        { label: 'Download', link: '/download/' },
+        { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
+        { label: 'Reference', items: [{ autogenerate: { directory: 'reference' } }] },
       ],
 
       editLink: {

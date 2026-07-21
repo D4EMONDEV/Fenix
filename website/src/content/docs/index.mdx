@@ -1,55 +1,91 @@
 ---
 title: Fenix
-description: A modern Minecraft mod loader.
+description: A modern Minecraft mod loader for 26.2, built on Java 25.
 template: splash
 hero:
-  tagline: A modern Minecraft mod loader. Mods that fail to compile instead of failing to launch.
+  tagline: Mods that fail to compile instead of failing to launch.
   actions:
-    - text: Get started
+    - text: Download the installer
+      link: /download/
+      icon: down-caret
+    - text: Write a mod
       link: /guides/getting-started/
       icon: right-arrow
-    - text: View on GitHub
-      link: https://github.com/D4EMONDEV/Fenix
-      icon: external
       variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
+Fenix loads mods into Minecraft 26.2, on Java 25. The game has shipped
+unobfuscated since 26.1, so a lot of what other loaders must do — remapping,
+refmaps, runtime scanning — Fenix simply does not do.
+
 :::caution[Early days]
-Fenix is under construction. The API will change without warning until `1.0`.
+Pre-1.0. The API changes without warning, and nothing is published yet.
 :::
 
-<CardGrid stagger>
+## What is different
+
+<CardGrid>
   <Card title="Errors at compile time" icon="approve-check">
-    Mods are indexed while they compile. A typo in a mod class is a `javac`
-    error with a line number, not a mod that silently never loads.
-  </Card>
-
-  <Card title="No global state" icon="puzzle">
-    Your mod is handed a context object instead of reaching for a singleton,
-    which is what lets every mod have its own logger and its own view.
-  </Card>
-
-  <Card title="Take only what you need" icon="seti:config">
-    The API is a set of small modules. If all you use is the event bus, that is
-    all you ship.
+    Mods are indexed while they compile, so a typo in a mod class is a `javac`
+    error with a line number rather than a mod that silently never loads.
+    Reaching for a client class from common code is the same — an error at
+    build time, not a crash on somebody else's server.
   </Card>
 
   <Card title="No mappings" icon="rocket">
-    Minecraft has shipped unobfuscated since 26.1, so there is no remapping
-    step anywhere. You write against real names.
+    No remapping step anywhere, and no refmaps to go stale. You write
+    `BlockBehaviour.Properties` and mean it.
   </Card>
 
   <Card title="Content that just works" icon="seti:db">
-    Registering a block means the bookkeeping vanilla does around its own —
-    state ids, item mapping — happens for yours too. The crashes that come from
+    Registering a block runs the bookkeeping vanilla does around its own —
+    state ids, item mapping, block entity validity. The crashes that come from
     skipping it are not yours to discover.
   </Card>
 
   <Card title="Resources from Java" icon="document">
-    Models, translations, loot tables, recipes and tags are described in code
-    against the content you registered, so renaming a block does not leave five
-    JSON files behind.
+    Models, translations, loot tables, recipes, tags and sounds are described in
+    code against the content you registered, so renaming a block does not leave
+    five JSON files behind.
+  </Card>
+
+  <Card title="Typed packets" icon="random">
+    A channel carries one payload one way, and which way is in its type.
+    Sending a client-to-server packet at a client does not compile.
+  </Card>
+
+  <Card title="One file to install" icon="puzzle">
+    The API is a set of small modules with their own versions, carried inside a
+    single jar. Installing is one file; so is updating.
   </Card>
 </CardGrid>
+
+## A mod, end to end
+
+```java
+@Mod("example-mod")
+public final class ExampleMod implements FenixMod {
+
+    @Override
+    public void onRegister(Fenix fenix) {
+        ModContent.REGISTRAR.apply();
+        CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS, ModBlocks.RUBY_BLOCK);
+    }
+}
+```
+
+```java
+public static final Holder<Block> RUBY_BLOCK = REGISTRAR
+        .newBlock("ruby_block")
+        .strength(3f)
+        .requiresTool()
+        .withItem()          // also registers the item that places it
+        .register();
+```
+
+Nothing in the metadata points at the mod class — the annotation processor finds
+it while your code compiles. The build file is one plugin line.
+
+[Install Fenix](/download/) or [write a mod](/guides/getting-started/).

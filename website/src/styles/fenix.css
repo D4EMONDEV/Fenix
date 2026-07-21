@@ -10,3 +10,20 @@
   --sl-color-accent: #c2410c;
   --sl-color-accent-high: #7c2d12;
 }
+
+/*
+ * The splash hero defaults to filling the viewport, which on a landing page
+ * with something to say pushes all of it below the fold.
+ */
+.hero {
+  padding-block: 2rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+}
+
+/* Cards read as a grid rather than as a list of headings. */
+.card {
+  border-color: var(--sl-color-gray-5);
+}
