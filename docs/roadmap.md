@@ -67,7 +67,8 @@ proves the loader works.
   ticks, server lifecycle, and cancellable block break/use on both sides.
 - **Registry** ✅ — a deferred `Registrar` with `Holder`s and fluent builders,
   absorbing the vanilla bookkeeping that a mod otherwise skips and crashes on.
-  Blocks, items, block entities and sounds.
+  Blocks, items, block entities, sounds and entities — with their default
+  attributes and, on the client, their renderers.
 - **Resources** ✅ — every mod jar is handed to the game as a resource pack, so
   its models, textures and translations are actually read.
 - **Creative tabs** ✅ — content goes into vanilla's tabs, or into a tab of the
@@ -76,8 +77,8 @@ proves the loader works.
   on Page Up/Page Down. Search, inventory, hotbars and op blocks travel to
   every page.
 
-Still missing, and wanted: more events (player, entity, world), entities and
-their attributes, and menus — which want networking first.
+Still missing, and wanted: more events (player, entity, world), spawn eggs and
+spawn rules, and menus — which want networking first.
 
 ## Phase 6 — Ember ✅
 

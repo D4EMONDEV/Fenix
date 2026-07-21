@@ -16,6 +16,17 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reason. Block entity types register in a second pass, after everything else,
   so a mod can declare a type and its block in whichever order reads best
   instead of ordering its fields to suit the registrar.
+- **Entities** (`Registrar.entity`), their default attributes
+  (`Registrar.attributes`) and their renderers (`EntityRendering.register`,
+  client-only). Attributes are not optional for anything living: a
+  `LivingEntity` asks vanilla for them inside its own constructor, so one that
+  is missing dies there, in vanilla code, nowhere near the mod. Vanilla's table
+  is an `ImmutableMap` and cannot be added to, and merely reading it during
+  registration would build it before the attribute registry is bound — so Fenix
+  keeps its own table and consults it first, resolving a mod's values lazily on
+  the first ask. The renderer table is vanilla's and mutable but its `register`
+  is private; an entity missing from it is invisible, which vanilla mentions
+  once in the log and never again.
 - **Sounds** (`Registrar.sound`) and `EmberSoundProvider`, which writes the
   `sounds.json` half — a sound event without it plays nothing, silently.
 - **Creative tabs**, with pages. `CreativeTabs.addTo` puts content in vanilla's

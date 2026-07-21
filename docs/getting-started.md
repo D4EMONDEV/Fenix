@@ -147,6 +147,38 @@ types are registered in a pass of their own, once every block exists.
 A block that does not implement `EntityBlock` is refused here rather than
 silently never creating its block entity.
 
+## Entities
+
+```java
+public static final Holder<EntityType<Wisp>> WISP = REGISTRAR.entity(
+        "wisp", Wisp::new, MobCategory.MISC, builder -> builder.sized(0.25f, 0.25f));
+```
+
+Anything that **lives** also needs default attributes, and this is not optional:
+a `LivingEntity` asks vanilla for them while it is being constructed, so one
+that is missing dies right there, inside vanilla code.
+
+```java
+REGISTRAR.attributes(ModContent.SPRITE, () -> Mob.createMobAttributes()
+        .add(Attributes.MAX_HEALTH, 8)
+        .add(Attributes.MOVEMENT_SPEED, 0.25));
+```
+
+Pass a lambda rather than a built value: the attribute holders are still
+unbound while your mod registers, so Fenix resolves them the first time the
+game asks.
+
+Anything **visible** needs a renderer, which is client-only:
+
+```java
+EntityRendering.register(ModContent.WISP, ThrownItemRenderer::new);
+```
+
+Keep that call in a `.client` package and behind `fenix.side() == Side.CLIENT`.
+The guard has to be a method boundary — a class naming `net.minecraft.client`
+types cannot even load on a dedicated server. An entity with no renderer is not
+an error, just invisible, which is worse.
+
 ## Sounds
 
 ```java
