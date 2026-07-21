@@ -7,6 +7,21 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The event bus** (`fenix-api-event`), the foundation the rest of the API
+  hangs off. An event carries a context — normally a record — so declaring one
+  is two lines instead of a hand-written functional interface and a combiner
+  per event, and adding a parameter later does not break every listener's
+  signature. `Event` cannot be cancelled and `CancellableEvent`'s listeners
+  return a `Flow`, so cancellability is a promise in the type rather than a
+  convention. Registration returns a `Subscription`, so a listener that only
+  matters while a screen is open or a world is loaded can be taken back off.
+  Listeners carry an `int` priority (higher runs first, ties keep registration
+  order). Dispatch takes no lock and allocates nothing: registration rebuilds a
+  sorted array behind a `volatile`, so registering or unsubscribing during a
+  dispatch is safe and simply takes effect from the next one.
+
 ### Changed
 
 - The version is now `0.1.0`, not `0.1.0-SNAPSHOT`: a statically hosted
