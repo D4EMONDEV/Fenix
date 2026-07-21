@@ -36,8 +36,8 @@ class CreativePagingMixinTest {
 
     private static final String PAGE_FILTER = "fenix$onlyCurrentPage";
     private static final String PER_PAGE_VALIDATION = "fenix$validatePerPage";
-    private static final String DRAW_ARROWS = "fenix$drawArrows";
-    private static final String CLICK_ARROWS = "fenix$clickArrows";
+    private static final String ADD_BUTTONS = "fenix$addPageButtons";
+    private static final String PAGE_KEYS = "fenix$pageKeys";
 
     @Test
     @DisplayName("the paging injections still land on Minecraft's tabs and creative screen")
@@ -63,10 +63,10 @@ class CreativePagingMixinTest {
                     "every tab would be crammed into vanilla's fourteen slots");
             assertCarries(transformed, TABS, PER_PAGE_VALIDATION,
                     "bootstrap would refuse to start the moment a mod registers a tab");
-            assertCarries(transformed, SCREEN, DRAW_ARROWS,
+            assertCarries(transformed, SCREEN, ADD_BUTTONS,
                     "there would be no arrows to change page with");
-            assertCarries(transformed, SCREEN, CLICK_ARROWS,
-                    "the arrows would be drawn but do nothing");
+            assertCarries(transformed, SCREEN, PAGE_KEYS,
+                    "Page Up and Page Down would stop turning pages");
         }
     }
 

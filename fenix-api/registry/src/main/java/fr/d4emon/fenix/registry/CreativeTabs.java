@@ -60,8 +60,20 @@ public final class CreativeTabs {
     /** Crafting materials — where most new items belong. */
     public static final ResourceKey<CreativeModeTab> INGREDIENTS = vanilla("ingredients");
 
-    /** Spawn eggs and operator tools. */
+    /** Spawn eggs. */
     public static final ResourceKey<CreativeModeTab> SPAWN_EGGS = vanilla("spawn_eggs");
+
+    /** The search tab. Present on every page — see {@link CreativePages}. */
+    public static final ResourceKey<CreativeModeTab> SEARCH = vanilla("search");
+
+    /** The survival inventory tab. Present on every page. */
+    public static final ResourceKey<CreativeModeTab> INVENTORY = vanilla("inventory");
+
+    /** Saved hotbars. Present on every page. */
+    public static final ResourceKey<CreativeModeTab> HOTBAR = vanilla("hotbar");
+
+    /** Operator blocks, shown only to operators. Present on every page. */
+    public static final ResourceKey<CreativeModeTab> OP_BLOCKS = vanilla("op_blocks");
 
     /** Declared additions, in the order they were declared. */
     private static final Map<ResourceKey<CreativeModeTab>, List<Holder<?>>> ADDITIONS =
@@ -95,6 +107,21 @@ public final class CreativeTabs {
      */
     public static List<Holder<?>> additionsFor(ResourceKey<CreativeModeTab> tab) {
         return ADDITIONS.getOrDefault(tab, List.of());
+    }
+
+    /**
+     * {@return the translation key for a tab's title}
+     *
+     * <p>The one place this is worked out. {@link Registrar#creativeTab} names
+     * the tab with it and {@code EmberLanguageProvider} translates it with it,
+     * so the two cannot drift apart — a tab showing its raw key in game is the
+     * sort of thing that ships unnoticed.
+     *
+     * @param tab the tab
+     */
+    public static String titleKey(ResourceKey<CreativeModeTab> tab) {
+        Identifier id = Objects.requireNonNull(tab, "tab").identifier();
+        return "itemGroup." + id.getNamespace() + "." + id.getPath();
     }
 
     private static ResourceKey<CreativeModeTab> vanilla(String name) {

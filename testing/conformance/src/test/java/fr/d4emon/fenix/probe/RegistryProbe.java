@@ -1,6 +1,7 @@
 package fr.d4emon.fenix.probe;
 
 import fr.d4emon.fenix.registry.CreativePages;
+import fr.d4emon.fenix.registry.CreativeTabs;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -71,13 +72,24 @@ public final class RegistryProbe {
                 "the first mod tab belongs on page 1, since vanilla fills page 0");
         require(CreativePages.count() == 2, "one mod tab means one page beyond vanilla's");
 
+        // Nothing may share a square with a tab on the same page, which is the
+        // rule vanilla enforces at bootstrap and Fenix widens rather than drops.
+        require(tab.column() < 5,
+                "mod tabs take columns 0 to 4; 5 and 6 belong to the tabs that follow the player");
+
         List<CreativeModeTab> all = BuiltInRegistries.CREATIVE_MODE_TAB.stream().toList();
         require(!CreativePages.onCurrentPage(all).contains(tab),
                 "page 0 is vanilla's alone — a mod tab there would push one of vanilla's out");
 
         CreativePages.turn(1);
-        require(CreativePages.onCurrentPage(all).equals(List.of(tab)),
-                "page 1 should hold the mod tab and nothing else");
+        List<CreativeModeTab> page = CreativePages.onCurrentPage(all);
+        require(page.contains(tab), "page 1 should hold the mod tab");
+        require(page.contains(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeTabs.SEARCH)),
+                "search follows the player to every page — losing it to reach a mod's blocks "
+                        + "is the whole reason paging feels bad elsewhere");
+        require(page.contains(BuiltInRegistries.CREATIVE_MODE_TAB.getValue(CreativeTabs.INVENTORY)),
+                "so does the inventory");
+        require(page.size() == 5, "page 1 is the mod's tab plus the four that always travel");
         CreativePages.turn(-1);
     }
 

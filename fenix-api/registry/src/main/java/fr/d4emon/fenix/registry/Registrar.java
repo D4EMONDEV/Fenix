@@ -259,8 +259,8 @@ public final class Registrar {
         defer(() -> {
             int slot = CreativePages.claimSlot();
             CreativeModeTab tab = CreativeModeTab
-                    .builder(slot < 7 ? CreativeModeTab.Row.TOP : CreativeModeTab.Row.BOTTOM, slot % 7)
-                    .title(Component.translatable("itemGroup." + modId + "." + name))
+                    .builder(CreativePages.rowOf(slot), CreativePages.columnOf(slot))
+                    .title(Component.translatable(CreativeTabs.titleKey(key)))
                     .icon(() -> new ItemStack(itemOf(icon)))
                     // No displayItems: the builder defaults to generating
                     // nothing, and CreativeTabs.addTo is the one way content

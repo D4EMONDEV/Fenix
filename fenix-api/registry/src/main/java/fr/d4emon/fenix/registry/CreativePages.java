@@ -1,10 +1,12 @@
 package fr.d4emon.fenix.registry;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Pages of creative tabs.
@@ -15,11 +17,32 @@ import java.util.List;
  *
  * <p>Page 0 is vanilla's, untouched — someone who installs a mod should still
  * find the menu exactly where they left it. Mod tabs start on page 1.
+ *
+ * <p>Four of vanilla's tabs come along to every page: search, inventory,
+ * hotbar and op blocks. They are tools rather than categories, and a player who
+ * turns the page to find a mod's blocks should not lose the search box to do
+ * it. They sit in columns 5 and 6 of both rows, which is exactly why mod tabs
+ * get {@value #TABS_PER_PAGE} slots and not fourteen.
  */
 public final class CreativePages {
 
-    /** Two rows of seven, as vanilla lays them out. */
-    public static final int TABS_PER_PAGE = 14;
+    /** Columns 0 to 4 of both rows — what is left once the tools are seated. */
+    public static final int TABS_PER_PAGE = 10;
+
+    /** Half a page: the point where slots move from the top row to the bottom. */
+    private static final int SLOTS_PER_ROW = TABS_PER_PAGE / 2;
+
+    /**
+     * The tabs that follow the player from page to page.
+     *
+     * <p>Not a category between them: they are how you search, what you are
+     * carrying, and what an operator can reach.
+     */
+    private static final Set<ResourceKey<CreativeModeTab>> ALWAYS_VISIBLE = Set.of(
+            CreativeTabs.SEARCH,
+            CreativeTabs.INVENTORY,
+            CreativeTabs.HOTBAR,
+            CreativeTabs.OP_BLOCKS);
 
     private static int current;
     private static int claimed;
@@ -35,6 +58,25 @@ public final class CreativePages {
      */
     static int claimSlot() {
         return claimed++ % TABS_PER_PAGE;
+    }
+
+    /**
+     * {@return the row a slot belongs to} Top row first, then the bottom.
+     *
+     * @param slot a slot from {@link #claimSlot()}
+     */
+    static CreativeModeTab.Row rowOf(int slot) {
+        return slot < SLOTS_PER_ROW ? CreativeModeTab.Row.TOP : CreativeModeTab.Row.BOTTOM;
+    }
+
+    /**
+     * {@return the column a slot belongs to} Never 5 or 6 — those are the
+     * tools', on every page.
+     *
+     * @param slot a slot from {@link #claimSlot()}
+     */
+    static int columnOf(int slot) {
+        return slot % SLOTS_PER_ROW;
     }
 
     /**
@@ -58,8 +100,24 @@ public final class CreativePages {
      * @param delta how far to move; negative goes back
      */
     public static void turn(int delta) {
-        int pages = count();
-        current = Math.floorMod(current + delta, pages);
+        current = Math.floorMod(current + delta, count());
+    }
+
+    /**
+     * {@return which page a tab sits on}
+     *
+     * <p>Vanilla's are all on page 0 — where they are <em>registered</em>, which
+     * is what decides whether two of them collide. The four that also travel to
+     * later pages are not registered twice, so they still answer 0.
+     *
+     * @param tab the tab to place
+     */
+    public static int pageOf(CreativeModeTab tab) {
+        if (!isModTab(tab)) {
+            return 0;
+        }
+        int index = modTabs().indexOf(tab);
+        return index < 0 ? 0 : 1 + index / TABS_PER_PAGE;
     }
 
     /**
@@ -71,28 +129,20 @@ public final class CreativePages {
         if (current == 0) {
             return tabs.stream().filter(tab -> !isModTab(tab)).toList();
         }
-        List<CreativeModeTab> mods = tabs.stream().filter(CreativePages::isModTab).toList();
+
+        List<CreativeModeTab> page = new ArrayList<>(tabs.stream().filter(CreativePages::isAlwaysVisible).toList());
+        List<CreativeModeTab> mods = modTabs();
         int from = (current - 1) * TABS_PER_PAGE;
-        int to = Math.min(from + TABS_PER_PAGE, mods.size());
-        return from >= mods.size() ? List.of() : new ArrayList<>(mods.subList(from, to));
+        if (from < mods.size()) {
+            page.addAll(mods.subList(from, Math.min(from + TABS_PER_PAGE, mods.size())));
+        }
+        return page;
     }
 
-    /**
-     * {@return which page a tab sits on}
-     *
-     * <p>Vanilla's are all on page 0. Mod tabs follow in registration order,
-     * fourteen to a page — the same order {@link #onCurrentPage} slices, so the
-     * two agree by construction.
-     *
-     * @param tab the tab to place
-     */
-    public static int pageOf(CreativeModeTab tab) {
-        if (!isModTab(tab)) {
-            return 0;
-        }
-        List<CreativeModeTab> mods = allTabs().stream().filter(CreativePages::isModTab).toList();
-        int index = mods.indexOf(tab);
-        return index < 0 ? 0 : 1 + index / TABS_PER_PAGE;
+    private static boolean isAlwaysVisible(CreativeModeTab tab) {
+        return BuiltInRegistries.CREATIVE_MODE_TAB.getResourceKey(tab)
+                .map(ALWAYS_VISIBLE::contains)
+                .orElse(Boolean.FALSE);
     }
 
     /**
@@ -106,6 +156,10 @@ public final class CreativePages {
         return BuiltInRegistries.CREATIVE_MODE_TAB.getResourceKey(tab)
                 .map(key -> !key.identifier().getNamespace().equals("minecraft"))
                 .orElse(Boolean.FALSE);
+    }
+
+    private static List<CreativeModeTab> modTabs() {
+        return allTabs().stream().filter(CreativePages::isModTab).toList();
     }
 
     private static List<CreativeModeTab> allTabs() {

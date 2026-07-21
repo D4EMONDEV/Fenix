@@ -1,13 +1,11 @@
 package fr.d4emon.fenix.mixin.registry;
 
 import fr.d4emon.fenix.registry.CreativePages;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import fr.d4emon.fenix.registry.client.CreativePageButton;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -21,14 +19,35 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 
 /**
- * Draws the arrows that turn creative pages, at the top right of the panel.
+ * Puts the page arrows on the creative screen.
  *
- * <p>The sprites are vanilla's own recipe-book arrows, so this needs no texture
- * of its own and matches whatever resource pack the player is using.
+ * <p>They live in the strip above the item grid, right of the title and above
+ * the scroll bar: the panel is 195 by 136, the scroll bar sits at
+ * {@code leftPos + 175} with its track starting at {@code topPos + 18}, and the
+ * search box — drawn only on the search tab, but drawn — ends at
+ * {@code leftPos + 162}. That leaves one free strip, and the pair fits it.
+ *
+ * <p>They are added as real widgets rather than drawn by hand, so hovering,
+ * clicking, focus and narration are the screen's job rather than this class's.
+ * Page Up and Page Down do the same thing, because reaching for the mouse to
+ * change page is the kind of thing that becomes tiring by the tenth time.
  */
 @Mixin(CreativeModeInventoryScreen.class)
 public abstract class CreativeScreenMixin
         extends AbstractContainerScreen<CreativeModeInventoryScreen.ItemPickerMenu> {
+
+    /** GLFW's page keys, the same pair Fabric bound and players already try. */
+    private static final int KEY_PAGE_UP = 266;
+    private static final int KEY_PAGE_DOWN = 267;
+
+    /** Distance from the panel's right edge to the forward arrow. */
+    private static final int RIGHT_INSET = 20;
+
+    /** Distance from the panel's top edge, leaving the arrows flush with the grid. */
+    private static final int TOP_INSET = 4;
+
+    /** Gap between the two, enough that the pair reads as two controls. */
+    private static final int SPACING = 12;
 
     /**
      * Never called — a mixin's constructors are discarded when it is merged.
@@ -41,38 +60,6 @@ public abstract class CreativeScreenMixin
         super(menu, inventory, title);
     }
 
-    /** The recipe book's arrows are 12 by 17. */
-    private static final int ARROW_WIDTH = 12;
-    private static final int ARROW_HEIGHT = 17;
-
-    /**
-     * Where the pair sits, measured from the panel's top right corner.
-     *
-     * <p>These are not eyeballed. The panel is 195 by 136, its scrollbar sits
-     * at {@code leftPos + 175} with its track starting at {@code topPos + 18},
-     * and the search box — drawn only on the search tab, but drawn — ends at
-     * {@code leftPos + 162}. That leaves exactly one free strip: 24 pixels
-     * wide, 18 tall, above the scrollbar and right of the title. Two arrows
-     * fill it precisely.
-     */
-    private static final int RIGHT_INSET = 20;
-    private static final int TOP_INSET = 1;
-
-    /** Flush, so the pair reads as one control rather than two. */
-    private static final int SPACING = 12;
-
-    private static final Identifier BACKWARD =
-            Identifier.withDefaultNamespace("recipe_book/page_backward");
-    private static final Identifier BACKWARD_HIGHLIGHTED =
-            Identifier.withDefaultNamespace("recipe_book/page_backward_highlighted");
-    private static final Identifier FORWARD =
-            Identifier.withDefaultNamespace("recipe_book/page_forward");
-    private static final Identifier FORWARD_HIGHLIGHTED =
-            Identifier.withDefaultNamespace("recipe_book/page_forward_highlighted");
-
-    // leftPos, topPos and imageWidth need no @Shadow: extending the real
-    // superclass means they are simply inherited.
-
     /**
      * Declared on the target itself, so this one does have to be shadowed.
      *
@@ -81,70 +68,50 @@ public abstract class CreativeScreenMixin
     @Shadow
     protected abstract void selectTab(CreativeModeTab tab);
 
-    @Inject(method = "extractBackground", at = @At("TAIL"))
-    private void fenix$drawArrows(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-                                  float partialTick, CallbackInfo info) {
+    @Inject(method = "init", at = @At("TAIL"))
+    private void fenix$addPageButtons(CallbackInfo info) {
         if (CreativePages.count() <= 1) {
+            // One page is the normal case, with no mods adding tabs. Nothing
+            // should appear that the player then has to wonder about.
             return;
         }
-        int y = fenix$arrowY();
-        int back = fenix$backwardX();
-        int forward = fenix$forwardX();
+        int forwardX = leftPos + imageWidth - RIGHT_INSET;
+        int y = topPos + TOP_INSET;
 
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
-                fenix$over(back, mouseX, mouseY) ? BACKWARD_HIGHLIGHTED : BACKWARD,
-                back, y, ARROW_WIDTH, ARROW_HEIGHT);
-        graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
-                fenix$over(forward, mouseX, mouseY) ? FORWARD_HIGHLIGHTED : FORWARD,
-                forward, y, ARROW_WIDTH, ARROW_HEIGHT);
+        addRenderableWidget(new CreativePageButton(
+                forwardX - SPACING, y, false, button -> fenix$turn(-1)));
+        addRenderableWidget(new CreativePageButton(
+                forwardX, y, true, button -> fenix$turn(1)));
     }
 
-    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void fenix$clickArrows(MouseButtonEvent event, boolean doubled,
-                                   CallbackInfoReturnable<Boolean> info) {
+    @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
+    private void fenix$pageKeys(KeyEvent event, CallbackInfoReturnable<Boolean> info) {
         if (CreativePages.count() <= 1) {
             return;
         }
-        int x = (int) event.x();
-        int y = (int) event.y();
-
-        if (fenix$over(fenix$backwardX(), x, y)) {
+        if (event.key() == KEY_PAGE_UP) {
             fenix$turn(-1);
-        } else if (fenix$over(fenix$forwardX(), x, y)) {
+        } else if (event.key() == KEY_PAGE_DOWN) {
             fenix$turn(1);
         } else {
             return;
         }
-        // Swallowed, or the click also lands on whatever is behind the arrow.
         info.setReturnValue(true);
     }
 
     private void fenix$turn(int delta) {
         CreativePages.turn(delta);
-        // The tab that was open is on the page we just left. Something has to
-        // be selected, and the screen would otherwise keep drawing contents
-        // belonging to a tab it no longer shows a button for.
+
+        // The tab that was open may belong to the page we just left, and the
+        // screen would otherwise keep drawing its contents with no button to
+        // match. Search and the inventory follow the player across pages, so
+        // prefer a tab that is actually new here.
         List<CreativeModeTab> tabs = CreativeModeTabs.tabs();
         if (!tabs.isEmpty()) {
-            selectTab(tabs.getFirst());
+            selectTab(tabs.stream()
+                    .filter(tab -> CreativePages.pageOf(tab) == CreativePages.current())
+                    .findFirst()
+                    .orElse(tabs.getFirst()));
         }
-    }
-
-    private int fenix$backwardX() {
-        return leftPos + imageWidth - RIGHT_INSET - SPACING;
-    }
-
-    private int fenix$forwardX() {
-        return leftPos + imageWidth - RIGHT_INSET;
-    }
-
-    private int fenix$arrowY() {
-        return topPos + TOP_INSET;
-    }
-
-    private boolean fenix$over(int arrowX, int mouseX, int mouseY) {
-        int y = fenix$arrowY();
-        return mouseX >= arrowX && mouseX < arrowX + ARROW_WIDTH
-                && mouseY >= y && mouseY < y + ARROW_HEIGHT;
     }
 }
