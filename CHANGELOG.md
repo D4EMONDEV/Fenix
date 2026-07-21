@@ -9,6 +9,22 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The installer is an application.** `Fenix Installer.exe`, built with
+  jpackage, with a window that asks two questions it has already answered and a
+  button. Installing a mod loader is something people do once, often before they
+  know what a loader is, and every question asked is a chance to answer it
+  wrongly. It carries its own Java runtime: Minecraft ships one but does not put
+  it on the `PATH`, so an installer needing one would turn away exactly the
+  people it exists for. Trimmed to the modules it uses, that is 49 MB unpacked
+  and 33 MB to download. Run with arguments, or on a machine with no screen, it
+  is still the command-line tool it was — a headless server is where scripting
+  an install actually matters.
+
+  `--type app-image` rather than msi: those need the WiX toolset installed by
+  hand, and a build that only works on a prepared machine breaks the first time
+  somebody else runs it. A signed system installer is a release concern and
+  belongs in CI.
+
 - **The API ships as one jar.** `fenix-api-<version>+mc<game>.jar` carries its
   modules under `META-INF/jars/`, and the loader unpacks anything it finds there
   and treats each as the mod it is. A player installing the API drops in one

@@ -38,6 +38,16 @@ public final class InstallerMain {
      */
     public static void main(String[] args) {
         try {
+            // Double-clicked, with a screen to draw on: show the window. Given
+            // arguments, or run over ssh, it stays the command-line tool it was
+            // — a headless machine is exactly where scripting an install
+            // matters, and popping up a window there would just hang.
+            if (args.length == 0 && !java.awt.GraphicsEnvironment.isHeadless()) {
+                Properties build = readBuildProperties();
+                InstallerWindow.open(build.getProperty("version"), build.getProperty("minecraft"),
+                        defaultMinecraftDir(), InstallerMain::payloadOrFail);
+                return;
+            }
             run(args);
         } catch (InstallException e) {
             System.err.println();
@@ -80,6 +90,15 @@ public final class InstallerMain {
         System.out.println();
         System.out.println("Open the Minecraft Launcher, pick the \"Fenix " + minecraftVersion
                 + "\" profile, and press Play.");
+    }
+
+    /** The window cannot throw a checked exception at us, so this wraps it. */
+    private static List<Installer.Library> payloadOrFail() {
+        try {
+            return extractPayload();
+        } catch (IOException e) {
+            throw new InstallException("the installer's payload cannot be read: " + e.getMessage());
+        }
     }
 
     private static Properties readBuildProperties() throws IOException {
