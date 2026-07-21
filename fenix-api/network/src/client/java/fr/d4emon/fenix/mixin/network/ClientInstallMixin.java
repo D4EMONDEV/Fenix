@@ -24,5 +24,7 @@ public class ClientInstallMixin {
     @Inject(method = "<init>", at = @At("TAIL"))
     private void fenix$installSender(CallbackInfo info) {
         ClientChannels.install();
+        // Loads the check so its handler is registered before any join.
+        fr.d4emon.fenix.network.RegistryCheck.listen();
     }
 }
