@@ -17,6 +17,25 @@ export default defineConfig({
       description: 'A modern Minecraft mod loader.',
       customCss: ['./src/styles/fenix.css'],
 
+      // English is the source of truth and lives at the root; French sits under
+      // /fr/. A page with no translation falls back to English rather than
+      // 404ing, so translations can land one at a time.
+      defaultLocale: 'root',
+      locales: {
+        root: { label: 'English', lang: 'en' },
+        fr: { label: 'Français', lang: 'fr' },
+      },
+
+      // Versioned docs, when there is a version to keep.
+      //
+      // starlight-versions is installed and snapshots the current docs into
+      // /v<x>/ on demand. It refuses an empty version list, and rightly: there
+      // is no release yet, so there is nothing older for anyone to be reading.
+      // At the first release, uncomment this and run
+      // `npx starlight-versions create 0.1`.
+      //
+      // plugins: [starlightVersions({ versions: [{ slug: '0.1' }] })],
+
       social: [
         {
           icon: 'github',
@@ -25,10 +44,39 @@ export default defineConfig({
         },
       ],
 
+      // Two audiences that want opposite things: someone installing a loader
+      // and someone writing against one. Splitting them is the difference
+      // between a page that answers your question and a page that mentions it.
       sidebar: [
-        { label: 'Download', link: '/download/' },
-        { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
-        { label: 'Reference', items: [{ autogenerate: { directory: 'reference' } }] },
+        {
+          label: 'Playing',
+          translations: { fr: 'Jouer' },
+          items: [
+            { label: 'Install Fenix', translations: { fr: 'Installer Fenix' }, slug: 'play/install' },
+            { label: 'Adding mods', translations: { fr: 'Ajouter des mods' }, slug: 'play/mods' },
+          ],
+        },
+        {
+          label: 'Making mods',
+          translations: { fr: 'Créer un mod' },
+          items: [
+            { label: 'Getting started', translations: { fr: 'Démarrer' }, slug: 'guides/getting-started' },
+            { label: 'Generating resources', translations: { fr: 'Générer les ressources' }, slug: 'guides/ember' },
+          ],
+        },
+        {
+          label: 'Why Fenix',
+          translations: { fr: 'Pourquoi Fenix' },
+          items: [
+            { label: 'Speed', translations: { fr: 'Vitesse' }, slug: 'why/performance' },
+            { label: 'Compared to other loaders', translations: { fr: 'Comparé aux autres chargeurs' }, slug: 'why/comparison' },
+          ],
+        },
+        {
+          label: 'Reference',
+          translations: { fr: 'Référence' },
+          items: [{ autogenerate: { directory: 'reference' } }],
+        },
       ],
 
       editLink: {

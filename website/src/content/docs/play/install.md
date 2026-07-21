@@ -1,5 +1,5 @@
 ---
-title: Download
+title: Install Fenix
 description: Install Fenix into the Minecraft Launcher.
 tableOfContents: false
 ---

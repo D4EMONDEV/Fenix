@@ -1,29 +1,163 @@
-/* Fenix accent: ember orange, warm greys. */
+/*
+ * Fenix — ember on charcoal.
+ *
+ * The palette is warm and narrow on purpose: a loader is infrastructure, and a
+ * site that shouts is a site nobody trusts with their game directory. Colour
+ * marks the things you can act on, and nothing else.
+ */
+
 :root {
-  --sl-color-accent-low: #3a1403;
-  --sl-color-accent: #c2410c;
+  --fenix-ember: #f97316;
+  --fenix-ember-deep: #c2410c;
+
+  --sl-color-accent-low: #431407;
+  --sl-color-accent: var(--fenix-ember-deep);
   --sl-color-accent-high: #fdba74;
+
+  --sl-color-bg: #0c0a09;
+  --sl-color-bg-nav: rgb(12 10 9 / 0.85);
+  --sl-color-bg-sidebar: #0c0a09;
+
+  --sl-color-gray-6: #141110;
+  --sl-color-gray-5: #292423;
 }
 
 :root[data-theme='light'] {
   --sl-color-accent-low: #ffedd5;
-  --sl-color-accent: #c2410c;
+  --sl-color-accent: var(--fenix-ember-deep);
   --sl-color-accent-high: #7c2d12;
+
+  --sl-color-bg: #fffbf7;
+  --sl-color-bg-nav: rgb(255 251 247 / 0.85);
+  --sl-color-bg-sidebar: #fffbf7;
 }
 
+/* ------------------------------------------------------------------ */
+/* Landing page                                                        */
+/* ------------------------------------------------------------------ */
+
 /*
- * The splash hero defaults to filling the viewport, which on a landing page
- * with something to say pushes all of it below the fold.
+ * The splash hero defaults to filling the viewport, which on a page with
+ * something to say pushes all of it below the fold.
  */
 .hero {
-  padding-block: 2rem;
+  padding-block: 1rem 2.5rem;
 }
 
 .hero h1 {
-  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-size: clamp(2.75rem, 9vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  background: linear-gradient(100deg, #fff 25%, var(--fenix-ember) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-/* Cards read as a grid rather than as a list of headings. */
+:root[data-theme='light'] .hero h1 {
+  background: linear-gradient(100deg, #1c1917 25%, var(--fenix-ember-deep) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.hero .tagline {
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  max-width: 36ch;
+}
+
+/* One ember glow, so the page has a horizon rather than a flat wall. */
+[data-has-hero] .page {
+  background:
+    radial-gradient(58rem 24rem at 50% -7rem, rgb(249 115 22 / 0.15), transparent 70%),
+    var(--sl-color-bg);
+}
+
+/* ------------------------------------------------------------------ */
+/* Cards                                                               */
+/* ------------------------------------------------------------------ */
+
 .card {
   border-color: var(--sl-color-gray-5);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.02), transparent);
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+.card:hover {
+  border-color: var(--fenix-ember-deep);
+  transform: translateY(-2px);
+}
+
+.card .icon {
+  color: var(--fenix-ember);
+}
+
+/* ------------------------------------------------------------------ */
+/* Comparison tables                                                   */
+/* ------------------------------------------------------------------ */
+
+.sl-markdown-content table {
+  font-size: var(--sl-text-sm);
+}
+
+.sl-markdown-content thead th {
+  white-space: nowrap;
+}
+
+/* Marks, so a comparison reads at a glance rather than word by word. */
+.yes { color: #4ade80; font-weight: 600; }
+.no { color: var(--sl-color-gray-4); }
+.part { color: var(--fenix-ember); }
+
+/* ------------------------------------------------------------------ */
+/* Numbers worth showing                                               */
+/* ------------------------------------------------------------------ */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin-block: 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.figures li {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.6rem;
+  background: linear-gradient(180deg, rgb(249 115 22 / 0.06), transparent);
+}
+
+.figures strong {
+  display: block;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--sl-color-white);
+  font-variant-numeric: tabular-nums;
+}
+
+.figures span {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+}
+
+/* ------------------------------------------------------------------ */
+/* Typography                                                          */
+/* ------------------------------------------------------------------ */
+
+.sl-markdown-content h2 {
+  letter-spacing: -0.02em;
+  margin-top: 2.75rem;
+}
+
+.sl-markdown-content blockquote {
+  border-inline-start-color: var(--fenix-ember-deep);
+}
+
+/* Code is the point of this site; give it a warmer frame. */
+.sl-markdown-content :not(pre) > code {
+  color: var(--sl-color-accent-high);
 }
