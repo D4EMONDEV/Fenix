@@ -41,6 +41,7 @@
             <option value="$PROJECT_DIR$/fenix-loader" />
             <option value="$PROJECT_DIR$/fenix-processor" />
             <option value="$PROJECT_DIR$/testing/conformance" />
+            <option value="$PROJECT_DIR$/testing/demo-mod" />
             <option value="$PROJECT_DIR$/testing/harness" />
             <option value="$PROJECT_DIR$/testmod" />
           </set>

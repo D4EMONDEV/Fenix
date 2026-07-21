@@ -15,3 +15,9 @@ description = "Sample mod: the smallest thing a Fenix mod author has to write."
 fenix {
     minecraft = "26.2"
 }
+
+dependencies {
+    // A mod-on-mod dependency: compiled against, and copied into run/mods so it
+    // is actually there at run time.
+    fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")
+}

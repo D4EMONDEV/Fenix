@@ -1,17 +1,17 @@
 plugins {
-    id("fenix.java-conventions")
-    // TODO: switch to `id("fr.d4emon.fenix.dev")` once the plugin can supply the
-    // Minecraft dependency and the runClient task. Until then this is a plain
-    // Java module so the build stays green.
+    id("fr.d4emon.fenix.dev")
 }
 
 description = "In-repo mod used to exercise the loader by hand while developing it."
 
-dependencies {
-    compileOnly(project(":fenix-api"))
-    annotationProcessor(project(":fenix-processor"))
+fenix {
+    minecraft = "26.2"
+}
 
-    // For the title mixin. compileOnly: Mixin is on the loader's classpath at
-    // runtime, so a mod never ships its own copy.
+dependencies {
+    // Copied into run/mods, and compiled against.
+    fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")
+
+    // For the title mixin. Provided by the loader at run time.
     compileOnly(libs.mixin)
 }

@@ -13,6 +13,7 @@
   "side": "both",
   "depends": {
     "fenix": ">=0.1.0",
-    "minecraft": "~${minecraft_version}"
+    "minecraft": "~${minecraft_version}",
+    "fenix-api-event": ">=0.1.0"
   }
 }

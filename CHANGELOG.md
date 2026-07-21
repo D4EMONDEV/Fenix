@@ -31,6 +31,21 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The dev plugin gained a `library` mode: Minecraft on the compile classpath
   and nothing else. Fenix's own API modules use it — they *are* the API, so
   depending on it would be circular, and there is nothing to launch.
+- A conformance check that the event mixins still land on their real Minecraft
+  targets, by reading back the bytecode Mixin produced. This is what catches a
+  Minecraft update moving a method the events hang off, whose failure mode is
+  otherwise an event that silently never fires.
+- `testmod` and `examples/example-mod` now listen to events — server lifecycle,
+  ticks and block breaking, including cancelling it. `testing/demo-mod` is a new
+  Minecraft-free mod so the fake-game smoke test still exercises mod loading now
+  that the other two need the real game.
+
+### Fixed
+
+- The dev plugin no longer copies non-mods into `run/mods`. A `fenixMod`
+  dependency brings its own dependencies, and a plain library among them —
+  `fenix-api-core`, which the loader supplies on the parent classpath — made the
+  loader refuse to start.
 
 ### Changed
 

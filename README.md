@@ -42,7 +42,8 @@ it does it the way it would be designed today.
 | `ember/`               | Generates assets and data from plain Java instead of hand-written JSON |
 | `testing/harness/`     | A fake game, so the loader is testable without Minecraft             |
 | `testing/conformance/` | Checks that require loading real Minecraft classes                   |
-| `testmod/`             | Mod used to exercise the loader by hand                              |
+| `testing/demo-mod/`    | A Minecraft-free mod, so the fake game can exercise mod loading      |
+| `testmod/`             | Mod used to exercise the loader by hand, in the real game            |
 | `examples/`            | Samples that double as documentation                                 |
 | `website/`             | The Fenix site                                                       |
 | `docs/`                | Developer documentation and architecture decisions                   |

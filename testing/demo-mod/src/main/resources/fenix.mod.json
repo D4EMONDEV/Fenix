@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "demo-mod",
+  "version": "${version}",
+  "name": "Fenix Demo Mod",
+  "description": "Minecraft-free mod for the fake-game smoke test.",
+  "authors": ["D4EMON"],
+  "license": "Apache-2.0",
+  "side": "both",
+  "depends": {
+    "fenix": ">=0.1.0"
+  }
+}

@@ -27,9 +27,13 @@ dependencies {
     demoRuntime(libs.gson)
 }
 
+// demo-mod, not testmod: the fake game has no Minecraft, so the mod it loads
+// must not need any. testmod is a real Minecraft mod now.
+evaluationDependsOn(":demo-mod")
+
 val stageDemoMods = tasks.register<Sync>("stageDemoMods") {
     description = "Copies the demo mods into the demo game directory"
-    from(project(":testmod").tasks.named("jar"))
+    from(project(":demo-mod").tasks.named("jar"))
     into(layout.buildDirectory.dir("demo/mods"))
 }
 

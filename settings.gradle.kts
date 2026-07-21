@@ -68,6 +68,9 @@ project(":test-harness").projectDir = settingsDir.resolve("testing/harness")
 include(":conformance")
 project(":conformance").projectDir = settingsDir.resolve("testing/conformance")
 
+include(":demo-mod")
+project(":demo-mod").projectDir = settingsDir.resolve("testing/demo-mod")
+
 include(":testmod")
 
 include(":example-mod")
