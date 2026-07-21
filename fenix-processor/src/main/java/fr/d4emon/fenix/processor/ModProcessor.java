@@ -170,6 +170,15 @@ public final class ModProcessor extends AbstractProcessor {
             error(type, "@Generator class " + name + " needs a public no-argument constructor");
         }
         checkImplements(type, name, GENERATOR_INTERFACE, "@Generator");
+        if (!indexFile().equals(INDEX_FILE)) {
+            // Ember reads only the common index, so a generator here would be
+            // quietly skipped and its files never written. Refusing says the
+            // one thing worth saying instead of leaving it to be discovered by
+            // a missing model in game.
+            error(type, "@Generator class " + name + " is in the client source set, where Ember "
+                    + "never looks. Generators describe files against registered content, and their "
+                    + "output lands in src/main/generated — move it to src/main/java");
+        }
 
         generators.add(processingEnv.getElementUtils().getBinaryName(type).toString());
     }
