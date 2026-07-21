@@ -42,6 +42,11 @@ val minecraftVersion = rootProperties.getProperty("minecraft_version")
 val vineflowerVersion = libs.versions.vineflower.get()
 
 tasks.processResources {
+    // Declared as inputs so a version bump actually re-expands the file rather
+    // than reusing a stale, cached result.
+    inputs.property("version", version)
+    inputs.property("minecraftVersion", minecraftVersion)
+    inputs.property("vineflowerVersion", vineflowerVersion)
     filesMatching("fenix-plugin.properties") {
         expand(
             "version" to version,
@@ -58,6 +63,17 @@ gradlePlugin {
             implementationClass = "fr.d4emon.fenix.gradle.FenixDevPlugin"
             displayName = "Fenix development plugin"
             description = "Downloads Minecraft, wires the Fenix loader and API, and adds runClient."
+        }
+    }
+}
+
+publishing {
+    repositories {
+        // The same on-disk repository the main build publishes into, so the
+        // plugin ships alongside the loader and API for GitHub Pages.
+        maven {
+            name = "pages"
+            url = file("../build/fenix-maven-repo").toURI()
         }
     }
 }

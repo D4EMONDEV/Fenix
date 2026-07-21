@@ -41,3 +41,21 @@ tasks.register("installFenix") {
     })
     dependsOn(gradle.includedBuild("fenix-gradle-plugin").task(":publishToMavenLocal"))
 }
+
+/**
+ * Assembles the whole Fenix Maven repository under `build/fenix-maven-repo`,
+ * which the publish workflow deploys to GitHub Pages. This is the public
+ * counterpart of `installFenix` — same artifacts, a shareable repository
+ * instead of the developer's `~/.m2`.
+ */
+tasks.register("publishFenixRepo") {
+    group = "fenix"
+    description = "Builds the public Fenix Maven repository into build/fenix-maven-repo"
+
+    dependsOn(provider {
+        subprojects
+            .filter { it.plugins.hasPlugin("maven-publish") }
+            .map { "${it.path}:publishAllPublicationsToPagesRepository" }
+    })
+    dependsOn(gradle.includedBuild("fenix-gradle-plugin").task(":publishAllPublicationsToPagesRepository"))
+}

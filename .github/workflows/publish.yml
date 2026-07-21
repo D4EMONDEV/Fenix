@@ -1,0 +1,54 @@
+name: Publish
+
+# Builds the Fenix Maven repository and deploys it to GitHub Pages, so mod
+# authors can resolve the loader, the API and the Gradle plugin.
+#
+# Runs on a version tag (v1.2.3), or on demand from the Actions tab. The version
+# published is whatever is set in gradle.properties — tag and property should
+# match; the tag is just the trigger.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# One deployment at a time; let a running one finish rather than cancelling it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build the Maven repository
+        run: ./gradlew publishFenixRepo --stacktrace
+
+      - name: Upload the repository as a Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/fenix-maven-repo
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

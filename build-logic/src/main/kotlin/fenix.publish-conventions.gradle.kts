@@ -16,6 +16,15 @@ extensions.configure<JavaPluginExtension> {
 }
 
 publishing {
+    repositories {
+        // A plain Maven repository laid out on disk, which the publish workflow
+        // deploys to GitHub Pages. Every module writes into the same root-level
+        // directory so the whole thing deploys as one site.
+        maven {
+            name = "pages"
+            url = rootProject.layout.buildDirectory.dir("fenix-maven-repo").get().asFile.toURI()
+        }
+    }
     publications.register<MavenPublication>("maven") {
         from(components["java"])
 

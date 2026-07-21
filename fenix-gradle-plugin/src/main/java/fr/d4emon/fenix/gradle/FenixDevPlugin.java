@@ -257,9 +257,18 @@ public final class FenixDevPlugin implements Plugin<Project> {
         }
     }
 
+    /** The public Fenix Maven repository, served from GitHub Pages. */
+    private static final String FENIX_REPO = "https://d4emondev.github.io/Fenix/";
+
     private static void addRepositories(Project project) {
         var repositories = project.getRepositories();
+        // The Fenix artifacts: locally from a developer's ~/.m2, or publicly from
+        // GitHub Pages. mavenLocal comes first so an in-development loader wins.
         repositories.mavenLocal();
+        repositories.maven(repo -> {
+            repo.setName("Fenix");
+            repo.setUrl(FENIX_REPO);
+        });
         repositories.mavenCentral();
         repositories.maven(repo -> {
             repo.setName("FabricMC");
