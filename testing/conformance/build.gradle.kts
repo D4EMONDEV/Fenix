@@ -29,6 +29,7 @@ dependencies {
     // registrar, then gets repackaged into a jar the loader discovers.
     testCompileOnly(files(fenix.clientJar))
     testCompileOnly(project(":fenix-api-registry"))
+    testCompileOnly(project(":fenix-api-network"))
 }
 
 // Compiling against Minecraft, and booting its registries, both need
@@ -54,11 +55,13 @@ dependencies {
 evaluationDependsOn(":fenix-api-event")
 evaluationDependsOn(":fenix-api-registry")
 evaluationDependsOn(":fenix-api-resource")
+evaluationDependsOn(":fenix-api-network")
 
 val clientJar = fenix.clientJar
 val eventJar = project(":fenix-api-event").tasks.named<Jar>("jar").flatMap { it.archiveFile }
 val registryJar = project(":fenix-api-registry").tasks.named<Jar>("jar").flatMap { it.archiveFile }
 val resourceJar = project(":fenix-api-resource").tasks.named<Jar>("jar").flatMap { it.archiveFile }
+val networkJar = project(":fenix-api-network").tasks.named<Jar>("jar").flatMap { it.archiveFile }
 
 tasks.test {
     // Mixin bootstraps once per JVM and never resets, so each test class that
@@ -74,10 +77,12 @@ tasks.test {
     inputs.file(eventJar).withPropertyName("eventJar")
     inputs.file(registryJar).withPropertyName("registryJar")
     inputs.file(resourceJar).withPropertyName("resourceJar")
+    inputs.file(networkJar).withPropertyName("networkJar")
     doFirst {
         systemProperty("fenix.test.clientJar", clientJar.get().asFile.absolutePath)
         systemProperty("fenix.test.eventJar", eventJar.get().asFile.absolutePath)
         systemProperty("fenix.test.registryJar", registryJar.get().asFile.absolutePath)
         systemProperty("fenix.test.resourceJar", resourceJar.get().asFile.absolutePath)
+        systemProperty("fenix.test.networkJar", networkJar.get().asFile.absolutePath)
     }
 }

@@ -85,6 +85,22 @@ class RegistryConformanceTest {
         }), "the probe reports a failed check by throwing");
     }
 
+    @Test
+    @DisplayName("a payload survives the real wire format and reaches its handler")
+    void payloadsTravelIntact() throws IOException {
+        Path clientJar = requiredFile("fenix.test.clientJar");
+        Path networkJar = requiredFile("fenix.test.networkJar");
+
+        Path mods = Files.createDirectories(gameDir.resolve("mods"));
+        Files.copy(networkJar, mods.resolve(networkJar.getFileName()));
+
+        assertDoesNotThrow(() -> Launch.run(new String[] {
+                "--fenix.gameJar", clientJar.toAbsolutePath().toString(),
+                "--fenix.gameMain", "fr.d4emon.fenix.probe.NetworkProbe",
+                "--fenix.gameDir", gameDir.toAbsolutePath().toString(),
+        }), "the probe reports a failed check by throwing");
+    }
+
     /** Packages the compiled probe classes into a jar shaped like a real mod. */
     private void writeProbeMod(Path jar) throws IOException {
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(jar))) {
