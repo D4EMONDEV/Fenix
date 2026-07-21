@@ -44,6 +44,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         FenixExtension extension = project.getExtensions().create("fenix", FenixExtension.class);
         extension.getMinecraft().convention(pluginProperties.getProperty("minecraft"));
         extension.getLoaderVersion().convention(pluginProperties.getProperty("version"));
+        extension.getLibrary().convention(false);
 
         addRepositories(project);
 
@@ -73,11 +74,18 @@ public final class FenixDevPlugin implements Plugin<Project> {
 
         var dependencies = project.getDependencies();
 
-        // The mod compiles against real Minecraft names and the Fenix API.
+        // The mod compiles against real Minecraft names.
         dependencies.add("compileOnly", project.files(game.clientJar()));
         game.compileLibs().forEach(lib -> dependencies.add("compileOnly", lib));
-        dependencies.add("compileOnly", "fr.d4emon.fenix:fenix-api:" + loaderVersion);
-        dependencies.add("annotationProcessor", "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
+
+        // A library is a piece of Fenix itself: it gets Minecraft and stops
+        // there. Depending on the API from inside the API would be circular, and
+        // there is no mod here to index or launch.
+        boolean library = extension.getLibrary().get();
+        if (!library) {
+            dependencies.add("compileOnly", "fr.d4emon.fenix:fenix-api:" + loaderVersion);
+            dependencies.add("annotationProcessor", "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
+        }
 
         // Let a mod template its metadata: ${version} and ${minecraft_version}
         // in fenix.mod.json are filled in from the build, so the declared
@@ -89,6 +97,11 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.getInputs().properties(tokens);
             task.filesMatching("fenix.mod.json", copy -> copy.expand(tokens));
         });
+
+        if (library) {
+            // Nothing to run, and nothing to write run configurations for.
+            return;
+        }
 
         // The launch process needs the loader, the API and every Minecraft
         // library (natives included — LWJGL extracts them from the classpath).

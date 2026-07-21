@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8.7",
+  "package": "fr.d4emon.fenix.mixin.event",
+  "compatibilityLevel": "JAVA_25",
+  "injectors": {
+    "_comment": "Every injection must land. These target real Minecraft methods that exist whenever this module is loaded, so a signature that stopped matching should fail loudly rather than leave an event that silently never fires.",
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "MinecraftServerMixin",
+    "ServerPlayerGameModeMixin"
+  ],
+  "client": [
+    "MinecraftTickMixin",
+    "MultiPlayerGameModeMixin"
+  ],
+  "server": []
+}

@@ -26,4 +26,14 @@ public abstract class FenixExtension {
      * {@return the Fenix loader version to compile and launch with}
      */
     public abstract Property<String> getLoaderVersion();
+
+    /**
+     * {@return whether this project is a Fenix building block rather than a mod}
+     *
+     * <p>A library gets Minecraft on its compile classpath and nothing else: no
+     * API dependency, no annotation processor, and no run tasks. Fenix's own API
+     * modules set this — they <em>are</em> the API, so depending on it would be
+     * circular, and there is nothing to launch. Defaults to {@code false}.
+     */
+    public abstract Property<Boolean> getLibrary();
 }

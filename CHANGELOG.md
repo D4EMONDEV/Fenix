@@ -21,6 +21,16 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   order). Dispatch takes no lock and allocates nothing: registration rebuilds a
   sorted array behind a `volatile`, so registering or unsubscribing during a
   dispatch is safe and simply takes effect from the next one.
+- The first game events, fired by mixins: `ClientEvents` (tick), `ServerEvents`
+  (started, tick), and cancellable block events on both sides —
+  `BlockEvents.BREAK`/`USE` on the server, where cancelling actually holds, and
+  `ClientBlockEvents.ATTACK`/`USE` for immediate feedback that never enforces
+  anything. Their mixin config requires every injection to land, so a signature
+  that stops matching in a future Minecraft fails loudly instead of leaving an
+  event that silently never fires.
+- The dev plugin gained a `library` mode: Minecraft on the compile classpath
+  and nothing else. Fenix's own API modules use it — they *are* the API, so
+  depending on it would be circular, and there is nothing to launch.
 
 ### Changed
 
