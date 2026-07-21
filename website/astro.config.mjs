@@ -15,6 +15,17 @@ export default defineConfig({
     starlight({
       title: 'Fenix',
       description: 'A modern Minecraft mod loader.',
+
+      // The mark beside the name, not instead of it: a logo nobody has seen
+      // before does not tell a first visitor what site they are on.
+      logo: { src: './src/assets/logo.svg', alt: '' },
+
+      favicon: '/favicon.svg',
+      head: [
+        // Safari still does not take an SVG favicon, and a broken favicon is
+        // the one asset every visitor sees.
+        { tag: 'link', attrs: { rel: 'icon', href: '/favicon.png', type: 'image/png', sizes: '64x64' } },
+      ],
       customCss: ['./src/styles/fenix.css'],
 
       // English is the source of truth and lives at the root; French sits under
