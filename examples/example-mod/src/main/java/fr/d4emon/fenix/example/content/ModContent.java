@@ -1,5 +1,6 @@
 package fr.d4emon.fenix.example.content;
 
+import fr.d4emon.fenix.registry.CreativeTabs;
 import fr.d4emon.fenix.registry.Registrar;
 
 /**
@@ -27,5 +28,12 @@ public final class ModContent {
         ModBlocks.load();
         ModItems.load();
         REGISTRAR.apply();
+
+        // Without this the content exists but is unreachable in game except
+        // through /give.
+        CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS,
+                ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK);
+        CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
+        CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES, ModItems.RUBY_HAMMER);
     }
 }

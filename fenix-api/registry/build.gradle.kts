@@ -9,3 +9,8 @@ description = "Content registration: blocks, items, and the vanilla bookkeeping 
 fenix {
     library = true
 }
+
+dependencies {
+    // The mixin that adds content to creative tabs.
+    compileOnly(libs.mixin)
+}
