@@ -10,13 +10,19 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -70,6 +76,7 @@ public final class Registrar {
 
     private final String modId;
     private final List<Runnable> pending = new ArrayList<>();
+    private final List<Runnable> pendingLate = new ArrayList<>();
     private boolean applied;
 
     private Registrar(String modId) {
@@ -286,6 +293,93 @@ public final class Registrar {
     }
 
     // ------------------------------------------------------------------
+    // Block entities
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares the type behind a block that stores something.
+     *
+     * <pre>{@code
+     * public static final Holder<BlockEntityType<SafeBlockEntity>> SAFE =
+     *         REGISTRAR.blockEntity("safe", SafeBlockEntity::new, ModBlocks.SAFE);
+     * }</pre>
+     *
+     * <p>The blocks may be declared before or after this call. Block entity
+     * types are registered in a pass of their own, after everything else, so
+     * the order a mod happens to write its fields in cannot matter.
+     *
+     * @param <T>     the block entity class
+     * @param name    the path part of its id
+     * @param factory builds one, given where it is and what it is
+     * @param blocks  the blocks that carry it; at least one
+     * @return a handle, bound once {@link #apply()} runs
+     * @throws IllegalArgumentException if no block is given
+     */
+    @SafeVarargs
+    public final <T extends BlockEntity> Holder<BlockEntityType<T>> blockEntity(
+            String name, BlockEntityType.BlockEntitySupplier<T> factory, Holder<Block>... blocks) {
+        Objects.requireNonNull(factory, "factory");
+        if (blocks.length == 0) {
+            throw new IllegalArgumentException(name + " has no blocks — a block entity type that "
+                    + "belongs to no block can never be created, and nothing would say so");
+        }
+        Identifier id = identifier(name);
+        Holder<BlockEntityType<T>> holder = new Holder<>(id);
+
+        deferLate(() -> {
+            Set<Block> valid = new LinkedHashSet<>();
+            for (Holder<Block> block : blocks) {
+                valid.add(requireEntityBlock(block, id));
+            }
+            ResourceKey<BlockEntityType<?>> key = ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, id);
+            holder.bind(Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key,
+                    new BlockEntityType<>(factory, valid)));
+        });
+        return holder;
+    }
+
+    /**
+     * A block that does not answer {@code EntityBlock} never creates its block
+     * entity: the type is registered, the block places fine, and whatever it
+     * was meant to store is quietly never there. Refusing here turns a bug
+     * found hours later in game into one found at startup.
+     */
+    private static Block requireEntityBlock(Holder<Block> holder, Identifier type) {
+        Block block = Objects.requireNonNull(holder, "block").get();
+        if (!(block instanceof EntityBlock)) {
+            throw new IllegalArgumentException(holder.id() + " carries the block entity " + type
+                    + " but does not implement EntityBlock, so the game would never create one");
+        }
+        return block;
+    }
+
+    // ------------------------------------------------------------------
+    // Sounds
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a sound event.
+     *
+     * <p>The event is only half of a sound: the other half is an entry in
+     * {@code sounds.json} naming the ogg files to play, which
+     * {@code EmberSoundProvider} generates.
+     *
+     * @param name the path part of its id, and the name used in {@code sounds.json}
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<SoundEvent> sound(String name) {
+        Identifier id = identifier(name);
+        Holder<SoundEvent> holder = new Holder<>(id);
+
+        defer(() -> {
+            ResourceKey<SoundEvent> key = ResourceKey.create(Registries.SOUND_EVENT, id);
+            holder.bind(Registry.register(BuiltInRegistries.SOUND_EVENT, key,
+                    SoundEvent.createVariableRangeEvent(id)));
+        });
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
     // Applying
     // ------------------------------------------------------------------
 
@@ -301,15 +395,31 @@ public final class Registrar {
         for (Runnable registration : pending) {
             registration.run();
         }
+        // Anything that needs another registration to have happened already —
+        // block entity types need their blocks — waits for this second pass,
+        // so a mod never has to order its own declarations to suit us.
+        for (Runnable registration : pendingLate) {
+            registration.run();
+        }
         pending.clear();
+        pendingLate.clear();
     }
 
     private void defer(Runnable registration) {
+        requireOpen();
+        pending.add(registration);
+    }
+
+    private void deferLate(Runnable registration) {
+        requireOpen();
+        pendingLate.add(registration);
+    }
+
+    private void requireOpen() {
         if (applied) {
             throw new IllegalStateException(modId + " declared content after registering — the game's "
                     + "registries are shut by now, so this would never have taken effect");
         }
-        pending.add(registration);
     }
 
     private Identifier identifier(String name) {
