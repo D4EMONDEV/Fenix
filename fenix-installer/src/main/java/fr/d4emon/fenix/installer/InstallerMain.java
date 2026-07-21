@@ -44,7 +44,9 @@ public final class InstallerMain {
             // matters, and popping up a window there would just hang.
             if (args.length == 0 && !java.awt.GraphicsEnvironment.isHeadless()) {
                 Properties build = readBuildProperties();
-                InstallerWindow.open(build.getProperty("version"), build.getProperty("minecraft"),
+                InstallerWindow.open(build.getProperty("version"),
+                        List.of(build.getProperty("supported", build.getProperty("minecraft"))
+                                .split("\s*,\s*")),
                         defaultMinecraftDir(), InstallerMain::payloadOrFail);
                 return;
             }

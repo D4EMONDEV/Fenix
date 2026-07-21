@@ -7,7 +7,18 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The installer offers the game versions it finds rather than asking for one to
+  be typed. That text box was its last remaining way to fail: a name that did
+  not match a folder produced an error the player then had to go and check. The
+  list is what the launcher has actually run — the same condition the install
+  needs — so anything offered will work, and versions sort newest first counting
+  numbers as numbers, since "26.10" above "26.2" is noticed at once and trusted
+  less for. A second list carries the Fenix versions available for the game
+  version chosen: one today, and honestly so, because the loader and its
+  libraries travel inside the installer and the only version it can lay down is
+  the one it carries.
 
 ## [0.1.0] — 2026-07-22
 
