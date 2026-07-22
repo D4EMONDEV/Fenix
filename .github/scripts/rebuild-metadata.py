@@ -15,10 +15,18 @@ metadata is written from them.
 Usage: rebuild-metadata.py <repository-root>
 """
 
+import hashlib
 import sys
 import re
 from pathlib import Path
 from xml.sax.saxutils import escape
+
+# What Gradle writes beside every file it publishes. Rewriting the metadata
+# without these leaves four files claiming a hash the metadata no longer has,
+# and a client that verifies them refuses the repository -- which is worse than
+# the incomplete list this script exists to fix.
+CHECKSUMS = {"md5": hashlib.md5, "sha1": hashlib.sha1,
+             "sha256": hashlib.sha256, "sha512": hashlib.sha512}
 
 TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 <metadata>
@@ -68,19 +76,31 @@ def rebuild(metadata_file):
         return False
 
     before = re.findall(r"<version>(.*?)</version>", existing)
-    metadata_file.write_text(TEMPLATE.format(
+    rebuilt = TEMPLATE.format(
         group=escape(group.group(1)),
         artifact=escape(artifact.group(1)),
         latest=escape(versions[-1]),
         release=escape(versions[-1]),
         versions="\n".join(f"      <version>{escape(v)}</version>" for v in versions),
         updated=escape(updated.group(1)),
-    ), encoding="utf-8")
+    )
+    if rebuilt == existing:
+        return False
+
+    # Hashed as written, not as formatted: the checksum has to describe the
+    # bytes on disk down to the last newline, or a client verifying it rejects
+    # the whole repository. The checksum files themselves hold the bare digest,
+    # which is what Maven reads.
+    raw = rebuilt.encode("utf-8")
+    metadata_file.write_bytes(raw)
+    for suffix, algorithm in CHECKSUMS.items():
+        metadata_file.with_name(metadata_file.name + "." + suffix).write_text(
+            algorithm(raw).hexdigest(), encoding="utf-8")
 
     added = [v for v in versions if v not in before]
-    if added:
-        print(f"  {artifact.group(1)}: {', '.join(before)} + {', '.join(added)}")
-    return bool(added)
+    print(f"  {artifact.group(1)}: {', '.join(before) or 'nothing'}"
+          f" + {', '.join(added) or 'no new version, rewritten'}")
+    return True
 
 
 def main():
