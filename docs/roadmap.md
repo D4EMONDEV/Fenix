@@ -1,7 +1,10 @@
 # Roadmap
 
 Phases are ordered so that each one is verifiable on its own. Phases 0 to 4 and
-6 are done; phase 5 is in progress and phases 7 onward are not started.
+6 to 8 are done; phase 5 is in progress and phase 9 is half done.
+
+The numbering is the order they were built in, not their importance — phase 5
+is last to close because "the API" has no natural end.
 
 ## Phase 0 — Scaffolding ✅
 
@@ -86,7 +89,18 @@ proves the loader works.
   are applied by the loader at run time *and* by the Gradle plugin to the jar
   the mod compiles against, so the two cannot disagree.
 
-Still missing, and wanted: spawn eggs and spawn rules.
+Still missing, in the order a mod author hits them:
+
+- **Keybindings.** Nothing today. A client mod that wants a key has to reach
+  into `KeyMapping` itself, and every one that does will do it differently.
+- **Render layers.** Every block Fenix registers renders opaque. There is no
+  way to say cutout or translucent, so glass, plants and anything with a hole
+  in it are simply not writable yet.
+- **Spawn eggs and spawn rules.** An entity can be registered and then only
+  summoned by command.
+- **The rest of the registries** — particles, effects, enchantments, fluids,
+  recipe serializers. Each is a small addition on the pattern `menu` set; the
+  work is knowing which vanilla bookkeeping each one skips.
 
 ## Phase 6 — Ember ✅
 
@@ -131,6 +145,14 @@ Textures and ogg files are what it cannot generate.
 
 - Publish to a public Maven repository ✅ — a plain Maven repo on GitHub Pages,
   free and login-free to consume; see [publishing.md](publishing.md)
-- The website, with generated API documentation
-- A conformance suite broad enough to trust a release
+- The website — **written, and hosted nowhere.** `d4emondev.github.io/Fenix/`
+  is the Maven repository, and a repository can only serve one Pages site. It
+  needs either a custom domain or a `D4EMONDEV.github.io` user site; nothing
+  in CI builds or deploys `website/` today.
+- Generated API documentation — every module publishes a `-javadoc` jar, but
+  nothing aggregates them into something readable in a browser.
+- A conformance suite broad enough to trust a release — ten checks today, each
+  verified to fail when the thing it covers is sabotaged. Untested end to end:
+  the installer against a real `.minecraft`, and Ember's output against a real
+  resource load.
 - Maven Central, once the API stabilises
