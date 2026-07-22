@@ -76,6 +76,16 @@ tasks.test {
     // is deliberately not on the test runtime classpath.
     exclude("fr/d4emon/fenix/probe/**")
 
+    // The worldgen check reads what Ember actually wrote and committed, and
+    // parses it with Minecraft's own codecs. The files rather than the
+    // generator, because the files are what ships.
+    val worldgen = rootProject.layout.projectDirectory
+        .dir("examples/example-mod/src/main/generated/data/example-mod/worldgen")
+    inputs.dir(worldgen).withPropertyName("worldgenData")
+    doFirst {
+        systemProperty("fenix.test.worldgenDir", worldgen.asFile.absolutePath)
+    }
+
     inputs.file(eventJar).withPropertyName("eventJar")
     inputs.file(registryJar).withPropertyName("registryJar")
     inputs.file(resourceJar).withPropertyName("resourceJar")

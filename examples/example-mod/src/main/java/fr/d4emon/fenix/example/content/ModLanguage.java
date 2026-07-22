@@ -17,6 +17,8 @@ public final class ModLanguage extends EmberLanguageProvider {
         add(ModBlocks.GLOWING_RUBY_BLOCK, "Glowing Ruby Block");
         add(ModBlocks.RUBY_TALLY, "Ruby Tally");
         add(ModBlocks.RUBY_SAFE, "Ruby Safe");
+        add(ModBlocks.RUBY_ORE, "Ruby Ore");
+        add(ModBlocks.DEEPSLATE_RUBY_ORE, "Deepslate Ruby Ore");
 
         // The title above the safe's slots. A raw key, because the name
         // belongs to the menu rather than to any one piece of content.

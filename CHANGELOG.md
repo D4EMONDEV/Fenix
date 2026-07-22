@@ -5,6 +5,45 @@ All notable changes to Fenix are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **World generation.** `EmberOreProvider` writes the two files an ore needs —
+  a configured feature saying what to place, a placed feature saying where —
+  and `BiomeModifications.addFeature` says which biomes want it, with
+  `BiomeSelectors` for the usual answers.
+
+  Code rather than data for the last part, because the alternative does not
+  compose: a datapack that redefines `minecraft:plains` to add an ore replaces
+  the whole biome, so two mods doing it erase each other and the player sees
+  whichever loaded last. Fenix adds to the biome the game actually loaded.
+
+  Applied when datapacks finish loading, and at no other moment. Earlier, biome
+  tags are not bound, so a selector asking whether a biome is in the overworld
+  gets the wrong answer; later, a chunk may already have generated from the
+  unmodified biome, and a world with the ore in some chunks and not others is
+  worse than one without it.
+
+- `Registrar.placedFeature` names one of the mod's own features, and
+  `Registrar.identifier` is now public — for naming things the registrar does
+  not register, like a key binding or a tag.
+
+- Two more conformance checks, each verified to fail when sabotaged. The
+  worldgen files Ember writes are parsed with Minecraft's own codecs, which is
+  the only honest check on generated data: a misspelled field fails no build,
+  fails no startup and logs nothing — the entry is dropped and the ore is never
+  anywhere. Misspelling `discard_chance_on_air_exposure` now fails the build.
+  The second covers the two biome injections still landing.
+
+### Fixed
+
+- `runClient` and `ember` left last build's jars in their mods directory, so
+  the first version bump put two of everything there and the loader refused to
+  start over duplicate ids — correctly, and about something the author did
+  nothing to cause. Both directories now mirror the build rather than
+  accumulating.
+
 ## [0.1.1] — 2026-07-22
 
 ### Added

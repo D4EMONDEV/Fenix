@@ -10,7 +10,9 @@
     "CreativeModeTabMixin",
     "CreativeTabValidationMixin",
     "DefaultAttributesMixin",
-    "SpawnPlacementsInvoker"
+    "SpawnPlacementsInvoker",
+    "BiomeGenerationSettingsMixin",
+    "RegistryDataLoaderMixin"
   ],
   "client": [
     "CreativeModeTabsMixin",

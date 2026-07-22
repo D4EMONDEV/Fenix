@@ -9,6 +9,7 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.JavaExec;
 
 import org.gradle.api.plugins.JavaPluginExtension;
@@ -264,8 +265,13 @@ public final class FenixDevPlugin implements Plugin<Project> {
 
         // Every mod that will be present at run time: this mod plus its fenixMod
         // dependencies, copied into run/mods where the loader discovers them.
-        var syncMods = project.getTasks().register("syncMods", Copy.class, task -> {
-            task.setDescription("Copies this mod and its Fenix mod dependencies into run/mods");
+        //
+        // Sync, not Copy: a copy leaves last build's jars behind, so the first
+        // version bump puts two of everything in the directory and the loader
+        // refuses to start over duplicate ids — correctly, and about something
+        // the author did nothing to cause. The directory mirrors the build.
+        var syncMods = project.getTasks().register("syncMods", Sync.class, task -> {
+            task.setDescription("Mirrors this mod and its Fenix mod dependencies into run/mods");
             task.from(jar);
             task.from(fenixMod);
             Set<String> carried = carriedInside(fenixMod);
@@ -318,8 +324,8 @@ public final class FenixDevPlugin implements Plugin<Project> {
         Directory runDir = project.getLayout().getBuildDirectory().dir("ember-run").get();
         var jar = project.getTasks().named("jar");
 
-        var syncEmberMods = project.getTasks().register("syncEmberMods", Copy.class, task -> {
-            task.setDescription("Copies this mod, its Fenix mod dependencies and Ember into the Ember game directory");
+        var syncEmberMods = project.getTasks().register("syncEmberMods", Sync.class, task -> {
+            task.setDescription("Mirrors this mod, its Fenix mod dependencies and Ember into the Ember game directory");
             task.from(jar);
             task.from(fenixMod);
             // Only generation needs it, so only generation gets it.

@@ -1,6 +1,8 @@
 {
+  "block.example-mod.deepslate_ruby_ore": "Deepslate Ruby Ore",
   "block.example-mod.glowing_ruby_block": "Glowing Ruby Block",
   "block.example-mod.ruby_block": "Ruby Block",
+  "block.example-mod.ruby_ore": "Ruby Ore",
   "block.example-mod.ruby_safe": "Ruby Safe",
   "block.example-mod.ruby_tally": "Ruby Tally",
   "container.example-mod.ruby_safe": "Ruby Safe",

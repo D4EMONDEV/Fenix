@@ -32,11 +32,15 @@ public final class ModTags {
                     .add(ModBlocks.RUBY_BLOCK)
                     .add(ModBlocks.GLOWING_RUBY_BLOCK)
                     .add(ModBlocks.RUBY_TALLY)
-                    .add(ModBlocks.RUBY_SAFE);
+                    .add(ModBlocks.RUBY_SAFE)
+                    .add(ModBlocks.RUBY_ORE)
+                    .add(ModBlocks.DEEPSLATE_RUBY_ORE);
 
             tag("minecraft:needs_iron_tool")
                     .add(ModBlocks.RUBY_BLOCK)
-                    .add(ModBlocks.GLOWING_RUBY_BLOCK);
+                    .add(ModBlocks.GLOWING_RUBY_BLOCK)
+                    .add(ModBlocks.RUBY_ORE)
+                    .add(ModBlocks.DEEPSLATE_RUBY_ORE);
         }
     }
 

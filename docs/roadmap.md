@@ -99,6 +99,10 @@ proves the loader works.
   and never appears in the world, which reads as a wrong spawn weight rather
   than as a missing registration.
 - **Particles, status effects and data components** ✅ — one line each.
+- **World generation** ✅ — `EmberOreProvider` writes the two files an ore
+  needs, and `BiomeModifications.addFeature` says which biomes want it. The
+  alternative, overriding whole biome files in a datapack, does not compose:
+  two mods each adding an ore to the plains erase one another.
 
 Still missing, and wanted:
 

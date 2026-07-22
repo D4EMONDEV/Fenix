@@ -446,6 +446,79 @@ versions needed is gone.
 **Enchantments.** Datapack data since 1.21 — a JSON file, not a registry call.
 :::
 
+## World generation
+
+Placing an ore takes three things, and it is worth knowing why: two of them are
+data, and the third is the one that makes them happen.
+
+**What to place.** A *configured feature* — which block, in veins of what size,
+replacing what. **Where it may go.** A *placed feature* — how many attempts per
+chunk, between which heights. Ember writes both:
+
+```java title="src/main/java"
+@Generator
+public final class ModOres extends EmberOreProvider {
+    @Override
+    protected void ores() {
+        ore("ruby_ore", ModBlocks.RUBY_ORE, ModBlocks.DEEPSLATE_RUBY_ORE)
+                .veinSize(6)
+                .veinsPerChunk(4)
+                .between(-48, 48)
+                .discardOnAirExposure(0.5f)
+                .write();
+    }
+}
+```
+
+**Which biomes want it.** Neither file does anything on its own: a placed
+feature no biome refers to is never run. That part is code, because it is a
+statement about biomes that already exist, including ones another mod added:
+
+```java
+BiomeModifications.addFeature(BiomeSelectors.overworld(),
+        GenerationStep.Decoration.UNDERGROUND_ORES,
+        REGISTRAR.placedFeature("ruby_ore"));
+```
+
+Two blocks, not one: vanilla's ores each have a deepslate variant because the
+two replace different blocks, and an ore that skips it shows stone-textured
+lumps below y=0.
+
+### Choosing biomes
+
+| Selector | Matches |
+|---|---|
+| `BiomeSelectors.overworld()` | every overworld biome, by tag |
+| `BiomeSelectors.nether()` / `.end()` | the other two dimensions |
+| `BiomeSelectors.tagged(tag)` | any biome tag |
+| `BiomeSelectors.only(keys…)` | exactly the biomes named |
+| `BiomeSelectors.all()` | everything |
+
+Prefer a tag. `overworld()` covers biomes a datapack or another mod adds;
+naming biomes one by one does not, and the ore then stops at the edge of
+whatever the list was written against.
+
+A selector can look at the biome itself:
+
+```java
+BiomeModifications.addFeature(
+        biome -> biome.hasTag(BiomeTags.IS_MOUNTAIN) && !biome.hasTag(BiomeTags.IS_FOREST),
+        GenerationStep.Decoration.UNDERGROUND_ORES,
+        REGISTRAR.placedFeature("ruby_ore"));
+```
+
+:::note[Why not just override the biome file?]
+Because it does not compose. A datapack that redefines `minecraft:plains` to
+add an ore replaces the whole biome, so two mods doing it erase each other and
+the player sees whichever loaded last. Fenix adds to the biome the game
+actually loaded, whoever else has touched it.
+:::
+
+Modifications are applied every time datapacks load, so they survive `/reload`
+and apply to whatever world is opened next. Naming a placed feature that does
+not exist fails there, loudly, rather than leaving an ore that is quietly
+nowhere.
+
 ## Menus
 
 A block that opens a screen needs a menu type, a menu, and a screen. The

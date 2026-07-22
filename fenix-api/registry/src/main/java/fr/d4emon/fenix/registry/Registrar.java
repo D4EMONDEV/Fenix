@@ -39,6 +39,7 @@ import net.minecraft.world.entity.SpawnPlacementType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
 import java.util.function.UnaryOperator;
 import java.util.Objects;
@@ -702,6 +703,21 @@ public final class Registrar {
         return holder;
     }
 
+    /**
+     * {@return the key of one of this mod's placed features}
+     *
+     * <p>Names rather than registers: features are datapack data, written by
+     * {@code EmberOreProvider} and loaded by the game. What this is for is
+     * pointing at one, usually to hand to
+     * {@code BiomeModifications.addFeature}.
+     *
+     * @param name the file's name under {@code worldgen/placed_feature/}
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public ResourceKey<PlacedFeature> placedFeature(String name) {
+        return ResourceKey.create(Registries.PLACED_FEATURE, identifier(name));
+    }
+
     // ------------------------------------------------------------------
     // Applying
     // ------------------------------------------------------------------
@@ -745,7 +761,16 @@ public final class Registrar {
         }
     }
 
-    private Identifier identifier(String name) {
+    /**
+     * {@return an id in this mod's namespace}
+     *
+     * <p>For naming things the registrar does not register — a key binding, a
+     * tag, a file in the mod's own data.
+     *
+     * @param name the path part
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public Identifier identifier(String name) {
         return Identifier.fromNamespaceAndPath(modId, Objects.requireNonNull(name, "name"));
     }
 

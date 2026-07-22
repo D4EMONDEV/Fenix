@@ -49,6 +49,28 @@ public final class ModBlocks {
             .withItem()
             .register();
 
+    /** Ruby ore as it appears in stone. */
+    public static final Holder<Block> RUBY_ORE = ModContent.REGISTRAR.newBlock("ruby_ore")
+            .strength(3f, 3f)
+            .requiresTool()
+            .withItem()
+            .register();
+
+    /**
+     * And as it appears in deepslate.
+     *
+     * <p>A separate block, not a variant: the two replace different blocks
+     * during generation, and an ore that skips this one shows stone-textured
+     * lumps below y=0.
+     */
+    public static final Holder<Block> DEEPSLATE_RUBY_ORE =
+            ModContent.REGISTRAR.newBlock("deepslate_ruby_ore")
+                    .strength(4.5f, 3f)
+                    .requiresTool()
+                    .sound(SoundType.DEEPSLATE)
+                    .withItem()
+                    .register();
+
     private ModBlocks() {
     }
 

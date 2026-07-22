@@ -3,6 +3,9 @@ package fr.d4emon.fenix.example.content;
 import fr.d4emon.fenix.registry.CreativeTabs;
 import fr.d4emon.fenix.registry.Holder;
 import fr.d4emon.fenix.registry.Registrar;
+import fr.d4emon.fenix.registry.worldgen.BiomeModifications;
+import fr.d4emon.fenix.registry.worldgen.BiomeSelectors;
+import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -91,8 +94,17 @@ public final class ModContent {
         // through /give.
         CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS,
                 ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK);
+        CreativeTabs.addTo(CreativeTabs.NATURAL_BLOCKS,
+                ModBlocks.RUBY_ORE, ModBlocks.DEEPSLATE_RUBY_ORE);
         CreativeTabs.addTo(CreativeTabs.FUNCTIONAL_BLOCKS, ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE);
         ModPayloads.listen();
+
+        // Two files say what the ore is and where it may go; this says which
+        // biomes actually want it. Without it the feature exists and is never
+        // run — no biome refers to it.
+        BiomeModifications.addFeature(BiomeSelectors.overworld(),
+                GenerationStep.Decoration.UNDERGROUND_ORES,
+                REGISTRAR.placedFeature("ruby_ore"));
 
         CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
         CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES, ModItems.RUBY_HAMMER);

@@ -168,6 +168,37 @@ Without the rule an entity can be summoned and hatched from its egg and still
 never appear in the world — which reads as a wrong spawn weight rather than as
 a missing registration.
 
+## World generation
+
+Three things, two of them data. Ember writes what to place and where it may go:
+
+```java
+@Generator
+public final class ModOres extends EmberOreProvider {
+    @Override
+    protected void ores() {
+        ore("ruby_ore", ModBlocks.RUBY_ORE, ModBlocks.DEEPSLATE_RUBY_ORE)
+                .veinSize(6)
+                .veinsPerChunk(4)
+                .between(-48, 48)
+                .write();
+    }
+}
+```
+
+Neither file does anything on its own — a placed feature no biome refers to is
+never run. Saying which biomes want it is code:
+
+```java
+BiomeModifications.addFeature(BiomeSelectors.overworld(),
+        GenerationStep.Decoration.UNDERGROUND_ORES,
+        REGISTRAR.placedFeature("ruby_ore"));
+```
+
+Prefer a tag-based selector like `overworld()` over naming biomes: it covers
+biomes a datapack or another mod adds. The full guide is in
+[getting started](https://github.com/D4EMONDEV/Fenix/blob/main/docs/getting-started.md).
+
 ## Reacting to the game
 
 ```java

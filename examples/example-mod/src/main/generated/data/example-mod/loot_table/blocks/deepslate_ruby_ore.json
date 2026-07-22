@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "example-mod:ruby"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "example-mod:blocks/deepslate_ruby_ore"
+}
