@@ -1,10 +1,4 @@
-# Astro
-dist/
-.astro/
-
-# Dependencies
 node_modules/
-
-# Environment
-.env
-.env.production
+dist/
+*.tsbuildinfo
+*.local

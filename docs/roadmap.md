@@ -176,15 +176,16 @@ sprites is still written by hand.
 
 - Publish to a public Maven repository ✅ — a plain Maven repo on GitHub Pages,
   free and login-free to consume; see [publishing.md](publishing.md)
-- The website — **written, and hosted nowhere.** `d4emondev.github.io/Fenix/`
+- The website — **written, and hosted nowhere.** React, Vite and TypeScript;
+  `npm run build` in `website/` produces a static `dist/`. `d4emondev.github.io/Fenix/`
   is the Maven repository, and a repository can only serve one Pages site. It
   needs either a custom domain or a `D4EMONDEV.github.io` user site; nothing
   in CI builds or deploys `website/` today.
-- Generated API documentation ✅ — `./gradlew apiDocsSite` writes the
-  reference into the website as pages Starlight renders, searchable and
-  versioned with the rest of the documentation. Written by a doclet rather than
-  by hand, so the reference cannot describe an API the compiler does not have.
-  `./gradlew apiDocs` still produces plain Javadoc, for anyone who wants it.
+- Generated API documentation ✅ — `./gradlew apiDocsSite` writes the reference
+  into the website as Markdown, versioned with the rest of the documentation.
+  Written by a doclet rather than by hand, so the reference cannot describe an
+  API the compiler does not have. `./gradlew apiDocs` still produces plain
+  Javadoc, for anyone who wants it.
 - A conformance suite broad enough to trust a release — twelve checks today, each
   verified to fail when the thing it covers is sabotaged. Untested end to end:
   the installer against a real `.minecraft`, and Ember's output against a real

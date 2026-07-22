@@ -94,7 +94,7 @@ val apiDocsSite = tasks.register<Javadoc>("apiDocsSite") {
     val docletJar = docletProject.tasks.named<Jar>("jar")
     dependsOn(docletJar)
 
-    val pages = layout.projectDirectory.dir("website/src/content/docs/reference/api")
+    val pages = layout.projectDirectory.dir("website/content/0.1/api")
     setDestinationDir(pages.asFile)
 
     options {
@@ -116,23 +116,12 @@ val apiDocsSite = tasks.register<Javadoc>("apiDocsSite") {
     }
 
     doLast {
-        // The archived copy of the series being developed, if there is one.
-        //
-        // starlight-versions freezes a copy of the whole documentation per
-        // released series, and 0.1.2 is what someone reading the "0.1" pages is
-        // actually running — so that copy should describe the API they have,
-        // not the API 0.1.0 had. Once 0.2 opens, this stops touching 0.1 by
-        // itself: the series is read from the version being built.
-        val series = version.toString().substringBefore('+').split('.').take(2).joinToString(".")
-        val archived = layout.projectDirectory
-            .dir("website/src/content/docs/$series/reference/api")
-        if (archived.asFile.parentFile.parentFile.isDirectory) {
-            sync {
-                from(pages)
-                into(archived)
-            }
-            logger.lifecycle("mirrored the reference into the $series pages")
-        }
+        // The site keeps one directory of documentation per released series and
+        // the reference is written straight into it, so there is nothing to
+        // mirror afterwards. Cutting 0.2 means copying the directory once; until
+        // then, someone reading the 0.1 pages is running a 0.1.x and should see
+        // the API they have.
+        logger.lifecycle("API reference written into the site")
     }
 }
 

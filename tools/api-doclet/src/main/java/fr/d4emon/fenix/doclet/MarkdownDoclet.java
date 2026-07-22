@@ -145,11 +145,7 @@ public final class MarkdownDoclet implements Doclet {
         out.append("---\n")
                 .append("title: ").append(quote(shortPackage(name))).append('\n')
                 .append("description: ").append(quote(summary)).append('\n')
-                .append("sidebar:\n  order: ").append(order(name)).append('\n')
-                // Types only in the table of contents. A package's methods are
-                // its third-level headings, and twenty signatures down the side
-                // of the page is a wall rather than a way through it.
-                .append("tableOfContents:\n  maxHeadingLevel: 2\n")
+                .append("order: ").append(order(name)).append('\n')
                 .append("---\n\n")
                 .append("<p class=\"api-package\"><code>").append(name).append("</code></p>\n\n");
 
@@ -225,7 +221,7 @@ public final class MarkdownDoclet implements Doclet {
                 .append("description: ")
                 .append(quote("Every package a mod is written against, generated from the source."))
                 .append('\n')
-                .append("sidebar:\n  order: 0\n")
+                .append("order: 0\n")
                 .append("---\n\n")
                 .append("Generated from the javadoc in the source, so what is written here is what\n")
                 .append("the compiler sees. The client halves are included: `KeyBindings`,\n")
