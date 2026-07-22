@@ -60,6 +60,8 @@ another jar may claim the same id.
 
 ### `ModMetadata metadata()`
 
+### `boolean nested()`
+
 ### `Path path()`
 
 ### `String toString()`

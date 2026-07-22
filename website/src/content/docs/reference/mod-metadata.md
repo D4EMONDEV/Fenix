@@ -21,7 +21,9 @@ point at code — that is what `@Mod` and the compile-time index are for.
 | `license`     | no       | SPDX identifier.                                           |
 | `contact`     | no       | Free-form map; `homepage` and `issues` are conventional.   |
 | `side`        | no       | `both` (default), `client`, or `server`.                   |
-| `depends`     | no       | Map of mod id to version constraint.                       |
+| `depends`     | no       | Map of mod id to version constraint. Required, and ordered after. |
+| `breaks`      | no       | Mods this one refuses to run alongside.                     |
+| `after`       | no       | Mods this one loads after, when present, without needing them. |
 | `mixins`      | no       | Mixin config files to load.                                |
 | `accessible`  | no       | Vanilla members to raise to public. See below.              |
 
@@ -49,6 +51,30 @@ it, so `^1.0.0` accepts `1.5.0-rc.1`.
 
 `depends` also drives **initialisation order**: a mod is always initialised
 after everything it depends on.
+
+## Ordering without requiring
+
+`after` orders exactly like `depends` and requires nothing:
+
+```json
+"after": { "somemod": "*" }
+```
+
+That is what a compatibility patch needs — it has to run after the mod it
+patches, and still load when that mod is absent. Saying it with `depends` was
+the only way before, and it turned every optional integration into a hard
+requirement.
+
+## Refusing a combination
+
+```json
+"breaks": { "oldmod": "<2.0.0" }
+```
+
+The launch is refused, naming both mods and the constraint. Without it the
+incompatibility surfaces as a crash inside one of the two, which names neither
+and blames whichever happened to be on the stack. A mod author knows what
+breaks their mod; this is the only place they can say so before it does.
 
 ## Depending on the API
 

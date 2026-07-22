@@ -80,11 +80,28 @@ public final class ModResolver {
                 continue;
             }
             ModCandidate first = active.putIfAbsent(candidate.id(), candidate);
-            if (first != null) {
-                problems.add("duplicate mod '" + candidate.id() + "': both "
-                        + first.fileName() + " and " + candidate.fileName() + " provide it"
-                        + " — remove one of them");
+            if (first == null) {
+                continue;
             }
+
+            // Two mods carrying the same library inside them is ordinary, not a
+            // mistake: neither author chose it and neither can fix it. Keeping
+            // the newer of the two is what makes bundling usable at all —
+            // refusing would mean any two mods sharing a dependency could not
+            // be installed together.
+            //
+            // Two loose jars is the other thing entirely: somebody put both
+            // files in the folder, and only they can say which one they meant.
+            if (first.nested() || candidate.nested()) {
+                if (candidate.version().compareTo(first.version()) > 0) {
+                    active.put(candidate.id(), candidate);
+                }
+                continue;
+            }
+
+            problems.add("duplicate mod '" + candidate.id() + "': both "
+                    + first.fileName() + " and " + candidate.fileName() + " provide it"
+                    + " — remove one of them");
         }
 
         Map<String, ModCandidate> onWrongSide = new HashMap<>();
@@ -96,6 +113,13 @@ public final class ModResolver {
         for (ModCandidate candidate : active.values()) {
             for (ModDependency dependency : candidate.metadata().depends()) {
                 checkDependency(candidate, dependency, active, builtins, onWrongSide, side, problems);
+            }
+        }
+
+        // Step 3b — nothing present that a mod refuses to run alongside.
+        for (ModCandidate candidate : active.values()) {
+            for (ModDependency broken : candidate.metadata().breaks()) {
+                checkBreak(candidate, broken, active, builtins, problems);
             }
         }
 
@@ -141,6 +165,37 @@ public final class ModResolver {
     }
 
     /**
+     * Refuses a launch where something a mod cannot work with is present.
+     *
+     * <p>The alternative is a crash somewhere inside one of the two, which
+     * names neither and blames whichever happened to be on the stack. A mod
+     * author knows what breaks their mod; this is the only place they can say
+     * so before it does.
+     */
+    private static void checkBreak(
+            ModCandidate candidate,
+            ModDependency broken,
+            Map<String, ModCandidate> active,
+            Map<String, Version> builtins,
+            List<String> problems) {
+
+        Version present = builtins.get(broken.id());
+        if (present == null) {
+            ModCandidate other = active.get(broken.id());
+            if (other == null) {
+                // Absent, which is what a `breaks` entry hopes for.
+                return;
+            }
+            present = other.version();
+        }
+
+        if (broken.isSatisfiedBy(present)) {
+            problems.add(candidate + " cannot run with " + broken.id() + " " + present
+                    + ", which it declares as broken (" + broken + ")");
+        }
+    }
+
+    /**
      * Kahn's algorithm over the dependency edges, popping the alphabetically
      * smallest ready id first so the order is deterministic.
      */
@@ -151,10 +206,21 @@ public final class ModResolver {
 
         for (ModCandidate candidate : active.values()) {
             int count = 0;
-            for (ModDependency dependency : candidate.metadata().depends()) {
+            // `after` orders exactly like `depends` and requires nothing, which
+            // is the whole point: a compatibility patch has to run after the
+            // mod it patches without refusing to load when that mod is absent.
+            // Expressing that with `depends` was the only way before, and it
+            // turned every optional integration into a hard requirement.
+            List<ModDependency> edges = new ArrayList<>(candidate.metadata().depends());
+            edges.addAll(candidate.metadata().after());
+
+            Set<String> seen = new HashSet<>();
+            for (ModDependency dependency : edges) {
                 // Only edges between actual mods order anything; builtins are
-                // always there and never move.
-                if (active.containsKey(dependency.id())) {
+                // always there and never move. A mod named by both `depends`
+                // and `after` is one edge, not two — counting it twice would
+                // leave it blocked forever.
+                if (active.containsKey(dependency.id()) && seen.add(dependency.id())) {
                     dependents.computeIfAbsent(dependency.id(), key -> new ArrayList<>()).add(candidate.id());
                     count++;
                 }

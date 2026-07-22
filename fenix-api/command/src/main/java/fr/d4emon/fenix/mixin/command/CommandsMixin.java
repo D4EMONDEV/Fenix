@@ -1,6 +1,7 @@
 package fr.d4emon.fenix.mixin.command;
 
 import fr.d4emon.fenix.command.CommandEvents;
+import fr.d4emon.fenix.command.FenixCommand;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.Commands;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,6 +25,11 @@ public abstract class CommandsMixin {
     @Inject(method = "<init>", at = @At("TAIL"))
     private void fenix$openTheTree(Commands.CommandSelection selection,
                                    CommandBuildContext context, CallbackInfo info) {
+        // Fenix's own command first, so a mod that wants to replace /fenix can.
+        // No API module has an entrypoint to register it from, and giving one
+        // just for this would make every mod wait on it.
+        FenixCommand.register(((Commands) (Object) this).getDispatcher());
+
         CommandEvents.REGISTER.fire(new CommandEvents.Registration(
                 ((Commands) (Object) this).getDispatcher(), context, selection));
     }

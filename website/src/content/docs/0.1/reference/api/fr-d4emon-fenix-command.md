@@ -15,6 +15,7 @@ tableOfContents:
 | [`CommandEvents.Registration`](#commandevents-registration) | What a listener is given. |
 | [`Commands`](#commands) | Commands, without the parts of Brigadier nobody enjoys. |
 | [`Commands.Body`](#commands-body) | A command body. |
+| [`FenixCommand`](#fenixcommand) | `/fenix`, which answers the first question asked of any broken world. |
 
 ## CommandEvents
 
@@ -111,4 +112,23 @@ try/catch would only turn a good message into a crash.
 ### `void run(CommandContext<CommandSourceStack> context)`
 
 Runs the command.
+
+## FenixCommand
+
+`/fenix`, which answers the first question asked of any broken world.
+
+Nothing in the game knows what Fenix loaded. A player reporting a problem
+is asked which mods they have and has to go and read a folder; a server
+administrator has to trust that the folder matches what started. Both are
+answerable in one line, and neither was.
+
+Open to everyone rather than to operators. The list is not a secret — the
+server already sends every mod's namespace to every client that joins, so
+withholding it would only inconvenience the person asking.
+
+### `static void register(CommandDispatcher<CommandSourceStack> dispatcher)`
+
+Adds the command to a dispatcher.
+
+Called by Fenix itself when the command tree opens, not by a mod.
 

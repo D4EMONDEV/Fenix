@@ -86,17 +86,43 @@ public final class ModDiscoverer {
                     List.of("the mods directory " + modsDirectory + " cannot be listed: " + e.getMessage()));
         }
 
+        // Each jar is opened, parsed and unpacked independently of every other,
+        // which at a hundred mods is a hundred file reads waiting on each other
+        // for no reason. Nested jars go into a directory named after their
+        // container, so two containers never write to the same place.
+        //
+        // The results are collected per jar and flattened afterwards rather
+        // than appended to shared lists: parallel appends would need locking,
+        // and the order would stop being the sorted one — which is the order a
+        // log has to read in for anyone to follow it.
+        List<Scanned> scanned = jars.parallelStream()
+                .map(jar -> scanOne(jar, unpackDirectory))
+                .toList();
+
         List<ModCandidate> mods = new ArrayList<>();
         List<String> problems = new ArrayList<>();
-        for (Path jar : jars) {
-            readJar(jar, mods, problems);
-            // After the container, so a log reads in the order a person would
-            // explain it: here is the API, and here is what it holds.
-            for (Path nested : NestedJars.unpack(jar, unpackDirectory, problems)) {
-                readJar(nested, mods, problems);
-            }
+        for (Scanned one : scanned) {
+            mods.addAll(one.mods());
+            problems.addAll(one.problems());
         }
         return new DiscoveryResult(mods, problems);
+    }
+
+    /** What one jar in the mods directory turned out to hold. */
+    private record Scanned(List<ModCandidate> mods, List<String> problems) {
+    }
+
+    private static Scanned scanOne(Path jar, Path unpackDirectory) {
+        List<ModCandidate> mods = new ArrayList<>();
+        List<String> problems = new ArrayList<>();
+
+        readJar(jar, mods, problems, false);
+        // After the container, so a log reads in the order a person would
+        // explain it: here is the API, and here is what it holds.
+        for (Path nested : NestedJars.unpack(jar, unpackDirectory, problems)) {
+            readJar(nested, mods, problems, true);
+        }
+        return new Scanned(mods, problems);
     }
 
     private static boolean isJar(Path path) {
@@ -104,7 +130,8 @@ public final class ModDiscoverer {
                 && path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar");
     }
 
-    private static void readJar(Path path, List<ModCandidate> mods, List<String> problems) {
+    private static void readJar(Path path, List<ModCandidate> mods, List<String> problems,
+                                boolean nested) {
         String fileName = path.getFileName().toString();
 
         try (JarFile jar = new JarFile(path.toFile())) {
@@ -119,7 +146,7 @@ public final class ModDiscoverer {
             try (Reader reader = new InputStreamReader(jar.getInputStream(entry), StandardCharsets.UTF_8)) {
                 metadata = ModMetadataReader.read(reader, fileName);
             }
-            mods.add(new ModCandidate(metadata, path));
+            mods.add(new ModCandidate(metadata, path, nested));
         } catch (InvalidMetadataException e) {
             // Already prefixed with the file name.
             problems.add(e.getMessage());

@@ -72,7 +72,9 @@ public final class ModMetadataReader {
                 optionalString(root, "license", source),
                 readStringMap(root, "contact", source),
                 readSide(root, source),
-                readDepends(root, source),
+                readDepends(root, source, "depends"),
+                readDepends(root, source, "breaks"),
+                readDepends(root, source, "after"),
                 readStringArray(root, "mixins", source),
                 readStringArray(root, "accessible", source));
     }
@@ -147,30 +149,33 @@ public final class ModMetadataReader {
         }
     }
 
-    private static List<ModDependency> readDepends(JsonObject root, String source) {
-        if (!root.has("depends")) {
+    private static List<ModDependency> readDepends(JsonObject root, String source,
+                                                   String field) {
+        if (!root.has(field)) {
             return List.of();
         }
 
-        JsonElement element = root.get("depends");
+        JsonElement element = root.get(field);
         if (!element.isJsonObject()) {
             throw new InvalidMetadataException(source,
-                    "'depends' must be an object mapping mod ids to version constraints");
+                    "'" + field + "' must be an object mapping mod ids to version constraints");
         }
 
         List<ModDependency> dependencies = new ArrayList<>();
         for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
             String id = entry.getKey();
             if (!ModInfo.isValidId(id)) {
-                throw new InvalidMetadataException(source, "'depends' contains '" + id + "', which is not a mod id");
+                throw new InvalidMetadataException(source,
+                        "'" + field + "' contains '" + id + "', which is not a mod id");
             }
 
-            String constraint = requireStringValue(entry.getValue(), "depends." + id, source);
+            String constraint = requireStringValue(entry.getValue(), field + "." + id, source);
             try {
                 dependencies.add(new ModDependency(id, VersionRange.parse(constraint)));
             } catch (IllegalArgumentException e) {
                 throw new InvalidMetadataException(source,
-                        "'depends." + id + "' is not a version constraint: '" + constraint + "'", e);
+                        "'" + field + "." + id + "' is not a version constraint: '"
+                                + constraint + "'", e);
             }
         }
         return List.copyOf(dependencies);

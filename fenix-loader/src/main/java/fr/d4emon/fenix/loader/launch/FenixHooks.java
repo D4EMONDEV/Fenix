@@ -1,8 +1,11 @@
 package fr.d4emon.fenix.loader.launch;
 
+import fr.d4emon.fenix.api.ModInfo;
+
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -66,6 +69,25 @@ public final class FenixHooks {
             jars.put(mod.id(), mod.path());
         }
         return Collections.unmodifiableMap(jars);
+    }
+
+    /**
+     * {@return what is loaded, in load order}
+     *
+     * <p>For anything that has to <em>describe</em> the launch rather than take
+     * part in it — the {@code /fenix mods} command above all. Nothing else in
+     * the game knows what Fenix loaded, and "which mods are installed" is the
+     * first question asked of any broken world.
+     *
+     * <p>Empty when no game is running rather than throwing, for the same
+     * reason {@link #modJars()} is.
+     */
+    public static List<ModInfo> loadedMods() {
+        FenixRuntime current = runtime;
+        if (current == null) {
+            return List.of();
+        }
+        return current.mods().stream().map(mod -> mod.metadata().toModInfo()).toList();
     }
 
     private static FenixRuntime active() {

@@ -17,7 +17,7 @@ import java.util.Objects;
  * @param metadata what its {@code fenix.mod.json} declares
  * @param path     the jar it was read from
  */
-public record ModCandidate(ModMetadata metadata, Path path) {
+public record ModCandidate(ModMetadata metadata, Path path, boolean nested) {
 
     /**
      * Checks that both parts are present.
@@ -27,6 +27,16 @@ public record ModCandidate(ModMetadata metadata, Path path) {
     public ModCandidate {
         Objects.requireNonNull(metadata, "metadata");
         Objects.requireNonNull(path, "path");
+    }
+
+    /**
+     * A mod found loose in the mods directory.
+     *
+     * @param metadata what its manifest said
+     * @param path     where it is
+     */
+    public ModCandidate(ModMetadata metadata, Path path) {
+        this(metadata, path, false);
     }
 
     /**

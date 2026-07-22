@@ -61,17 +61,28 @@ public final class Launch {
         try {
             run(args);
         } catch (LaunchException | ResolutionException | InvalidMetadataException e) {
-            // Diagnosed failures: the message is the whole story. The cause, if
-            // any, is genuinely useful context — print it compactly.
-            System.err.println();
-            System.err.println(e.getMessage());
-            if (e.getCause() != null) {
-                e.getCause().printStackTrace();
-            }
+            // Diagnosed: the message is the whole story, and the cause is
+            // context rather than the report.
+            FailureReport.publish(e, true, reportDirectory(args));
             System.exit(1);
         } catch (Throwable t) {
-            t.printStackTrace();
+            FailureReport.publish(t, false, reportDirectory(args));
             System.exit(1);
+        }
+    }
+
+    /**
+     * {@return where a failure report should go, guessed from the arguments}
+     *
+     * <p>Guessed rather than taken, because the arguments are what failed to
+     * parse in some of the cases this exists for. A report next to the game is
+     * worth a second attempt at reading them; a report nowhere is not.
+     */
+    private static Path reportDirectory(String[] args) {
+        try {
+            return Options.parse(args).gameDir();
+        } catch (RuntimeException unparseable) {
+            return Path.of(".");
         }
     }
 

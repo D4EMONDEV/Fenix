@@ -1,5 +1,6 @@
 package fr.d4emon.fenix.loader.launch;
 
+import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Side;
 import fr.d4emon.fenix.api.Version;
 import fr.d4emon.fenix.loader.classloader.FenixClassLoader;
@@ -62,6 +63,40 @@ class ModInstantiatorTest {
         return writer.toByteArray();
     }
 
+    /**
+     * Generates the shape Kotlin's {@code object} compiles to: a private
+     * constructor and a public static final INSTANCE holding the only one.
+     */
+    private static byte[] singletonModClass(String binaryName) {
+        String internal = binaryName.replace('.', '/');
+        ClassWriter writer = new ClassWriter(0);
+        writer.visit(Opcodes.V21, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+                internal, null, "java/lang/Object", new String[] {"fr/d4emon/fenix/api/FenixMod"});
+        writer.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                "INSTANCE", "L" + internal + ";", null, null).visitEnd();
+
+        MethodVisitor constructor = writer.visitMethod(Opcodes.ACC_PRIVATE, "<init>", "()V", null, null);
+        constructor.visitCode();
+        constructor.visitVarInsn(Opcodes.ALOAD, 0);
+        constructor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        constructor.visitInsn(Opcodes.RETURN);
+        constructor.visitMaxs(1, 1);
+        constructor.visitEnd();
+
+        MethodVisitor clinit = writer.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+        clinit.visitCode();
+        clinit.visitTypeInsn(Opcodes.NEW, internal);
+        clinit.visitInsn(Opcodes.DUP);
+        clinit.visitMethodInsn(Opcodes.INVOKESPECIAL, internal, "<init>", "()V", false);
+        clinit.visitFieldInsn(Opcodes.PUTSTATIC, internal, "INSTANCE", "L" + internal + ";");
+        clinit.visitInsn(Opcodes.RETURN);
+        clinit.visitMaxs(2, 0);
+        clinit.visitEnd();
+
+        writer.visitEnd();
+        return writer.toByteArray();
+    }
+
     /** Generates a class that does NOT implement FenixMod. */
     private static byte[] plainClass(String binaryName) {
         ClassWriter writer = new ClassWriter(0);
@@ -95,7 +130,7 @@ class ModInstantiatorTest {
         }
         loader.addPath(jar);
         ModMetadata metadata = new ModMetadata(id, Version.parse("1.0.0"),
-                null, null, null, null, null, ModSide.BOTH, null, null, null);
+                null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
         return new ModCandidate(metadata, jar);
     }
 
@@ -165,7 +200,7 @@ class ModInstantiatorTest {
         }
         loader.addPath(jar);
         ModMetadata metadata = new ModMetadata("split", Version.parse("1.0.0"),
-                null, null, null, null, null, ModSide.BOTH, null, null, null);
+                null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
         return new ModCandidate(metadata, jar);
     }
 
@@ -189,7 +224,7 @@ class ModInstantiatorTest {
             out.closeEntry();
         }
         ModMetadata metadata = new ModMetadata("data-only", Version.parse("1.0.0"),
-                null, null, null, null, null, ModSide.BOTH, null, null, null);
+                null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
 
         List<LoadedMod> mods = ModInstantiator.instantiate(loader, List.of(new ModCandidate(metadata, jar)), Side.CLIENT);
 
@@ -228,5 +263,22 @@ class ModInstantiatorTest {
                 () -> ModInstantiator.instantiate(loader, List.of(candidate), Side.CLIENT));
 
         assertTrue(failure.getMessage().contains("does not implement"), failure.getMessage());
+    }
+
+    @Test
+    @DisplayName("a singleton entry class is used rather than constructed")
+    void usesTheSingleton() throws Exception {
+        // What `object ExampleMod : FenixMod` compiles to. Requiring a public
+        // no-argument constructor ruled out the idiomatic way to write a Kotlin
+        // mod, and failed with an error about a constructor nobody wrote.
+        ModCandidate candidate = candidate("kotlin-mod", "kotlin-mod",
+                "com.example.KotlinMod", singletonModClass("com.example.KotlinMod"));
+
+        List<LoadedMod> mods = ModInstantiator.instantiate(loader, List.of(candidate), Side.CLIENT);
+
+        FenixMod entry = mods.getFirst().entries().getFirst();
+        assertSame(loader, entry.getClass().getClassLoader());
+        assertSame(entry, entry.getClass().getField("INSTANCE").get(null),
+                "the mod should be the class's own singleton, not a second copy of it");
     }
 }

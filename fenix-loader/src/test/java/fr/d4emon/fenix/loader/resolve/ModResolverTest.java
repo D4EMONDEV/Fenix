@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,7 +30,28 @@ class ModResolverTest {
 
     private static ModCandidate mod(String id, String version, ModSide side, ModDependency... depends) {
         ModMetadata metadata = new ModMetadata(
-                id, Version.parse(version), null, null, null, null, null, side, List.of(depends), null, null);
+                id, Version.parse(version), null, null, null, null, null, side, List.of(depends), null, null, null, null);
+        return new ModCandidate(metadata, Path.of(id + ".jar"));
+    }
+
+    /** A mod as it arrives from inside another mod's jar. */
+    private static ModCandidate bundled(String id, String version) {
+        ModMetadata metadata = new ModMetadata(id, Version.parse(version), null, null, null, null,
+                null, ModSide.BOTH, null, null, null, null, null);
+        return new ModCandidate(metadata, Path.of(id + "-" + version + ".jar"), true);
+    }
+
+    /** A mod that refuses to run alongside something. */
+    private static ModCandidate breaker(String id, ModDependency... broken) {
+        ModMetadata metadata = new ModMetadata(id, Version.parse("1.0.0"), null, null, null, null,
+                null, ModSide.BOTH, null, List.of(broken), null, null, null);
+        return new ModCandidate(metadata, Path.of(id + ".jar"));
+    }
+
+    /** A mod that wants to load after something, without requiring it. */
+    private static ModCandidate follower(String id, ModDependency... after) {
+        ModMetadata metadata = new ModMetadata(id, Version.parse("1.0.0"), null, null, null, null,
+                null, ModSide.BOTH, null, null, List.of(after), null, null);
         return new ModCandidate(metadata, Path.of(id + ".jar"));
     }
 
@@ -166,7 +188,7 @@ class ModResolverTest {
         @Test
         void reportsDuplicateIdsWithBothFiles() {
             ModMetadata metadata = new ModMetadata(
-                    "twin", Version.parse("1.0.0"), null, null, null, null, null, ModSide.BOTH, null, null, null);
+                    "twin", Version.parse("1.0.0"), null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
 
             ResolutionException failure = assertThrows(ResolutionException.class, () -> ModResolver.resolve(
                     List.of(
@@ -269,6 +291,145 @@ class ModResolverTest {
 
             String problem = failure.problems().getFirst();
             assertTrue(problem.contains("looper -> returner -> looper"), problem);
+        }
+    }
+
+    @Nested
+    @DisplayName("breaks")
+    class Breaks {
+
+        @Test
+        @DisplayName("a mod refuses to load beside something it declares broken")
+        void refusesABrokenCombination() {
+            ResolutionException thrown = assertThrows(ResolutionException.class, () ->
+                    ModResolver.resolve(
+                            List.of(breaker("patch", dep("legacy", "<2.0.0")),
+                                    mod("legacy", "1.4.0", ModSide.BOTH)),
+                            Side.CLIENT, NO_BUILTINS));
+
+            // Naming both, and the constraint: "it crashed" is what this
+            // exists to replace.
+            assertTrue(thrown.getMessage().contains("legacy"), thrown.getMessage());
+            assertTrue(thrown.getMessage().contains("cannot run with"), thrown.getMessage());
+        }
+
+        @Test
+        @DisplayName("a version outside the broken range is fine")
+        void allowsAVersionThatIsNotBroken() {
+            assertDoesNotThrow(() -> ModResolver.resolve(
+                    List.of(breaker("patch", dep("legacy", "<2.0.0")),
+                            mod("legacy", "2.0.0", ModSide.BOTH)),
+                    Side.CLIENT, NO_BUILTINS));
+        }
+
+        @Test
+        @DisplayName("what is not installed cannot break anything")
+        void allowsAnAbsentMod() {
+            assertDoesNotThrow(() -> ModResolver.resolve(
+                    List.of(breaker("patch", dep("legacy", "*"))), Side.CLIENT, NO_BUILTINS));
+        }
+
+        @Test
+        @DisplayName("a builtin can be declared broken too")
+        void checksBuiltins() {
+            assertThrows(ResolutionException.class, () -> ModResolver.resolve(
+                    List.of(breaker("patch", dep("minecraft", "<26.2"))), Side.CLIENT,
+                    Map.of("minecraft", Version.parse("26.1.0"))));
+        }
+    }
+
+    @Nested
+    @DisplayName("after")
+    class After {
+
+        @Test
+        @DisplayName("a mod loads after what it names, without requiring it")
+        void ordersWithoutRequiring() {
+            // Alphabetically "aaa" comes first, so only the edge can put it last.
+            ResolutionResult result = ModResolver.resolve(
+                    List.of(follower("aaa", dep("zzz", "*")), mod("zzz", "1.0.0", ModSide.BOTH)),
+                    Side.CLIENT, NO_BUILTINS);
+
+            assertEquals(List.of("zzz", "aaa"), order(result));
+        }
+
+        @Test
+        @DisplayName("naming something absent is not an error")
+        void toleratesAnAbsentMod() {
+            ResolutionResult result = ModResolver.resolve(
+                    List.of(follower("patch", dep("never-installed", "*"))),
+                    Side.CLIENT, NO_BUILTINS);
+
+            // The whole point: an optional integration must not become a
+            // requirement just to be ordered correctly.
+            assertEquals(List.of("patch"), order(result));
+        }
+
+        @Test
+        @DisplayName("a mod named by both depends and after is one edge, not two")
+        void doesNotCountTheSameEdgeTwice() {
+            ModMetadata both = new ModMetadata("patch", Version.parse("1.0.0"), null, null, null,
+                    null, null, ModSide.BOTH, List.of(dep("lib", "*")), null,
+                    List.of(dep("lib", "*")), null, null);
+
+            ResolutionResult result = ModResolver.resolve(
+                    List.of(new ModCandidate(both, Path.of("patch.jar")),
+                            mod("lib", "1.0.0", ModSide.BOTH)),
+                    Side.CLIENT, NO_BUILTINS);
+
+            // Counted twice, the mod is blocked by one satisfied edge forever
+            // and never reaches the load order at all.
+            assertEquals(List.of("lib", "patch"), order(result));
+        }
+    }
+
+    @Nested
+    @DisplayName("bundled duplicates")
+    class Bundled {
+
+        @Test
+        @DisplayName("two mods carrying the same library keep the newer copy")
+        void keepsTheNewerBundledCopy() {
+            ResolutionResult result = ModResolver.resolve(
+                    List.of(bundled("lib", "1.0.0"), bundled("lib", "2.1.0")),
+                    Side.CLIENT, NO_BUILTINS);
+
+            // Refusing here would mean any two mods sharing a dependency could
+            // not be installed together, which neither author could fix.
+            assertEquals(List.of("lib"), order(result));
+            assertEquals(Version.parse("2.1.0"), result.loadOrder().get(0).version());
+        }
+
+        @Test
+        @DisplayName("order does not decide which copy wins")
+        void picksTheNewerWhicheverCameFirst() {
+            ResolutionResult result = ModResolver.resolve(
+                    List.of(bundled("lib", "2.1.0"), bundled("lib", "1.0.0")),
+                    Side.CLIENT, NO_BUILTINS);
+
+            assertEquals(Version.parse("2.1.0"), result.loadOrder().get(0).version());
+        }
+
+        @Test
+        @DisplayName("a loose jar and a bundled one still resolve")
+        void reconcilesLooseWithBundled() {
+            ResolutionResult result = ModResolver.resolve(
+                    List.of(mod("lib", "1.0.0", ModSide.BOTH), bundled("lib", "2.0.0")),
+                    Side.CLIENT, NO_BUILTINS);
+
+            assertEquals(Version.parse("2.0.0"), result.loadOrder().get(0).version());
+        }
+
+        @Test
+        @DisplayName("two loose jars are still the player's to sort out")
+        void refusesTwoLooseCopies() {
+            ResolutionException thrown = assertThrows(ResolutionException.class, () ->
+                    ModResolver.resolve(
+                            List.of(mod("lib", "1.0.0", ModSide.BOTH),
+                                    mod("lib", "2.0.0", ModSide.BOTH)),
+                            Side.CLIENT, NO_BUILTINS));
+
+            assertTrue(thrown.getMessage().contains("remove one of them"), thrown.getMessage());
         }
     }
 }

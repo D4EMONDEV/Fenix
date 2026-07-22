@@ -16,4 +16,8 @@ dependencies {
 
     // The mixin that opens the command tree.
     compileOnly(libs.mixin)
+
+    // FenixHooks.loadedMods() and the loader's version, for /fenix. The loader
+    // is on the parent classpath at run time.
+    compileOnly(project(":fenix-loader"))
 }

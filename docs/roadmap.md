@@ -21,6 +21,14 @@ Minecraft to be tested. `./gradlew :test-harness:runDemo` shows it end to end.
 - Semantic version constraint solving and dependency ordering ✅
 - A child-first classloader with a transformation hook ✅
 - The `@Mod` annotation, the `fenix-processor` index, and lifecycle dispatch ✅
+  — an entry class may be a singleton, which is what Kotlin's `object` compiles to
+- Discovery runs in parallel, and results stay in sorted order ✅
+- `breaks` and `after` in the manifest ✅ — refusing a combination, and
+  ordering after something without requiring it
+- Two mods carrying the same library keep the newer copy, rather than refusing ✅
+- A failed launch is written beside the game and shown in a window ✅ — the
+  diagnosis was always good, and always went where nobody looked
+- `/fenix mods` lists what is loaded, in load order ✅
 
 ## Phase 2 — Launching real Minecraft ✅
 

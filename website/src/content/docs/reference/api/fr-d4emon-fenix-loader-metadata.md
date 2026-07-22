@@ -65,7 +65,11 @@ breaking anyone.
 
 ### `List<String> accessible()`
 
+### `List<ModDependency> after()`
+
 ### `List<String> authors()`
+
+### `List<ModDependency> breaks()`
 
 ### `Map<String,String> contact()`
 

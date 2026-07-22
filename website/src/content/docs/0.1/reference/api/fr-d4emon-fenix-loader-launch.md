@@ -11,6 +11,7 @@ tableOfContents:
 
 | Type | What it is |
 |---|---|
+| [`FailureReport`](#failurereport) | Puts a failed launch somewhere the person who caused it will find it. |
 | [`FenixHooks`](#fenixhooks) | The game's way back into the loader. |
 | [`FenixRuntime`](#fenixruntime) | The state behind every `Fenix` context, and the thing that fires the lifecycle. |
 | [`FenixVersion`](#fenixversion) | The loader's own version, stamped into `fenix-loader.properties` at build time. |
@@ -19,6 +20,25 @@ tableOfContents:
 | [`LoadedMod`](#loadedmod) | A mod that made it all the way in: resolved, on the classpath, instantiated. |
 | [`ModIndexReader`](#modindexreader) | Reads `fenix.index.json`, the file the annotation processor writes into a mod jar at compile time. |
 | [`ModInstantiator`](#modinstantiator) | Turns resolved candidates into `LoadedMod`s by reading each jar's compile-time index and instantiating the classes it names — through the `FenixClassLoader`, so mod code lives in the child scope from its very first instruction. |
+
+## FailureReport
+
+Puts a failed launch somewhere the person who caused it will find it.
+
+Fenix already says what went wrong, and says it well — "duplicate mod
+'x': both a.jar and b.jar provide it, remove one of them" is the whole
+answer. What it did with that answer was print it to standard output and
+exit, which for anyone starting the game from the Minecraft launcher means
+the window vanishes and nothing else happens. The diagnosis was fine; it went
+nowhere they would look.
+
+So it is written to a file first — a file survives, a window does not, and
+it is what gets pasted into a bug report — and then shown, if there is a
+screen to show it on.
+
+### `static void publish(Throwable failure, boolean diagnosed, Path gameDir)`
+
+Writes the failure down, and shows it when there is somewhere to show it.
 
 ## FenixHooks
 
@@ -33,6 +53,18 @@ having a fake game.
 This class lives in the loader, so it is parent-only: game code compiled
 against it resolves to the same class the loader holds, static state
 included.
+
+### `static List<ModInfo> loadedMods()`
+
+{@return what is loaded, in load order}
+
+For anything that has to <em>describe</em> the launch rather than take
+part in it — the `/fenix mods` command above all. Nothing else in
+the game knows what Fenix loaded, and "which mods are installed" is the
+first question asked of any broken world.
+
+Empty when no game is running rather than throwing, for the same
+reason `#modJars()` is.
 
 ### `static Map<String,Path> modJars()`
 

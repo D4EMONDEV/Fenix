@@ -5,7 +5,9 @@ import fr.d4emon.fenix.api.Side;
 import fr.d4emon.fenix.loader.classloader.FenixClassLoader;
 import fr.d4emon.fenix.loader.discovery.ModCandidate;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,10 +84,18 @@ public final class ModInstantiator {
 
         Object instance;
         try {
-            instance = type.getConstructor().newInstance();
+            // A singleton first, when the class is one. Kotlin compiles
+            // `object Foo : FenixMod` to a class with a public static final
+            // INSTANCE and a private constructor, so requiring a constructor
+            // ruled out the idiomatic way to write a Kotlin mod — and said so
+            // with an error about constructors, which is no help at all to
+            // somebody who did not write one on purpose.
+            Object singleton = singletonOf(type);
+            instance = singleton != null ? singleton : type.getConstructor().newInstance();
         } catch (NoSuchMethodException e) {
             throw new LaunchException("the entry class " + className + " of mod '" + candidate.id()
-                    + "' has no public no-argument constructor", e);
+                    + "' has no public no-argument constructor, and no public static INSTANCE"
+                    + " field to use instead", e);
         } catch (InvocationTargetException e) {
             throw new LaunchException("the constructor of " + className + " (mod '" + candidate.id()
                     + "') threw — a mod must not do real work before its lifecycle starts", e.getCause());
@@ -99,5 +109,36 @@ public final class ModInstantiator {
                     + "' does not implement " + FenixMod.class.getName());
         }
         return mod;
+    }
+
+    /**
+     * {@return the class's own singleton, or {@code null} if it has none}
+     *
+     * <p>The field has to be public, static, final and of the class's own type
+     * — all four, because {@code INSTANCE} is a common enough name that any
+     * looser test would eventually pick up something that merely shares it.
+     * That shape is what Kotlin's {@code object} compiles to, and what a Java
+     * singleton is written as by hand.
+     */
+    private static Object singletonOf(Class<?> type) {
+        Field field;
+        try {
+            field = type.getField("INSTANCE");
+        } catch (NoSuchFieldException none) {
+            return null;
+        }
+
+        int modifiers = field.getModifiers();
+        if (!Modifier.isStatic(modifiers) || !Modifier.isFinal(modifiers)
+                || !type.equals(field.getType())) {
+            return null;
+        }
+        try {
+            return field.get(null);
+        } catch (IllegalAccessException | RuntimeException unreadable) {
+            // Named INSTANCE but not usable as one; the constructor path can
+            // still succeed, and its error is the clearer one if it does not.
+            return null;
+        }
     }
 }
