@@ -1,6 +1,7 @@
 package fr.d4emon.fenix.mixin.registry;
 
 import com.google.common.base.Suppliers;
+import fr.d4emon.fenix.registry.worldgen.BiomeFeatureAccess;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.tags.FeatureTags;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
  * somebody uses bone meal on a modded flower.
  */
 @Mixin(BiomeGenerationSettings.class)
-public abstract class BiomeGenerationSettingsMixin {
+public abstract class BiomeGenerationSettingsMixin implements BiomeFeatureAccess {
 
     @Mutable
     @Shadow
@@ -56,6 +57,7 @@ public abstract class BiomeGenerationSettingsMixin {
      * @param step    the step's index — {@code GenerationStep.Decoration.ordinal()}
      * @param feature the feature to add
      */
+    @Override
     public void fenix$addFeature(int step, Holder<PlacedFeature> feature) {
         List<HolderSet<PlacedFeature>> steps = new ArrayList<>(features);
         // A biome only carries steps up to the last one it uses, so a mod

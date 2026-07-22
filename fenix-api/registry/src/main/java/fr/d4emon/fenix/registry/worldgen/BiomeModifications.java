@@ -1,7 +1,6 @@
 package fr.d4emon.fenix.registry.worldgen;
 
 import com.mojang.logging.LogUtils;
-import fr.d4emon.fenix.mixin.registry.BiomeGenerationSettingsMixin;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -114,8 +113,12 @@ public final class BiomeModifications {
             int changed = 0;
             for (Holder.Reference<Biome> biome : biomes.get().listElements().toList()) {
                 if (addition.where().test(new BiomeSelector.Context(biome.key(), biome))) {
-                    BiomeGenerationSettingsMixin settings =
-                            (BiomeGenerationSettingsMixin) (Object) biome.value().getGenerationSettings();
+                    // The interface, never the mixin class: Mixin merges a
+                    // mixin into its target and then refuses to load the mixin
+                    // itself, so casting to one fails where it runs rather than
+                    // where it compiles.
+                    BiomeFeatureAccess settings =
+                            (BiomeFeatureAccess) (Object) biome.value().getGenerationSettings();
                     settings.fenix$addFeature(addition.step().ordinal(), feature.get());
                     changed++;
                 }

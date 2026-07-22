@@ -64,6 +64,18 @@ class BiomeMixinTest {
             assertCarries(transformed, SETTINGS, ADD,
                     "there would be nothing to apply them with");
 
+            // And the interface that lets it be called. A mixin class is a
+            // template: Mixin merges its members into the target and then
+            // refuses to load the template itself, so a caller has to cast to
+            // something ordinary. Without the interface on the target that cast
+            // throws IllegalClassLoadError the first time a feature is actually
+            // applied — which is to say, in a working installation and nowhere
+            // else. That is how it reached a player before it reached a test.
+            assertTrue(interfaces(transformed.get(SETTINGS))
+                            .contains("fr/d4emon/fenix/registry/worldgen/BiomeFeatureAccess"),
+                    "BiomeGenerationSettings should implement BiomeFeatureAccess — without it "
+                            + "applying a modification throws IllegalClassLoadError");
+
             // The list is final in vanilla, and adding to it means replacing it.
             // If @Mutable ever stops stripping that flag the method still merges
             // and its assignment does nothing.
@@ -81,6 +93,21 @@ class BiomeMixinTest {
         // substring of what ends up in the class rather than all of it.
         assertTrue(methodNames(bytes).stream().anyMatch(name -> name.contains(handler)),
                 target + " should carry " + handler + " — without it " + consequence);
+    }
+
+    /** {@return the interfaces a class declares} */
+    private static List<String> interfaces(byte[] classBytes) {
+        List<String> found = new ArrayList<>();
+        new ClassReader(classBytes).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public void visit(int version, int access, String name, String signature,
+                              String superName, String[] declared) {
+                if (declared != null) {
+                    found.addAll(List.of(declared));
+                }
+            }
+        }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        return found;
     }
 
     private static Path requiredFile(String property) {

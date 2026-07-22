@@ -11,10 +11,29 @@ tableOfContents:
 
 | Type | What it is |
 |---|---|
+| [`BiomeFeatureAccess`](#biomefeatureaccess) | Adds a feature to a biome's generation settings, from outside them. |
 | [`BiomeModifications`](#biomemodifications) | Adds features to biomes that already exist — an ore, a plant, a spring. |
 | [`BiomeSelector`](#biomeselector) | Decides which biomes a modification applies to. |
 | [`BiomeSelector.Context`](#biomeselector-context) | What a selector gets to look at. |
 | [`BiomeSelectors`](#biomeselectors) | The selectors most modifications want. |
+
+## BiomeFeatureAccess
+
+Adds a feature to a biome's generation settings, from outside them.
+
+Not a mixin, and deliberately not in the mixin package either. A mixin
+class is a template: Mixin merges its members into the target and then
+refuses to load the template itself, so casting to one gets
+`IllegalClassLoadError` at the moment it runs. Mixin owns the whole
+package a config declares, not merely the classes it lists, so an ordinary
+interface put next to a mixin is refused for the same reason.
+
+Internal. A mod has `BiomeModifications` and no reason to touch
+this.
+
+So the mixin implements this, Mixin gives the interface to
+`BiomeGenerationSettings` along with the method, and a caller casts to
+the interface. The target has no idea it implements anything.
 
 ## BiomeModifications
 
