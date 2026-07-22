@@ -19,6 +19,7 @@
     "CreativeScreenMixin",
     "EntityRenderersAccessor",
     "MenuScreensAccessor",
-    "OptionsMixin"
+    "OptionsMixin",
+    "ParticleResourcesMixin"
   ]
 }

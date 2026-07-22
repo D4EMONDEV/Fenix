@@ -22,6 +22,7 @@ public final class ModItems {
     public static final Holder<Item> RUBY_HAMMER = ModContent.REGISTRAR.newItem("ruby_hammer")
             .durability(250)
             .rarity(Rarity.RARE)
+            .from(RubyHammer::new)
             .register();
 
     private ModItems() {

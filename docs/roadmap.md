@@ -98,7 +98,9 @@ proves the loader works.
   `Registrar.spawnRule`. Without the rule an entity can be summoned and hatched
   and never appears in the world, which reads as a wrong spawn weight rather
   than as a missing registration.
-- **Particles, status effects and data components** ✅ — one line each.
+- **Particles, status effects and data components** ✅ — one line each on the
+  common side, plus `ParticleRendering` on the client: a particle type with no
+  provider is spawned and never drawn, silently.
 - **World generation** ✅ — `EmberOreProvider` writes the two files an ore
   needs, and `BiomeModifications.addFeature` says which biomes want it. The
   alternative, overriding whole biome files in a datapack, does not compose:
@@ -125,11 +127,13 @@ Two things worth writing down because they *look* missing and are not:
 
 Assets and data generated from Java, as a set of providers:
 `EmberModelProvider`, `EmberLanguageProvider`, `EmberLootTableProvider`,
-`EmberRecipeProvider`, `EmberSoundProvider` and
+`EmberRecipeProvider`, `EmberSoundProvider`, `EmberOreProvider` and
 `EmberTagsProvider.BlockTagsProvider`/`.ItemTagsProvider`.
 Run with `gradlew ember`; output lands in `src/main/generated`.
 
-Textures and ogg files are what it cannot generate.
+Textures and ogg files are what it cannot generate, and so are particle
+definition files — the small `particles/<name>.json` listing a particle's
+sprites is still written by hand.
 
 ## Phase 7 — Networking 🚧
 

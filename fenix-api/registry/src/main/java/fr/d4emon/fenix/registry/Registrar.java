@@ -607,8 +607,9 @@ public final class Registrar {
      * Declares a particle carrying no data of its own.
      *
      * <p>This is the half both sides need. The client also has to say what the
-     * particle looks like, and needs a file under {@code particles/} naming its
-     * textures.
+     * particle looks like — {@code ParticleRendering.register} — and the
+     * textures come from {@code assets/<namespace>/particles/<name>.json}. A
+     * type with no provider is spawned and never drawn, silently.
      *
      * @param name the path part of its id
      * @return a handle, bound once {@link #apply()} runs

@@ -426,6 +426,53 @@ nothing.
 | `REGISTRAR.effect("glimmer", new GlimmerEffect())` | a status effect |
 | `REGISTRAR.dataComponent("charge", …)` | typed state a stack carries |
 
+A particle needs three things, and two of them are easy to forget. The type is
+the half both sides need; the client also has to say what it looks like, and
+the textures come from a file of their own:
+
+```java title="src/client/java"
+ParticleRendering.register(ModContent.SPARK, GlowParticle.ElectricSparkProvider::new);
+```
+
+```json title="assets/mymod/particles/spark.json"
+{ "textures": ["mymod:spark"] }
+```
+
+Miss the provider and the particle is spawned and never drawn — the lookup
+finds nothing and returns, with nothing logged. Miss the file and it is drawn
+as the missing texture.
+
+Spawn it from the server, which tells the clients that can see the spot:
+
+```java
+level.sendParticles(ModContent.SPARK.get(), x, y, z, 8, 0.25, 0.1, 0.25, 0.02);
+```
+
+A status effect is a class of the mod's own plus one line. It also needs an
+icon at `textures/mob_effect/<name>.png`, or the player's inventory shows a
+missing texture:
+
+```java
+public final class GlimmerEffect extends MobEffect {
+    public GlimmerEffect() {
+        super(MobEffectCategory.BENEFICIAL, 0xC43042);
+    }
+
+    @Override
+    public boolean applyEffectTick(ServerLevel level, LivingEntity entity, int amplification) {
+        entity.heal(1f);
+        return true;   // false ends the effect early
+    }
+}
+```
+
+`shouldApplyEffectTickThisTick` is what decides how often that runs. The
+default is every tick, which for anything healing is faster than most things
+can hurt a player.
+
+The example mod does all three at once — `RubyHammer` counts its swings in a
+data component, sparks where it lands, and glimmers every fifth swing.
+
 A data component says how it travels:
 
 ```java

@@ -6,10 +6,12 @@
   "block.example-mod.ruby_safe": "Ruby Safe",
   "block.example-mod.ruby_tally": "Ruby Tally",
   "container.example-mod.ruby_safe": "Ruby Safe",
+  "effect.example-mod.ruby_glimmer": "Ruby Glimmer",
   "item.example-mod.ruby": "Ruby",
   "item.example-mod.ruby_hammer": "Ruby Hammer",
   "item.example-mod.ruby_wisp_spawn_egg": "Ruby Wisp Spawn Egg",
   "itemGroup.example-mod.example_mod": "Example Mod",
   "key.category.example-mod.example_mod": "Example Mod",
-  "key.example-mod.count_wisps": "Count nearby wisps"
+  "key.example-mod.count_wisps": "Count nearby wisps",
+  "message.example-mod.glimmer": "The hammer glimmers on swing %s."
 }

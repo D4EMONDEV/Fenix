@@ -9,6 +9,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import fr.d4emon.fenix.registry.client.EntityRendering;
 import fr.d4emon.fenix.registry.client.MenuScreens;
+import fr.d4emon.fenix.registry.client.ParticleRendering;
+import net.minecraft.client.particle.GlowParticle;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 
 /**
@@ -35,6 +37,11 @@ public final class ExampleModClient implements FenixMod {
         // Runs after the common half, so the entity type is already bound.
         // Vanilla's item renderer is all a wisp needs — no model file.
         EntityRendering.register(ModContent.RUBY_WISP, ThrownItemRenderer::new);
+
+        // A particle type with no provider is spawned and never drawn: the
+        // lookup finds nothing and the effect silently does not happen.
+        // Vanilla's spark provider is all a ruby spark needs.
+        ParticleRendering.register(ModContent.RUBY_SPARK, GlowParticle.ElectricSparkProvider::new);
 
         // Keys are client-only, and registered here rather than beside the
         // content: onRegister runs before the game builds its options, which

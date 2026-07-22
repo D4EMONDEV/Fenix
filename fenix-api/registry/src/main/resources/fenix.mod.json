@@ -24,6 +24,8 @@
     "class net.minecraft.world.inventory.MenuType$MenuSupplier",
     "method net.minecraft.world.inventory.MenuType <init>",
     "class net.minecraft.client.gui.screens.MenuScreens$ScreenConstructor",
-    "method net.minecraft.core.particles.SimpleParticleType <init>"
+    "method net.minecraft.core.particles.SimpleParticleType <init>",
+    "class net.minecraft.client.particle.ParticleResources$SpriteParticleRegistration",
+    "method net.minecraft.client.particle.ParticleResources register"
   ]
 }

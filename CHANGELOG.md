@@ -5,7 +5,7 @@ All notable changes to Fenix are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.2] — 2026-07-22
 
 ### Added
 
@@ -25,9 +25,30 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   unmodified biome, and a world with the ore in some chunks and not others is
   worse than one without it.
 
+- **`ParticleRendering`**, the client half `Registrar.particle` was missing —
+  and which its own documentation had promised. A particle type with no
+  provider is spawned and never drawn: the client looks one up, finds nothing
+  and returns, with nothing logged and nothing crashed. Vanilla's provider
+  table is filled once, in a method naming its own particles one by one, so
+  Fenix appends at the end of it — which is also where the sprite sets are
+  still being collected, so a particle registered later would have no textures.
+
+  `SpriteParticleFactory` is Fenix's own for the third time now: vanilla's
+  equivalent is a private nested interface, so a mod passing a method reference
+  could not compile against it.
+
+- Ember knows a status effect's translation key. It handled blocks and items
+  and threw on anything else, which is the right failure and was reached the
+  first time an effect was declared.
+
 - `Registrar.placedFeature` names one of the mod's own features, and
   `Registrar.identifier` is now public — for naming things the registrar does
   not register, like a key binding or a tag.
+
+- The example mod now demonstrates every registry added since 0.1.0. The ruby
+  hammer does three at once — it counts its swings in a data component, sparks
+  where it lands, and glimmers every fifth swing — and ruby ore generates
+  underground in overworld biomes.
 
 - Two more conformance checks, each verified to fail when sabotaged. The
   worldgen files Ember writes are parsed with Minecraft's own codecs, which is
@@ -37,6 +58,13 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   The second covers the two biome injections still landing.
 
 ### Fixed
+
+- The list of jars a bundle carries was read when the sync task was
+  *configured*, from whatever bundle had been built at the time. So the first
+  build after a version bump excluded the previous version's names, let this
+  version's modules through, and put every module in the directory twice —
+  once loose, once unpacked from the bundle — which the loader refused to start
+  over. It is read when the task runs now.
 
 - `runClient` and `ember` left last build's jars in their mods directory, so
   the first version bump put two of everything there and the loader refused to

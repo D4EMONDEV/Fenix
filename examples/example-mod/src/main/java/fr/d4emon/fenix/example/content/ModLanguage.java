@@ -31,6 +31,11 @@ public final class ModLanguage extends EmberLanguageProvider {
         // The key binding, and the group it sits in. Without these the controls
         // screen shows the raw translation key.
         add("key.example-mod.count_wisps", "Count nearby wisps");
+
+        // The status effect, and the message the hammer sends. %s is the swing
+        // count — the argument passed to Component.translatable.
+        add(ModContent.RUBY_GLIMMER, "Ruby Glimmer");
+        add("message.example-mod.glimmer", "The hammer glimmers on swing %s.");
         add("key.category.example-mod.example_mod", "Example Mod");
 
         // The key comes from the tab, so renaming it cannot leave a stale

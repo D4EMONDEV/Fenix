@@ -8,6 +8,8 @@ import org.gradle.api.attributes.LibraryElements;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.tasks.Jar;
+import org.gradle.api.file.FileTreeElement;
+import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.JavaExec;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.Map;
 import java.util.Set;
 import java.util.Properties;
@@ -274,9 +277,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.setDescription("Mirrors this mod and its Fenix mod dependencies into run/mods");
             task.from(jar);
             task.from(fenixMod);
-            Set<String> carried = carriedInside(fenixMod);
-            task.exclude(element -> carried.contains(element.getName())
-                    || !isFenixMod(element.getFile()));
+            task.exclude(notCarriedInside(fenixMod));
             task.into(runDir.dir("mods"));
         });
 
@@ -330,9 +331,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.from(fenixMod);
             // Only generation needs it, so only generation gets it.
             task.from(ember);
-            Set<String> carried = carriedInside(fenixMod);
-            task.exclude(element -> carried.contains(element.getName())
-                    || !isFenixMod(element.getFile()));
+            task.exclude(notCarriedInside(fenixMod));
             task.into(runDir.dir("mods"));
         });
 
@@ -475,6 +474,30 @@ public final class FenixDevPlugin implements Plugin<Project> {
      * on its own and once unpacked out of the bundle — and the loader would
      * rightly refuse two mods with one id.
      */
+    /**
+     * {@return a rule excluding jars the bundle already carries, and anything
+     * that is not a Fenix mod}
+     *
+     * <p>The list is read when the task runs, not when it is configured. A
+     * bundle is a file, and at configuration time it is last build's file: the
+     * first build after a version bump would exclude the previous version's
+     * names and let this version's modules through, so every module would land
+     * in the directory twice — once loose, once unpacked from the bundle — and
+     * the loader would refuse to start over duplicate ids.
+     *
+     * @param bundles the jars that may carry others inside them
+     */
+    private static Spec<FileTreeElement> notCarriedInside(Iterable<File> bundles) {
+        // Read once per run rather than once per file: opening every bundle
+        // for each of its own entries would be quadratic in the module count.
+        AtomicReference<Set<String>> carried = new AtomicReference<>();
+        return element -> {
+            Set<String> names = carried.updateAndGet(
+                    known -> known != null ? known : carriedInside(bundles));
+            return names.contains(element.getName()) || !isFenixMod(element.getFile());
+        };
+    }
+
     private static Set<String> carriedInside(Iterable<File> candidates) {
         Set<String> carried = new HashSet<>();
         for (File file : candidates) {

@@ -10,6 +10,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.resources.ResourceKey;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTab;
@@ -75,6 +79,31 @@ public final class ModContent {
      */
     public static final Holder<Item> RUBY_WISP_SPAWN_EGG =
             REGISTRAR.spawnEgg("ruby_wisp_spawn_egg", RUBY_WISP);
+
+    /**
+     * Sparks, drawn when the safe is opened.
+     *
+     * <p>Registering the type is the half both sides need. The client also has
+     * to say what it looks like — {@code ParticleRendering} in the client half
+     * — and the textures come from {@code particles/ruby_spark.json}.
+     */
+    public static final Holder<SimpleParticleType> RUBY_SPARK = REGISTRAR.particle("ruby_spark");
+
+    /** A status effect, which is a class of the mod's own plus this line. */
+    public static final Holder<RubyGlimmerEffect> RUBY_GLIMMER =
+            REGISTRAR.effect("ruby_glimmer", new RubyGlimmerEffect());
+
+    /**
+     * How many times a hammer has been swung.
+     *
+     * <p>Persistent so it survives saving, and network-synchronised so the
+     * client can put it in the tooltip. A component with neither would last
+     * until the stack was next looked at.
+     */
+    public static final Holder<DataComponentType<Integer>> SWINGS =
+            REGISTRAR.dataComponent("swings", builder -> builder
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT));
 
     private ModContent() {
     }

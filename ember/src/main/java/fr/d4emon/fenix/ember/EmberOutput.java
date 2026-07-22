@@ -1,6 +1,7 @@
 package fr.d4emon.fenix.ember;
 
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
@@ -87,16 +88,19 @@ public final class EmberOutput {
         return switch (content) {
             case Block block -> net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block);
             case Item item -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
+            case MobEffect effect ->
+                    net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.getKey(effect);
             default -> throw new IllegalArgumentException(
-                    content.getClass().getName() + " is neither a block nor an item");
+                    content.getClass().getName() + " is not a block, an item or an effect");
         };
     }
 
-    /** {@return the translation key of a block or item} */
+    /** {@return the translation key of a block, item or status effect} */
     static String descriptionId(Object content) {
         return switch (content) {
             case Block block -> block.getDescriptionId();
             case Item item -> item.getDescriptionId();
+            case MobEffect effect -> effect.getDescriptionId();
             default -> throw new IllegalArgumentException(
                     content.getClass().getName() + " has no translation key");
         };
