@@ -13,7 +13,13 @@ import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.world.entity.SpawnPlacementTypes;
+import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
@@ -65,6 +71,8 @@ public final class RegistryProbe {
         checkSound();
         checkEntity();
         checkMenu();
+        checkSpawning();
+        checkSmallRegistries();
 
         System.out.println("registry conformance: all checks passed");
     }
@@ -174,6 +182,62 @@ public final class RegistryProbe {
         MenuType<?> type = BuiltInRegistries.MENU.getValue(Identifier.parse("probemod:chest"));
         require(type != null, "the menu type should be in the registry");
         require(type == ProbeContent.CHEST_MENU.get(), "the handle should be bound to it");
+    }
+
+    /**
+     * A spawn egg has to name its entity, and a mob has to have a placement.
+     *
+     * <p>Both fail quietly. An egg whose component is missing spawns nothing
+     * when right-clicked; a mob with no placement can be summoned and hatched
+     * and simply never appears in the world, which reads as a wrong spawn
+     * weight rather than as a missing registration.
+     */
+    private static void checkSpawning() {
+        Item egg = BuiltInRegistries.ITEM.getValue(Identifier.parse("probemod:critter_spawn_egg"));
+        require(egg != null, "the spawn egg should be in the registry");
+        require(egg == ProbeContent.CRITTER_EGG.get(), "the handle should be bound to it");
+        require(egg instanceof SpawnEggItem, "and it should be a spawn egg");
+
+        // Getting this far is the check that matters. An egg names its entity
+        // by holding the type itself, not a promise of one, so it can only be
+        // built once the entity exists — and the registrar's late pass is what
+        // arranges that. Declared the other way round and without it, this line
+        // is never reached: apply() throws while the handle is still unbound.
+        //
+        // What the stack actually carries cannot be read here. Components are
+        // bound while the game loads datapacks, and a probe stops long before
+        // that: until then vanilla's own Items.STONE cannot be made into a
+        // stack either.
+
+        // Vanilla answers NO_RESTRICTIONS for a type it has never heard of, so
+        // asking for the placement is not enough — it has to be the one asked
+        // for.
+        require(SpawnPlacements.getPlacementType(ProbeContent.CRITTER.get())
+                        == SpawnPlacementTypes.ON_GROUND,
+                "the placement registered should be the one asked for");
+        require(SpawnPlacements.getHeightmapType(ProbeContent.CRITTER.get())
+                        == Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                "and so should the heightmap");
+    }
+
+    /** The registries that are one line each, and silent when missed. */
+    private static void checkSmallRegistries() {
+        require(BuiltInRegistries.PARTICLE_TYPE.getValue(Identifier.parse("probemod:spark"))
+                        == ProbeContent.SPARK.get(),
+                "the particle type should be in the registry, bound to its handle");
+
+        require(BuiltInRegistries.MOB_EFFECT.getValue(Identifier.parse("probemod:glimmer"))
+                        == ProbeContent.GLIMMER.get(),
+                "the status effect should be in the registry, bound to its handle");
+
+        DataComponentType<Integer> charge = ProbeContent.CHARGE.get();
+        require(BuiltInRegistries.DATA_COMPONENT_TYPE.getValue(Identifier.parse("probemod:charge"))
+                        == charge,
+                "the data component type should be in the registry, bound to its handle");
+
+        // A component registered without a codec cannot be saved, and that is
+        // invisible until a world is reloaded and the state is simply gone.
+        require(charge.codec() != null, "a persistent component should have a codec, or it never saves");
     }
 
     private static void checkSound() {

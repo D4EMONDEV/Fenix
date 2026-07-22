@@ -36,6 +36,11 @@ public final class ExampleModClient implements FenixMod {
         // Vanilla's item renderer is all a wisp needs — no model file.
         EntityRendering.register(ModContent.RUBY_WISP, ThrownItemRenderer::new);
 
+        // Keys are client-only, and registered here rather than beside the
+        // content: onRegister runs before the game builds its options, which
+        // is exactly when the list has to be complete.
+        ModKeys.listen();
+
         // The other half of a menu: the server opens the window, this says what
         // the player sees when it opens.
         MenuScreens.register(ModContent.RUBY_SAFE_MENU, RubySafeScreen::new);

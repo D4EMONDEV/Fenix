@@ -5,30 +5,43 @@ All notable changes to Fenix are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Fixed
-
-- `MenuScreens.register` could not be called by a mod. It took vanilla's
-  `ScreenConstructor`, which is private, so `javac` refused the method reference
-  at the call site — the same trap `MenuFactory` was written to avoid on the
-  other half of the API, missed here. It now takes Fenix's own `ScreenFactory`
-  and adapts internally, where naming vanilla's type is this module's privilege
-  rather than a mod's problem.
-
-  Found by writing the demo. Nothing had ever called the method from outside the
-  module that declares it, which is the one place the mistake was invisible.
-
-- The example mod declared three API modules while using six, and had for
-  weeks. Nothing complained, because `depends` asserts presence and all six
-  were present anyway — which is the argument for naming the bundle instead of
-  keeping a list by hand. It now depends on `fenix-api` alone.
-
-- Blocks in the example mod declaring `requiresTool()` without a
-  `mineable/pickaxe` tag. No tool is the correct one for such a block, so it
-  broke without ever dropping.
+## [0.1.1] — 2026-07-22
 
 ### Added
+
+- **Key bindings.** `KeyBindings.register` binds a key and returns the mapping
+  to ask; `KeyBindings.category` makes a group of the mod's own. Vanilla builds
+  its list of mappings once, in a field initialiser naming its own one by one,
+  and never reads it again — so a mapping missing from that list never reaches
+  the controls screen and is never written to `options.txt`. The key works
+  until the player restarts, then silently returns to its default, with nothing
+  logged. Fenix appends to the list at the end of `Options`' constructor, which
+  is after the initialiser and before anything reads it.
+
+- **Spawn eggs and spawn rules.** `Registrar.spawnEgg` and
+  `Registrar.spawnRule`. The egg holds its entity type rather than a promise of
+  one, so it is registered in the pass that runs once every entity exists —
+  which is what lets the two be declared in whichever order reads best. Without
+  the rule an entity can be summoned and hatched from its egg and still never
+  appear in the world, which reads as a wrong spawn weight rather than as a
+  missing registration.
+
+- **Particles, status effects and data components.** One line each:
+  `particle`, `effect`, `dataComponent`. `SimpleParticleType`'s constructor is
+  protected, so the registry module widens it rather than making every mod
+  write a subclass to reach `super`.
+
+- **`./gradlew apiDocs`** — one browsable Javadoc site over every module, both
+  halves of each, into `build/docs/api`. The `-javadoc` jars each module
+  already published are what an IDE reads and what nobody browses. The client
+  halves are included deliberately: `KeyBindings`, `MenuScreens` and
+  `EntityRendering` live there, and a per-module split is what hides them.
+
+- Two more conformance checks, each verified to fail when what it covers is
+  sabotaged: the key binding injection landing on `Options` — including that
+  `keyMappings` is no longer final, without which the injection lands and its
+  assignment does nothing — and spawn eggs, spawn rules, particles, effects and
+  data components reaching their registries.
 
 - `fenix-api` declares the modules it carries, so one line in `depends` is now
   enough for the whole API. Carrying a module and depending on it are not the
@@ -51,16 +64,35 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- The installer offers the game versions it finds rather than asking for one to
-  be typed. That text box was its last remaining way to fail: a name that did
-  not match a folder produced an error the player then had to go and check. The
-  list is what the launcher has actually run — the same condition the install
-  needs — so anything offered will work, and versions sort newest first counting
-  numbers as numbers, since "26.10" above "26.2" is noticed at once and trusted
-  less for. A second list carries the Fenix versions available for the game
-  version chosen: one today, and honestly so, because the loader and its
-  libraries travel inside the installer and the only version it can lay down is
-  the one it carries.
+- The roadmap said phases 7 onward were not started while marking both done
+  further down. It also listed two gaps that are not gaps in 26.2, now written
+  down as such so they are not "fixed" later:
+  **render layers**, which the game derives from a texture's own alpha channel
+  — glass and plants render correctly with no registration, and the
+  `ItemBlockRenderTypes` table earlier versions needed is gone — and
+  **enchantments**, which have been datapack data since 1.21.
+
+
+### Fixed
+
+- `MenuScreens.register` could not be called by a mod. It took vanilla's
+  `ScreenConstructor`, which is private, so `javac` refused the method reference
+  at the call site — the same trap `MenuFactory` was written to avoid on the
+  other half of the API, missed here. It now takes Fenix's own `ScreenFactory`
+  and adapts internally, where naming vanilla's type is this module's privilege
+  rather than a mod's problem.
+
+  Found by writing the demo. Nothing had ever called the method from outside the
+  module that declares it, which is the one place the mistake was invisible.
+
+- The example mod declared three API modules while using six, and had for
+  weeks. Nothing complained, because `depends` asserts presence and all six
+  were present anyway — which is the argument for naming the bundle instead of
+  keeping a list by hand. It now depends on `fenix-api` alone.
+
+- Blocks in the example mod declaring `requiresTool()` without a
+  `mineable/pickaxe` tag. No tool is the correct one for such a block, so it
+  broke without ever dropping.
 
 ## [0.1.0] — 2026-07-22
 
@@ -450,6 +482,17 @@ be written against, and an installer a player can double-click.
 
 ### Changed
 
+
+- The installer offers the game versions it finds rather than asking for one to
+  be typed. That text box was its last remaining way to fail: a name that did
+  not match a folder produced an error the player then had to go and check. The
+  list is what the launcher has actually run — the same condition the install
+  needs — so anything offered will work, and versions sort newest first counting
+  numbers as numbers, since "26.10" above "26.2" is noticed at once and trusted
+  less for. A second list carries the Fenix versions available for the game
+  version chosen: one today, and honestly so, because the loader and its
+  libraries travel inside the installer and the only version it can lay down is
+  the one it carries.
 - The version is now `0.1.0`, not `0.1.0-SNAPSHOT`: a statically hosted
   repository serves releases, and a pre-release sorts below its release so
   `>=0.1.0` would otherwise reject the loader.

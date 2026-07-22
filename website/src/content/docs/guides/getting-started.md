@@ -133,6 +133,41 @@ Name the tab from the key itself so the two cannot drift apart:
 add(ModContent.TAB, "Example Mod");
 ```
 
+## Key bindings
+
+Client-only, so `src/client/java`:
+
+```java
+public static final KeyMapping COUNT = KeyBindings.register(
+        Identifier.parse("mymod:count"), InputConstants.KEY_K);
+```
+
+Then read it on the client tick, in a `while` — a key pressed twice between two
+ticks reports twice, and asking once drops the second press:
+
+```java
+ClientEvents.TICK_END.register(tick -> {
+    while (COUNT.consumeClick()) {
+        // …
+    }
+});
+```
+
+The id doubles as a translation key: `key.mymod.count`.
+
+## Spawning
+
+```java
+public static final Holder<Item> WISP_EGG = REGISTRAR.spawnEgg("wisp_spawn_egg", WISP);
+
+REGISTRAR.spawnRule(WISP, SpawnPlacementTypes.ON_GROUND,
+        Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Animal::checkAnimalSpawnRules);
+```
+
+Without the rule an entity can be summoned and hatched from its egg and still
+never appear in the world — which reads as a wrong spawn weight rather than as
+a missing registration.
+
 ## Reacting to the game
 
 ```java

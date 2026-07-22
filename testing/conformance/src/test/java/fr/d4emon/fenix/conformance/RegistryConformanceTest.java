@@ -42,6 +42,7 @@ class RegistryConformanceTest {
             "fr/d4emon/fenix/probe/ProbeBlockEntity.class",
             "fr/d4emon/fenix/probe/ProbeContent.class",
             "fr/d4emon/fenix/probe/ProbeCritter.class",
+            "fr/d4emon/fenix/probe/ProbeEffect.class",
             "fr/d4emon/fenix/probe/ProbeMachineBlock.class",
             "fr/d4emon/fenix/probe/ProbeMenu.class",
             "fr/d4emon/fenix/probe/ProbeMod.class",

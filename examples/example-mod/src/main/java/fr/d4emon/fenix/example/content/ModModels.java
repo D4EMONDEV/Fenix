@@ -18,6 +18,10 @@ public final class ModModels extends EmberModelProvider {
         cubeAll(ModBlocks.RUBY_TALLY);
         cubeAll(ModBlocks.RUBY_SAFE);
 
+        // A spawn egg is an ordinary flat item in 26.2 — one texture, no tint
+        // template — so there is nothing special to say about it here.
+        flatItem(ModContent.RUBY_WISP_SPAWN_EGG);
+
         flatItem(ModItems.RUBY);
         flatItem(ModItems.RUBY_HAMMER);
     }

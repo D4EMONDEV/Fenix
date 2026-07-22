@@ -9,12 +9,14 @@
   "mixins": [
     "CreativeModeTabMixin",
     "CreativeTabValidationMixin",
-    "DefaultAttributesMixin"
+    "DefaultAttributesMixin",
+    "SpawnPlacementsInvoker"
   ],
   "client": [
     "CreativeModeTabsMixin",
     "CreativeScreenMixin",
     "EntityRenderersAccessor",
-    "MenuScreensAccessor"
+    "MenuScreensAccessor",
+    "OptionsMixin"
   ]
 }

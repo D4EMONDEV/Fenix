@@ -89,18 +89,33 @@ proves the loader works.
   are applied by the loader at run time *and* by the Gradle plugin to the jar
   the mod compiles against, so the two cannot disagree.
 
-Still missing, in the order a mod author hits them:
+- **Key bindings** ✅ — `KeyBindings.register` and a category of the mod's
+  own. Vanilla builds its list of mappings once, from a field initialiser
+  naming its own one by one, and never reads it again; a mapping missing from
+  it never reaches the controls screen and is never saved, so the key works
+  until the player restarts and then silently reverts.
+- **Spawn eggs and spawn rules** ✅ — `Registrar.spawnEgg` and
+  `Registrar.spawnRule`. Without the rule an entity can be summoned and hatched
+  and never appears in the world, which reads as a wrong spawn weight rather
+  than as a missing registration.
+- **Particles, status effects and data components** ✅ — one line each.
 
-- **Keybindings.** Nothing today. A client mod that wants a key has to reach
-  into `KeyMapping` itself, and every one that does will do it differently.
-- **Render layers.** Every block Fenix registers renders opaque. There is no
-  way to say cutout or translucent, so glass, plants and anything with a hole
-  in it are simply not writable yet.
-- **Spawn eggs and spawn rules.** An entity can be registered and then only
-  summoned by command.
-- **The rest of the registries** — particles, effects, enchantments, fluids,
-  recipe serializers. Each is a small addition on the pattern `menu` set; the
-  work is knowing which vanilla bookkeeping each one skips.
+Still missing, and wanted:
+
+- **Fluids.** Not one registration but four — the fluid, its flowing form, the
+  block it becomes and the bucket — plus a renderer. A convenience wrapper that
+  covered only the first would be worse than none.
+- **Custom recipes.** The registries are there; what is missing is a
+  `Recipe` implementation worth handing to a mod, and the crafting screen to go
+  with it.
+
+Two things worth writing down because they *look* missing and are not:
+
+- **Render layers.** 26.2 derives them from the texture's own alpha, in
+  `BakedQuad.MaterialInfo.of` via `ChunkSectionLayer.byTransparency`, so glass
+  and plants render correctly with no registration at all. The
+  `ItemBlockRenderTypes` table earlier versions needed is gone.
+- **Enchantments.** Datapack data since 1.21, not a code registry.
 
 ## Phase 6 — Ember ✅
 
@@ -149,9 +164,10 @@ Textures and ogg files are what it cannot generate.
   is the Maven repository, and a repository can only serve one Pages site. It
   needs either a custom domain or a `D4EMONDEV.github.io` user site; nothing
   in CI builds or deploys `website/` today.
-- Generated API documentation — every module publishes a `-javadoc` jar, but
-  nothing aggregates them into something readable in a browser.
-- A conformance suite broad enough to trust a release — ten checks today, each
+- Generated API documentation ✅ — `./gradlew apiDocs` builds one browsable
+  site covering every module, both halves of each, under `build/docs/api`. It
+  is not deployed anywhere yet, for the same reason the website is not.
+- A conformance suite broad enough to trust a release — twelve checks today, each
   verified to fail when the thing it covers is sabotaged. Untested end to end:
   the installer against a real `.minecraft`, and Ember's output against a real
   resource load.

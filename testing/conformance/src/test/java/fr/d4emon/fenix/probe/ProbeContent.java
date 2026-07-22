@@ -7,7 +7,12 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -61,6 +66,19 @@ public final class ProbeContent {
     public static final Holder<MenuType<ProbeMenu>> CHEST_MENU =
             REGISTRAR.menu("chest", ProbeMenu::new);
 
+    /** A spawn egg, which is an item whose entity travels as a component. */
+    public static final Holder<Item> CRITTER_EGG = REGISTRAR.spawnEgg("critter_spawn_egg", CRITTER);
+
+    /** A particle, whose type vanilla will not let a mod construct unwidened. */
+    public static final Holder<SimpleParticleType> SPARK = REGISTRAR.particle("spark");
+
+    /** A status effect. */
+    public static final Holder<ProbeEffect> GLIMMER = REGISTRAR.effect("glimmer", new ProbeEffect());
+
+    /** A data component, the way 26.x carries state on a stack. */
+    public static final Holder<DataComponentType<Integer>> CHARGE =
+            REGISTRAR.dataComponent("charge", builder -> builder.persistent(Codec.INT));
+
     /** A sound event, which is half of a sound; sounds.json is the other half. */
     public static final Holder<SoundEvent> CHIME = REGISTRAR.sound("chime");
 
@@ -70,6 +88,11 @@ public final class ProbeContent {
         REGISTRAR.attributes(CRITTER, () -> Animal.createAnimalAttributes()
                 .add(Attributes.MAX_HEALTH, 8)
                 .add(Attributes.MOVEMENT_SPEED, 0.25));
+
+        // Without this the critter can be summoned and hatched from its egg,
+        // and never appears on its own anywhere.
+        REGISTRAR.spawnRule(CRITTER, SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Animal::checkAnimalSpawnRules);
     }
 
     private ProbeContent() {

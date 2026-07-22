@@ -6,5 +6,8 @@
   "container.example-mod.ruby_safe": "Ruby Safe",
   "item.example-mod.ruby": "Ruby",
   "item.example-mod.ruby_hammer": "Ruby Hammer",
-  "itemGroup.example-mod.example_mod": "Example Mod"
+  "item.example-mod.ruby_wisp_spawn_egg": "Ruby Wisp Spawn Egg",
+  "itemGroup.example-mod.example_mod": "Example Mod",
+  "key.category.example-mod.example_mod": "Example Mod",
+  "key.example-mod.count_wisps": "Count nearby wisps"
 }

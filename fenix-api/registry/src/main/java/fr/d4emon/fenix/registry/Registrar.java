@@ -29,6 +29,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import fr.d4emon.fenix.mixin.registry.SpawnPlacementsInvoker;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.SpawnPlacementType;
+import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.level.levelgen.Heightmap;
+
+import java.util.function.UnaryOperator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -506,6 +518,186 @@ public final class Registrar {
             ResourceKey<SoundEvent> key = ResourceKey.create(Registries.SOUND_EVENT, id);
             holder.bind(Registry.register(BuiltInRegistries.SOUND_EVENT, key,
                     SoundEvent.createVariableRangeEvent(id)));
+        });
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Spawning
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a spawn egg for an entity.
+     *
+     * <pre>{@code
+     * public static final Holder<Item> WISP_EGG = REGISTRAR.spawnEgg("wisp_spawn_egg", WISP);
+     * }</pre>
+     *
+     * <p>A spawn egg is an ordinary flat item in 26.2 — one texture, no tint
+     * template — so {@code EmberModelProvider.flatItem} writes its model and
+     * the two colours are the texture's own.
+     *
+     * <p>Registered after every entity type, so the egg and the entity can be
+     * declared in whichever order reads best.
+     *
+     * @param <T>  the entity class
+     * @param name the path part of the item's id
+     * @param type the entity it spawns
+     * @return a handle, bound once {@link #apply()} runs
+     * @throws NullPointerException if {@code type} is {@code null}
+     */
+    public <T extends Entity> Holder<Item> spawnEgg(String name, Holder<EntityType<T>> type) {
+        Objects.requireNonNull(type, "type");
+        Identifier id = identifier(name);
+        Holder<Item> holder = new Holder<>(id);
+
+        // Late, because the properties need the entity type itself rather than
+        // a promise of one.
+        deferLate(() -> {
+            ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, id);
+            holder.bind(Registry.register(BuiltInRegistries.ITEM, key,
+                    new SpawnEggItem(new Item.Properties().setId(key).spawnEgg(type.get()))));
+        });
+        return holder;
+    }
+
+    /**
+     * Says where and when an entity may spawn on its own.
+     *
+     * <pre>{@code
+     * REGISTRAR.spawnRule(WISP, SpawnPlacementTypes.ON_GROUND,
+     *         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mob::checkMobSpawnRules);
+     * }</pre>
+     *
+     * <p>This is one half of natural spawning; the other is a biome giving the
+     * mob a weight, which is data rather than code. Without <em>this</em> half
+     * the entity never spawns anywhere at all — which reads as a wrong spawn
+     * weight rather than as a missing registration.
+     *
+     * <p>Registered after every entity type, so declaration order does not
+     * matter.
+     *
+     * @param <T>           the mob class
+     * @param type          the entity type
+     * @param placementType what it needs underfoot
+     * @param heightmap     which surface a candidate position is measured from
+     * @param predicate     the final say — light level, difficulty, whatever
+     *                      the mob cares about
+     * @throws NullPointerException if any argument is {@code null}
+     */
+    public <T extends Mob> void spawnRule(Holder<EntityType<T>> type,
+                                          SpawnPlacementType placementType,
+                                          Heightmap.Types heightmap,
+                                          SpawnPlacements.SpawnPredicate<T> predicate) {
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(placementType, "placementType");
+        Objects.requireNonNull(heightmap, "heightmap");
+        Objects.requireNonNull(predicate, "predicate");
+
+        deferLate(() -> SpawnPlacementsInvoker.fenix$register(
+                type.get(), placementType, heightmap, predicate));
+    }
+
+    // ------------------------------------------------------------------
+    // Smaller registries
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a particle carrying no data of its own.
+     *
+     * <p>This is the half both sides need. The client also has to say what the
+     * particle looks like, and needs a file under {@code particles/} naming its
+     * textures.
+     *
+     * @param name the path part of its id
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<SimpleParticleType> particle(String name) {
+        return particle(name, false);
+    }
+
+    /**
+     * Declares a particle carrying no data of its own.
+     *
+     * @param name          the path part of its id
+     * @param alwaysVisible {@code true} to ignore the particle-distance
+     *                      setting, as vanilla's explosions do. Reserve it for
+     *                      particles carrying meaning a player must not miss.
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<SimpleParticleType> particle(String name, boolean alwaysVisible) {
+        Identifier id = identifier(name);
+        Holder<SimpleParticleType> holder = new Holder<>(id);
+
+        defer(() -> {
+            ResourceKey<ParticleType<?>> key = ResourceKey.create(Registries.PARTICLE_TYPE, id);
+            holder.bind(Registry.register(BuiltInRegistries.PARTICLE_TYPE, key,
+                    new SimpleParticleType(alwaysVisible)));
+        });
+        return holder;
+    }
+
+    /**
+     * Declares a status effect.
+     *
+     * <pre>{@code
+     * public static final Holder<MobEffect> GLIMMER =
+     *         REGISTRAR.effect("glimmer", new GlimmerEffect());
+     * }</pre>
+     *
+     * <p>The effect is a class of the mod's own extending {@code MobEffect};
+     * what it does lives in {@code applyEffectTick}.
+     *
+     * @param <T>    the effect class
+     * @param name   the path part of its id
+     * @param effect the effect
+     * @return a handle, bound once {@link #apply()} runs
+     * @throws NullPointerException if {@code effect} is {@code null}
+     */
+    public <T extends MobEffect> Holder<T> effect(String name, T effect) {
+        Objects.requireNonNull(effect, "effect");
+        Identifier id = identifier(name);
+        Holder<T> holder = new Holder<>(id);
+
+        defer(() -> {
+            ResourceKey<MobEffect> key = ResourceKey.create(Registries.MOB_EFFECT, id);
+            Registry.register(BuiltInRegistries.MOB_EFFECT, key, effect);
+            holder.bind(effect);
+        });
+        return holder;
+    }
+
+    /**
+     * Declares a data component — a typed piece of state a stack carries.
+     *
+     * <pre>{@code
+     * public static final Holder<DataComponentType<Integer>> CHARGE =
+     *         REGISTRAR.dataComponent("charge", builder -> builder
+     *                 .persistent(Codec.INT)
+     *                 .networkSynchronized(ByteBufCodecs.VAR_INT));
+     * }</pre>
+     *
+     * <p>Say {@code persistent} for state that has to survive saving, and
+     * {@code networkSynchronized} for state the client needs in order to draw.
+     * A component with neither lasts until the stack is next looked at.
+     *
+     * @param <T>   the value type
+     * @param name  the path part of its id
+     * @param build fills in the builder
+     * @return a handle, bound once {@link #apply()} runs
+     * @throws NullPointerException if {@code build} is {@code null}
+     */
+    public <T> Holder<DataComponentType<T>> dataComponent(
+            String name, UnaryOperator<DataComponentType.Builder<T>> build) {
+        Objects.requireNonNull(build, "build");
+        Identifier id = identifier(name);
+        Holder<DataComponentType<T>> holder = new Holder<>(id);
+
+        defer(() -> {
+            ResourceKey<DataComponentType<?>> key =
+                    ResourceKey.create(Registries.DATA_COMPONENT_TYPE, id);
+            holder.bind(Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, key,
+                    build.apply(DataComponentType.builder()).build()));
         });
         return holder;
     }

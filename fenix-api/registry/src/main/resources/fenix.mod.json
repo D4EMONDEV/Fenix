@@ -23,6 +23,7 @@
   "accessible": [
     "class net.minecraft.world.inventory.MenuType$MenuSupplier",
     "method net.minecraft.world.inventory.MenuType <init>",
-    "class net.minecraft.client.gui.screens.MenuScreens$ScreenConstructor"
+    "class net.minecraft.client.gui.screens.MenuScreens$ScreenConstructor",
+    "method net.minecraft.core.particles.SimpleParticleType <init>"
   ]
 }

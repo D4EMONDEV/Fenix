@@ -24,6 +24,12 @@ public final class ModLanguage extends EmberLanguageProvider {
 
         add(ModItems.RUBY, "Ruby");
         add(ModItems.RUBY_HAMMER, "Ruby Hammer");
+        add(ModContent.RUBY_WISP_SPAWN_EGG, "Ruby Wisp Spawn Egg");
+
+        // The key binding, and the group it sits in. Without these the controls
+        // screen shows the raw translation key.
+        add("key.example-mod.count_wisps", "Count nearby wisps");
+        add("key.category.example-mod.example_mod", "Example Mod");
 
         // The key comes from the tab, so renaming it cannot leave a stale
         // translation behind.

@@ -8,6 +8,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTab;
 
 /**
@@ -59,6 +60,19 @@ public final class ModContent {
     public static final Holder<MenuType<RubySafeMenu>> RUBY_SAFE_MENU =
             REGISTRAR.menu("ruby_safe", RubySafeMenu::new);
 
+    /**
+     * Hatches a wisp, so the entity can be met without a command.
+     *
+     * <p>Beside the entity rather than in {@link ModItems}, and not by taste:
+     * this class initialises that one — {@link #TAB} names a ruby as its icon —
+     * so a field there reading {@code ModContent.RUBY_WISP} would read it while
+     * this class is still half-initialised, and get null. Java allows the cycle
+     * and says nothing; the registrar reports a null entity, from a line that
+     * looks correct.
+     */
+    public static final Holder<Item> RUBY_WISP_SPAWN_EGG =
+            REGISTRAR.spawnEgg("ruby_wisp_spawn_egg", RUBY_WISP);
+
     private ModContent() {
     }
 
@@ -82,10 +96,12 @@ public final class ModContent {
 
         CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
         CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES, ModItems.RUBY_HAMMER);
+        CreativeTabs.addTo(CreativeTabs.SPAWN_EGGS, RUBY_WISP_SPAWN_EGG);
 
         // And again in the mod's own tab, where a player looking for this mod
         // in particular will go. Content belongs in both.
         CreativeTabs.addTo(TAB, ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK,
-                ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE, ModItems.RUBY, ModItems.RUBY_HAMMER);
+                ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE, ModItems.RUBY, ModItems.RUBY_HAMMER,
+                RUBY_WISP_SPAWN_EGG);
     }
 }

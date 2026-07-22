@@ -359,6 +359,93 @@ there is no inventory and no position to look at.
 it rather than resetting it, so anything a mod attached to the old one is gone
 and has to be put back here.
 
+## Key bindings
+
+Client-only, so `src/client/java`:
+
+```java
+public static final KeyMapping COUNT = KeyBindings.register(
+        Identifier.parse("mymod:count"), InputConstants.KEY_K);
+```
+
+Read it on the client tick, in a `while` rather than an `if` — a key pressed
+twice between two ticks reports twice, and asking once drops the second press:
+
+```java
+ClientEvents.TICK_END.register(tick -> {
+    while (COUNT.consumeClick()) {
+        // …
+    }
+});
+```
+
+The id is a translation key: `mymod:count` is shown as whatever
+`key.mymod.count` says. Without that line the player sees the raw key in their
+controls screen. A mod with several keys can group them:
+
+```java
+KeyMapping.Category category = KeyBindings.category(Identifier.parse("mymod:mymod"));
+```
+
+Registering has to happen in `onRegister`, which runs before the game builds
+its options — and that list is built once and never read again.
+
+## Spawning
+
+```java
+public static final Holder<Item> WISP_EGG = REGISTRAR.spawnEgg("wisp_spawn_egg", WISP);
+```
+
+A spawn egg is an ordinary flat item in 26.2 — one texture, no tint template —
+so `flatItem` writes its model and the two colours are the texture's own.
+
+For an entity to appear on its own, it also needs a placement:
+
+```java
+REGISTRAR.spawnRule(WISP, SpawnPlacementTypes.ON_GROUND,
+        Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Animal::checkAnimalSpawnRules);
+```
+
+That is one half of natural spawning; the other is a biome giving the mob a
+weight, which is data. Without *this* half the entity never spawns anywhere at
+all — and that reads as a wrong spawn weight rather than a missing call.
+
+:::caution[Watch the class initialisation order]
+Declare the egg beside the entity. If the class holding your entity also
+initialises the class holding your items — a creative tab naming an item as its
+icon is enough — then an item field reading `ModContent.WISP` reads it while
+that class is half-initialised, and gets null. Java allows the cycle and says
+nothing.
+:::
+
+## Smaller registries
+
+| Call | For |
+|---|---|
+| `REGISTRAR.particle("spark")` | a particle with no data of its own |
+| `REGISTRAR.effect("glimmer", new GlimmerEffect())` | a status effect |
+| `REGISTRAR.dataComponent("charge", …)` | typed state a stack carries |
+
+A data component says how it travels:
+
+```java
+REGISTRAR.dataComponent("charge", builder -> builder
+        .persistent(Codec.INT)
+        .networkSynchronized(ByteBufCodecs.VAR_INT));
+```
+
+`persistent` for state that has to survive saving, `networkSynchronized` for
+state the client needs in order to draw. A component with neither lasts until
+the stack is next looked at.
+
+:::note[Two things you do not have to do]
+**Render layers.** 26.2 works them out from the texture's own alpha channel, so
+glass and plants render correctly with no registration. The table earlier
+versions needed is gone.
+
+**Enchantments.** Datapack data since 1.21 — a JSON file, not a registry call.
+:::
+
 ## Menus
 
 A block that opens a screen needs a menu type, a menu, and a screen. The
