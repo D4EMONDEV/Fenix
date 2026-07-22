@@ -75,6 +75,67 @@ val apiDocs = tasks.register<Javadoc>("apiDocs") {
     }
 }
 
+/**
+ * Writes the same API reference as pages the website renders.
+ *
+ * The javadoc jars every module publishes are what an IDE reads; a browsable
+ * site is a different job, and one the reference should not be a second,
+ * hand-written copy of. Both tasks read the same sources through the same
+ * doclet API, so the site cannot describe an API the compiler does not have.
+ *
+ * Regenerating is deliberate rather than automatic: the output is committed, so
+ * a change to the documentation shows up in a diff like any other change.
+ */
+val apiDocsSite = tasks.register<Javadoc>("apiDocsSite") {
+    group = "fenix"
+    description = "Writes the API reference into the website, as Markdown"
+
+    val docletProject = project(":api-doclet")
+    val docletJar = docletProject.tasks.named<Jar>("jar")
+    dependsOn(docletJar)
+
+    val pages = layout.projectDirectory.dir("website/src/content/docs/reference/api")
+    setDestinationDir(pages.asFile)
+
+    options {
+        this as StandardJavadocDocletOptions
+        encoding = "UTF-8"
+        docletpath = listOf(docletJar.get().archiveFile.get().asFile)
+        doclet = "fr.d4emon.fenix.doclet.MarkdownDoclet"
+        addStringOption("-doctitle", "API reference")
+        // Standard javadoc's own flags are not this doclet's, and javadoc
+        // passes whatever it is given straight through.
+        isNoTimestamp = false
+    }
+
+    doFirst {
+        // Removed rather than overwritten: a package that stops existing should
+        // stop having a page, and a stale one would sit in the sidebar looking
+        // exactly as current as the rest.
+        delete(pages.asFile.listFiles { file -> file.name.endsWith(".md") })
+    }
+
+    doLast {
+        // The archived copy of the series being developed, if there is one.
+        //
+        // starlight-versions freezes a copy of the whole documentation per
+        // released series, and 0.1.2 is what someone reading the "0.1" pages is
+        // actually running — so that copy should describe the API they have,
+        // not the API 0.1.0 had. Once 0.2 opens, this stops touching 0.1 by
+        // itself: the series is read from the version being built.
+        val series = version.toString().substringBefore('+').split('.').take(2).joinToString(".")
+        val archived = layout.projectDirectory
+            .dir("website/src/content/docs/$series/reference/api")
+        if (archived.asFile.parentFile.parentFile.isDirectory) {
+            sync {
+                from(pages)
+                into(archived)
+            }
+            logger.lifecycle("mirrored the reference into the $series pages")
+        }
+    }
+}
+
 subprojects {
     plugins.withId("java") {
         // Documented: what a mod is written against. The installer, the
@@ -83,7 +144,7 @@ subprojects {
             return@withId
         }
         val sourceSets = extensions.getByType<SourceSetContainer>()
-        apiDocs.configure {
+        listOf(apiDocs, apiDocsSite).forEach { docs -> docs.configure {
             sourceSets.matching { it.name == "main" || it.name == "client" }.all {
                 source(allJava)
                 // Compiled output as well as the compile classpath: the mixins
@@ -99,7 +160,7 @@ subprojects {
             // a plain one side by side — so a mixin naming a widened type fails
             // to resolve, depending on which jar came first.
             exclude("**/mixin/**")
-        }
+        } }
     }
 }
 

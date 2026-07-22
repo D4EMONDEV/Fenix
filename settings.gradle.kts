@@ -73,5 +73,10 @@ project(":demo-mod").projectDir = settingsDir.resolve("testing/demo-mod")
 
 include(":testmod")
 
+// Writes the API reference as pages the website renders, so the documentation
+// a mod author reads is the documentation in the source.
+include(":api-doclet")
+project(":api-doclet").projectDir = settingsDir.resolve("tools/api-doclet")
+
 include(":example-mod")
 project(":example-mod").projectDir = settingsDir.resolve("examples/example-mod")
