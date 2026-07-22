@@ -51,11 +51,31 @@ reachable, because somewhere a mod's build file names it and will keep naming it
 for years — an artifact that disappears is a mod that stops building, and its
 author has no way to bring it back.
 
-So the repository lives on a branch of its own, and Pages is pointed straight at
-that branch — **Settings → Pages → Source: Deploy from a branch → `maven-repo`**.
-Pushing is publishing: there is no artifact to upload and no deployment to wait
-for, and the branch is both what is served and the durable copy — the two cannot
-drift apart because there is only one of them.
+So the repository lives on a branch of its own, and Pages has to be pointed
+straight at that branch — **Settings → Pages → Source: Deploy from a branch →
+`maven-repo` / `(root)`**. That setting is not optional and not something the
+workflow can do for itself.
+
+:::caution
+With Pages left on **GitHub Actions** as its source, the branch fills up and
+nothing changes on the site: Pages keeps serving the last artifact any workflow
+deployed. That is exactly what happened between 0.1.0 and 0.1.2 — every publish
+run was green, every version reached the branch, and
+`d4emondev.github.io/Fenix/` still served the files from 0.1.0. Nothing is lost
+when it is fixed; the branch is the durable copy and Pages starts serving it.
+:::
+
+Once it is pointed at the branch, pushing is publishing: there is no artifact to
+upload and no deployment to wait for, and the branch is both what is served and
+the durable copy — the two cannot drift apart because there is only one of them.
+
+Every published version has to stay listed as well as present. Gradle writes
+`maven-metadata.xml` for the versions it just built, so copying a fresh build
+over the branch replaces a file naming every release with one naming the newest;
+the directories survive, but a build asking for a range stops seeing anything
+older. `.github/scripts/rebuild-metadata.py` rewrites each file from the version
+directories actually on disk, which repairs the whole history on the next run
+rather than only going forward.
 
 Deploying from the workflow instead would also have needed the `github-pages`
 environment opened to tags, since by default only the default branch may deploy

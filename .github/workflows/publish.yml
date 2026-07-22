@@ -66,6 +66,13 @@ jobs:
           # Copied over, never cleared: an artifact that disappears is a mod
           # that stops building, and its author cannot bring it back.
           cp -r ../build/fenix-maven-repo/. .
+          # Gradle writes metadata for the versions it just built and nothing
+          # else, so the copy above replaces a file listing every release with
+          # one listing the newest. The directories survive and an exact version
+          # still resolves, but a build asking for a range stops seeing anything
+          # older. Rebuilt from what is actually on disk, which also repairs any
+          # metadata a previous run flattened.
+          python3 ../.github/scripts/rebuild-metadata.py .
           git add -A
           git -c user.name='github-actions[bot]'               -c user.email='41898282+github-actions[bot]@users.noreply.github.com'               commit -q -m "Publish ${GITHUB_REF_NAME}" || echo "nothing new to publish"
           git push -q origin HEAD:maven-repo
