@@ -5,6 +5,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.FolderRepositorySource;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.RepositorySource;
+import net.minecraft.server.packs.repository.ServerPacksSource;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -28,9 +29,10 @@ import java.util.Set;
  * {@code instanceof ClientPackSource} — is a trap: that class is client-only,
  * and merely naming it here would be a {@code NoClassDefFoundError} on a
  * dedicated server, because loading a class resolves every type its code
- * mentions. So the type is read off the {@link FolderRepositorySource} that
- * every repository is built with (the player's {@code resourcepacks} or
- * {@code datapacks} folder), which is common to both sides.
+ * mentions. So the type is read off the sources themselves. A
+ * {@link ServerPacksSource} means datapacks and is nameable on both sides; a
+ * repository without one is the client's, and is told apart by the folder it
+ * watches.
  */
 @Mixin(PackRepository.class)
 public class PackRepositoryMixin {
@@ -60,6 +62,28 @@ public class PackRepositoryMixin {
 
     private static PackType inferType(RepositorySource[] given) {
         for (RepositorySource source : given) {
+            // A datapack repository, whether or not it has a folder behind it.
+            //
+            // This is the one that mattered and the one the folder test missed.
+            // The create-world screen builds `new PackRepository(new
+            // ServerPacksSource(...))` — vanilla and nothing else, no folder —
+            // so mod datapacks were absent from the load that decides a new
+            // world's worldgen registries. The world was then created without
+            // them, and the ore a mod adds to a biome had no feature to point
+            // at. The server noticed the pack afterwards ("Found new data pack
+            // …, loading it automatically") and reloaded recipes and
+            // advancements, which is too late: worldgen is frozen at world
+            // load.
+            //
+            // Safe to name on both sides, unlike ClientPackSource: the
+            // dedicated server is built on this class.
+            if (source instanceof ServerPacksSource) {
+                return PackType.SERVER_DATA;
+            }
+        }
+        for (RepositorySource source : given) {
+            // The client's resource-pack repository, which has no
+            // ServerPacksSource and is told apart by its folder.
             if (source instanceof FolderRepositorySource folder) {
                 return ((FolderRepositorySourceAccessor) folder).fenix$packType();
             }

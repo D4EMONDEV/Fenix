@@ -10,9 +10,11 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
@@ -58,6 +60,53 @@ class ResourceMixinTest {
                     TARGET + " should carry " + HANDLER
                             + " — mod resources would silently never be loaded");
         }
+    }
+
+    @Test
+    @DisplayName("a repository built with no folder still receives Fenix's source")
+    void modPacksReachAFolderlessRepository() throws Exception {
+        Path clientJar = requiredFile("fenix.test.clientJar");
+        Path resourceJar = requiredFile("fenix.test.resourceJar");
+
+        try (FenixClassLoader loader = new FenixClassLoader(getClass().getClassLoader())) {
+            loader.addPath(clientJar);
+            loader.addPath(resourceJar);
+            MixinSetup.bootstrap(loader, Side.CLIENT, List.of("fenix-api-resource.mixins.json"));
+
+            // ServerPacksSource reads the game's version while it initialises,
+            // so the game has to have been brought up first.
+            loader.loadClass("net.minecraft.SharedConstants")
+                    .getMethod("tryDetectVersion").invoke(null);
+            loader.loadClass("net.minecraft.server.Bootstrap")
+                    .getMethod("bootStrap").invoke(null);
+
+            // Vanilla's own name for the shape the create-world screen builds:
+            // a ServerPacksSource and nothing else, with no folder anywhere.
+            // Deciding a repository's kind by looking for a folder therefore
+            // declined to touch it — so mod datapacks were absent from the load
+            // that decides a new world's worldgen registries, an ore added to a
+            // biome had no feature to point at, and nothing said so.
+            Class<?> serverPacksSource =
+                    loader.loadClass("net.minecraft.server.packs.repository.ServerPacksSource");
+            Object repository = serverPacksSource
+                    .getMethod("createVanillaTrustedRepository").invoke(null);
+
+            assertTrue(carriesModPacks(loader, repository),
+                    "a datapack repository with no folder should still receive Fenix's source"
+                            + " — without it a mod contributes nothing to a new world, silently");
+        }
+    }
+
+    /** {@return whether Fenix's source is among a repository's own} */
+    private static boolean carriesModPacks(FenixClassLoader loader, Object repository)
+            throws Exception {
+        Field field = loader.loadClass("net.minecraft.server.packs.repository.PackRepository")
+                .getDeclaredField("sources");
+        field.setAccessible(true);
+
+        Collection<?> sources = (Collection<?>) field.get(repository);
+        return sources.stream().anyMatch(source ->
+                source.getClass().getName().equals("fr.d4emon.fenix.resource.ModPackSource"));
     }
 
     private static Path requiredFile(String property) {
