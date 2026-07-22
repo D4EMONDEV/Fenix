@@ -43,7 +43,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class BiomeModifications {
 
-    /** The game's own logger, so a warning lands in the log a player already sends. */
+    /** The game's own logger, so this lands in the log a player already sends. */
     private static final Logger LOG = LogUtils.getLogger();
 
     /**
@@ -52,8 +52,8 @@ public final class BiomeModifications {
      */
     private static final List<Addition> ADDITIONS = new CopyOnWriteArrayList<>();
 
-    /** Features already complained about, so the warning is said once. */
-    private static final Set<ResourceKey<PlacedFeature>> WARNED = ConcurrentHashMap.newKeySet();
+    /** Features already reported, so the line is said once rather than per load. */
+    private static final Set<ResourceKey<PlacedFeature>> APPLIED = ConcurrentHashMap.newKeySet();
 
     private record Addition(BiomeSelector where, GenerationStep.Decoration step,
                             ResourceKey<PlacedFeature> feature) {
@@ -102,28 +102,32 @@ public final class BiomeModifications {
         for (Addition addition : ADDITIONS) {
             Optional<Holder.Reference<PlacedFeature>> feature = features.get().get(addition.feature());
             if (feature.isEmpty()) {
-                // Skipped, not refused. This runs on more than the one load
-                // that carries a mod's data: the game loads its worldgen
-                // registries in passes, and a pass with no mod datapack behind
-                // it is a normal thing rather than a broken installation.
-                // Throwing here took the world-creation screen down with it.
-                //
-                // Said once per feature, so a genuinely missing file is visible
-                // in the log without a line per load.
-                if (WARNED.add(addition.feature())) {
-                    LOG.warn("Fenix: no placed feature named {} yet — if nothing generates,"
-                                    + " check that the mod ships"
-                                    + " data/<namespace>/worldgen/placed_feature/",
-                            addition.feature().identifier());
-                }
+                // Not a problem in itself, and not worth a warning. The game
+                // loads its worldgen registries more than once — the
+                // world-creation screen loads them before it has even found the
+                // mod's datapack — so a pass without a mod's data is the normal
+                // first half of a normal launch. Warning here cried wolf on
+                // every start, and throwing here took the screen down with it.
                 continue;
             }
+
+            int changed = 0;
             for (Holder.Reference<Biome> biome : biomes.get().listElements().toList()) {
                 if (addition.where().test(new BiomeSelector.Context(biome.key(), biome))) {
                     BiomeGenerationSettingsMixin settings =
                             (BiomeGenerationSettingsMixin) (Object) biome.value().getGenerationSettings();
                     settings.fenix$addFeature(addition.step().ordinal(), feature.get());
+                    changed++;
                 }
+            }
+
+            // Said once, on the first load that actually carries the feature.
+            // This is the line that answers "is my ore live?" — and its absence
+            // is the tell when nothing generates, which is a question a log
+            // could not answer before.
+            if (APPLIED.add(addition.feature())) {
+                LOG.info("Fenix: {} added to {} biomes at {}", addition.feature().identifier(),
+                        changed, addition.step().getName());
             }
         }
     }
