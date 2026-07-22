@@ -1,5 +1,6 @@
 package fr.d4emon.fenix.registry.worldgen;
 
+import com.mojang.logging.LogUtils;
 import fr.d4emon.fenix.mixin.registry.BiomeGenerationSettingsMixin;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -10,9 +11,13 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
+import org.slf4j.Logger;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -38,11 +43,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class BiomeModifications {
 
+    /** The game's own logger, so a warning lands in the log a player already sends. */
+    private static final Logger LOG = LogUtils.getLogger();
+
     /**
      * Registered from mod threads and read while datapacks load, which are not
      * the same thread.
      */
     private static final List<Addition> ADDITIONS = new CopyOnWriteArrayList<>();
+
+    /** Features already complained about, so the warning is said once. */
+    private static final Set<ResourceKey<PlacedFeature>> WARNED = ConcurrentHashMap.newKeySet();
 
     private record Addition(BiomeSelector where, GenerationStep.Decoration step,
                             ResourceKey<PlacedFeature> feature) {
@@ -91,13 +102,21 @@ public final class BiomeModifications {
         for (Addition addition : ADDITIONS) {
             Optional<Holder.Reference<PlacedFeature>> feature = features.get().get(addition.feature());
             if (feature.isEmpty()) {
-                // Loudly, and here. The alternative is an ore that simply never
-                // generates, which a player reports as bad luck and an author
-                // spends an evening looking for in the wrong place.
-                throw new IllegalStateException("no placed feature named "
-                        + addition.feature().identifier()
-                        + " — check that the mod ships data/<namespace>/worldgen/placed_feature/"
-                        + ", or that whatever provides it is installed");
+                // Skipped, not refused. This runs on more than the one load
+                // that carries a mod's data: the game loads its worldgen
+                // registries in passes, and a pass with no mod datapack behind
+                // it is a normal thing rather than a broken installation.
+                // Throwing here took the world-creation screen down with it.
+                //
+                // Said once per feature, so a genuinely missing file is visible
+                // in the log without a line per load.
+                if (WARNED.add(addition.feature())) {
+                    LOG.warn("Fenix: no placed feature named {} yet — if nothing generates,"
+                                    + " check that the mod ships"
+                                    + " data/<namespace>/worldgen/placed_feature/",
+                            addition.feature().identifier());
+                }
+                continue;
             }
             for (Holder.Reference<Biome> biome : biomes.get().listElements().toList()) {
                 if (addition.where().test(new BiomeSelector.Context(biome.key(), biome))) {

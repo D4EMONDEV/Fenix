@@ -24,7 +24,13 @@ import java.util.concurrent.CompletableFuture;
 @Mixin(RegistryDataLoader.class)
 public abstract class RegistryDataLoaderMixin {
 
-    @Inject(method = "load(Lnet/minecraft/resources/RegistryDataLoader$LoaderFactory;"
+    // The datapack overload specifically, not the private one both paths share.
+    // The other caller is a client receiving registries from a server it has
+    // joined: that world's features were decided by the server and applied
+    // there, and a client generates no terrain of its own — so modifying what
+    // arrives would change nothing except which biome objects differ between
+    // the two machines.
+    @Inject(method = "load(Lnet/minecraft/server/packs/resources/ResourceManager;"
             + "Ljava/util/List;Ljava/util/List;Ljava/util/concurrent/Executor;)"
             + "Ljava/util/concurrent/CompletableFuture;",
             at = @At("RETURN"), cancellable = true)
