@@ -35,7 +35,7 @@
           "group": "fr.d4emon.fenix",
           "module": "fenix-api-registry",
           "version": {
-            "requires": "0.1.0+mc26.2"
+            "requires": "0.1.1+mc26.2"
           }
         }
       ],
@@ -72,7 +72,7 @@
           "group": "fr.d4emon.fenix",
           "module": "fenix-api-registry",
           "version": {
-            "requires": "0.1.0+mc26.2"
+            "requires": "0.1.1+mc26.2"
           }
         }
       ],

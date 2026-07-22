@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>fr.d4emon.fenix.dev</groupId>
+  <artifactId>fr.d4emon.fenix.dev.gradle.plugin</artifactId>
+  <version>0.1.1</version>
+  <packaging>pom</packaging>
+  <name>Fenix development plugin</name>
+  <description>Downloads Minecraft, wires the Fenix loader and API, and adds runClient.</description>
+  <dependencies>
+    <dependency>
+      <groupId>fr.d4emon.fenix</groupId>
+      <artifactId>fenix-gradle-plugin</artifactId>
+      <version>0.1.1</version>
+    </dependency>
+  </dependencies>
+</project>
