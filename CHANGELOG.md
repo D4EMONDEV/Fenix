@@ -5,6 +5,47 @@ All notable changes to Fenix are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+Ore generation, which needed four fixes and none of them showed up outside the
+game. The feature is applied to 55 biomes now; before, it reached none.
+
+- **The create-world screen never received mod datapacks.** The mixin that adds
+  Fenix as a pack source decided which kind of repository it was looking at by
+  finding a folder source, and `CreateWorldScreen` builds
+  `new PackRepository(new ServerPacksSource(…))` — no folder at all. So mod data
+  was absent from the load that decides a new world's worldgen registries, and
+  an ore added to a biome had no feature to point at. A `ServerPacksSource` now
+  means datapacks; it is nameable on both sides, which is what pushed the
+  original rule towards folders.
+
+- **Applying a modification cast to the mixin class.** A mixin is a template:
+  Mixin merges its members into the target and then refuses to load the
+  template, so the cast compiled and could never run. A plain interface carries
+  the method now — and lives outside the mixin package, because Mixin owns every
+  class in a package a config declares, not merely the ones it lists.
+
+- **The injection was on the method both callers share**, so it also ran for a
+  client receiving registries from a server it had joined. That world was
+  decided by the server, and a client generates no terrain of its own.
+
+- **A missing feature refused the launch.** The game loads its worldgen
+  registries in passes, and a pass before the mod's datapack is found is normal
+  rather than broken; throwing there took the world-creation screen down with
+  it. Missing is skipped now, and the load that carries the feature logs once —
+  the id, the biome count and the step. That line is the answer to "is my ore
+  live", and its absence is the tell when nothing generates.
+
+### Changed
+
+- Two conformance checks that would have caught the first two, each verified to
+  fail without its fix: a datapack repository built with no folder still
+  receives Fenix's source, and `BiomeGenerationSettings` implements the
+  interface the modification is applied through. Asserting the injection landed
+  was never enough — it always had.
+
 ## [0.1.3] — 2026-07-22
 
 Six things the loader was missing, in the order a person meets them.
