@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api-registry",
+    "version": "0.1.2+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.2+mc26.2.jar",
+          "url": "fenix-api-registry-0.1.2+mc26.2.jar",
+          "size": 59928,
+          "sha512": "6960c6ccdaeb48daab8e63e5c7d0ad50154a4a2b77d19d215c98f9ba37a67ac3b42370ff50b1dbeebb7d7c7dbebffbafcccb571784ed04670cd2f52538a8cd8f",
+          "sha256": "c9561a6b22bcfde5f67652d5a6a10c380634a1af4216806182125b708565b0e9",
+          "sha1": "58184a68a852b7210195296fee923250db2094b5",
+          "md5": "f6cca06cfcfd65ba20e4760d9151ee65"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.2+mc26.2.jar",
+          "url": "fenix-api-registry-0.1.2+mc26.2.jar",
+          "size": 59928,
+          "sha512": "6960c6ccdaeb48daab8e63e5c7d0ad50154a4a2b77d19d215c98f9ba37a67ac3b42370ff50b1dbeebb7d7c7dbebffbafcccb571784ed04670cd2f52538a8cd8f",
+          "sha256": "c9561a6b22bcfde5f67652d5a6a10c380634a1af4216806182125b708565b0e9",
+          "sha1": "58184a68a852b7210195296fee923250db2094b5",
+          "md5": "f6cca06cfcfd65ba20e4760d9151ee65"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.2+mc26.2-sources.jar",
+          "url": "fenix-api-registry-0.1.2+mc26.2-sources.jar",
+          "size": 34632,
+          "sha512": "0f45051812a7ea78d23babd3036373af774cca43288ad2bf14e52231d1f9621edc714224abff041e5bdbc479a305755b7f4f42aa4446acfb7857bea5f2fe5baf",
+          "sha256": "37725c87da28185575578eaff0e17a15914e526fa4ddadae8338df12eacb7436",
+          "sha1": "8d9dce30400c5edd10c9a585039190c395dddf67",
+          "md5": "e65abef27d94e20cb321811eeab76c73"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-registry-0.1.2+mc26.2-javadoc.jar",
+          "url": "fenix-api-registry-0.1.2+mc26.2-javadoc.jar",
+          "size": 4230588,
+          "sha512": "8213fdefa29e369a39e47c19e2070128d2575f5e887bfcebbe1317ec0910037fc53421146dbdcab87f5886c16b385ae63f088bd0f679a063d23349fc7cd1cb43",
+          "sha256": "feaed944d9a5b128586a4c5dda3fecc9a5ab55d97af5839e61ae01a6f5d8fdcb",
+          "sha1": "74f2a03b5865695eb5ca71259ab0fb786ec51521",
+          "md5": "16f2ac6ae45f384652c1dee8275eb001"
+        }
+      ]
+    }
+  ]
+}
