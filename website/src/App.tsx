@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { Docs } from './pages/Docs';
+import { Generate } from './pages/Generate';
 import { latestVersion } from './lib/content';
 
 export function App() {
@@ -26,6 +27,7 @@ export function App() {
       <main id="content">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/generate" element={<Generate />} />
           <Route path="/docs" element={<Navigate to={`/docs/${latestVersion}/index`} replace />} />
           <Route path="/docs/:version/*" element={<Docs />} />
           <Route path="/why" element={<Navigate to={`/docs/${latestVersion}/why/comparison`} replace />} />

@@ -57,12 +57,12 @@ pluginManagement {
 ```
 
 ```kotlin title="build.gradle.kts"
-plugins { id("fr.d4emon.fenix.dev") version "0.1.3" }
+plugins { id("fr.d4emon.fenix.dev") version "0.1.4" }
 
 fenix { minecraft = "26.2" }
 ```
 
-Then `./gradlew runClient`. [Getting started](/docs/0.1/guides/getting-started)
+Then `./gradlew runClient`. [Getting started](/docs/0.2.0/guides/getting-started)
 takes it from there.
 
 ## Building the installer yourself

@@ -1,88 +1,55 @@
 ---
-title: Generating resources
-description: Ember writes a mod's assets and data from Java, into its source tree.
-order: 2
+title: Ember
+description: Generate the resource files your mod needs, from the Java declarations it owns.
+order: 3
 ---
 
-A block with no model is a purple cube. A block with no loot table drops
-nothing, silently. A block with no translation shows its raw key. None of those
-fail a build, and all of them are found by a player.
-
-Ember writes those files from Java, so they cannot drift from the content they
-describe.
-
-## How it runs
+Ember is the Fenix generator API. It writes resource and data files into
+`src/main/generated`; the directory is part of your build and should be
+committed like any other source output.
 
 ```bash
 ./gradlew ember
 ```
 
-Output lands in `src/main/generated`, which is part of the build and ships in
-the jar. It is committed, so a change to a generator shows up in a diff like any
-other change.
+## Add a provider when you need one
 
-## The providers
+The template's Ember option creates an empty `ModResources` class. It produces
+nothing until you add a provider that matches a real need in your mod.
 
-| Provider | Writes |
+For example, if your mod owns `Content.COPPER_TOKEN`, this provider creates its
+English translation:
+
+```java
+import fr.d4emon.fenix.ember.EmberLanguageProvider;
+import fr.d4emon.fenix.ember.Generator;
+
+@Generator
+public final class ModLanguage extends EmberLanguageProvider {
+    @Override
+    protected void translations() {
+        add(Content.COPPER_TOKEN, "Copper Token");
+    }
+}
+```
+
+`Content` is still your class. Ember receives its `Holder` values through the
+public Fenix API; it does not require a class named `ModContent`.
+
+## Providers
+
+| Provider | Generates |
 |---|---|
-| `EmberModelProvider` | block and item models, blockstates |
-| `EmberLanguageProvider` | `lang/en_us.json` |
-| `EmberLootTableProvider` | what a block drops |
-| `EmberRecipeProvider` | crafting and smelting |
+| `EmberLanguageProvider` | translations such as `lang/en_us.json` |
+| `EmberModelProvider` | blockstates, models and item definitions |
+| `EmberLootTableProvider` | block loot tables |
+| `EmberRecipeProvider` | crafting and smelting recipes |
 | `EmberTagsProvider` | block and item tags |
 | `EmberSoundProvider` | `sounds.json` |
-| `EmberOreProvider` | ore generation: the configured and placed features |
+| `EmberOreProvider` | configured and placed ore features |
 
-## A generator
+Textures and `.ogg` sound files remain files you create yourself. Ember creates
+the JSON around them, not the artwork or audio.
 
-```java
-@Generator
-public final class ModModels extends EmberModelProvider {
-
-    @Override
-    protected void models() {
-        cubeAll(ModBlocks.RUBY_BLOCK);
-        flatItem(ModItems.RUBY);
-    }
-}
-```
-
-`@Generator` is how Ember finds it — the same compile-time index the loader uses
-for `@Mod`. A generator that does not compile is not a generator that quietly
-never runs.
-
-## Ore generation
-
-An ore needs two files: a *configured feature* saying what to place, and a
-*placed feature* saying where.
-
-```java
-@Generator
-public final class ModOres extends EmberOreProvider {
-
-    @Override
-    protected void ores() {
-        ore("ruby_ore", ModBlocks.RUBY_ORE, ModBlocks.DEEPSLATE_RUBY_ORE)
-                .veinSize(6)
-                .veinsPerChunk(4)
-                .between(-48, 48)
-                .discardOnAirExposure(0.5f)
-                .write();
-    }
-}
-```
-
-Two blocks, not one: vanilla's ores each have a deepslate variant because the two
-replace different blocks, and an ore that skips it shows stone-textured lumps
-below y=0.
-
-:::caution[Neither file does anything alone]
-A placed feature that no biome refers to is never run. Saying which biomes want
-it is code — see the world generation section of
-[Getting started](/docs/0.1/guides/getting-started).
-:::
-
-## What Ember cannot generate
-
-Textures and `.ogg` files, and the small `particles/<name>.json` that lists a
-particle's sprites. Those are still written by hand.
+Browse the [`ember` API reference](/docs/0.2.0/api/fr-d4emon-fenix-ember) for
+every provider and method.

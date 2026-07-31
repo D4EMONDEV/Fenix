@@ -1,0 +1,7 @@
+{
+  "type": "example-mod:reforging",
+  "ingredient": "minecraft:diamond",
+  "result": {
+    "id": "example-mod:ruby"
+  }
+}

@@ -68,7 +68,7 @@ cannot drift apart.
 
 ## Every claim is checked against the game
 
-Thirteen conformance checks boot real Minecraft through the loader and inspect
+Nineteen conformance checks boot real Minecraft through the loader and inspect
 what happened. Each one was verified to fail when the thing it covers is
 sabotaged — a check that cannot fail proves nothing.
 
@@ -83,6 +83,7 @@ That is why this page can be specific. It is also why the next one is honest.
   would be worse than none.
 - **Custom recipes.** The registries are there; a `Recipe` implementation worth
   handing to a mod is not.
-- **One game version.** 26.2, and nothing older. There is no mapping layer to
-  make older versions cheap.
+- **A modern starting point.** Fenix support begins at 26.2 and is never
+  backported to older versions. Each release targets one exact Minecraft
+  version; support for a newer game version is a new Fenix release.
 - **Pre-1.0.** The API changes without notice.

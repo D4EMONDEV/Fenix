@@ -113,23 +113,81 @@ proves the loader works.
   needs, and `BiomeModifications.addFeature` says which biomes want it. The
   alternative, overriding whole biome files in a datapack, does not compose:
   two mods each adding an ore to the plains erase one another.
+- **Fluids** ✅ — `Registrar.newFluid` registers the four things a fluid is in
+  one pass: a still form and a flowing form, the block it becomes in the world,
+  and the bucket that carries it. A `FenixFlowingFluid` mirrors `WaterFluid`,
+  configured rather than subclassed. On the client `FluidRendering` names the
+  sprites — 26.2 bakes fluid models into a two-entry map of water and lava, and
+  a mixin adds a mod's fluids to it, so they are drawn rather than shown as the
+  missing-texture checkerboard.
+- **Attachments** ✅ — `Registrar.attachment` declares a typed, optionally
+  persistent piece of data a mod hangs on an `Entity` or `BlockEntity` without
+  editing either class. A mixin makes both an `AttachmentHolder`; a persistent
+  attachment is written beside the thing it is attached to, through its codec,
+  at the same two methods the thing saves itself with — so it survives a world
+  reload with no storage of its own. `get` never writes, so reading an
+  attachment off every mob in a level does not quietly grow the save.
+- **Custom recipes** ✅ — `Registrar.recipeType` and `Registrar.recipeSerializer`
+  register the two halves a mod's own recipe kind needs; a mod writes the recipe
+  on vanilla's `SingleItemRecipe`, or any `Recipe`, and its station finds it with
+  `getRecipeFor(TYPE, input, level)`. The recipes themselves are datapack JSON,
+  read through the serializer. `example-mod`'s reforging table is the crafting
+  screen to go with it: a block, a two-slot menu and a recipe of its own.
+- **Villager professions and trades** ✅ — `Registrar.poiType` registers a
+  job-site point of interest and, crucially, redoes the block-state bookkeeping
+  vanilla does at bootstrap, without which a job site is registered and no
+  villager ever recognises it. `Registrar.villagerProfession` registers the
+  profession that claims it. Trades became datapack data in 26.2 — a `trade_set`
+  of `villager_trade` entries the profession names by level — so the API
+  registers the profession and points it at the sets, which a mod ships as JSON.
 
-Still missing, and wanted:
+  A mod also has to add its job site to `minecraft:acquirable_job_site`, which
+  is the one part Fenix cannot do for it: an unemployed villager searches with
+  the `none` profession's predicate, and that predicate is the tag, not the
+  registry. Everything else can be right and no villager ever takes the job.
+  Fenix cannot write the tag — it is datapack data a pack may legitimately
+  override — so it does the next best thing and says so, naming the profession
+  and the file, the moment the tags bind.
 
-- **Fluids.** Not one registration but four — the fluid, its flowing form, the
-  block it becomes and the bucket — plus a renderer. A convenience wrapper that
-  covered only the first would be worse than none.
-- **Custom recipes.** The registries are there; what is missing is a
-  `Recipe` implementation worth handing to a mod, and the crafting screen to go
-  with it.
+- **Block interactions** ✅ — `BlockInteractions` covers the behaviour vanilla
+  keeps in tables rather than on the block: flammability, composting, stripping,
+  waxing, oxidation and furnace fuel. Each table is filled once at bootstrap from
+  a list of vanilla's own content, so a modded wood type looks like wood and
+  quietly is not — it will not catch fire, an axe does nothing to it, and a
+  furnace refuses it, with nothing logged because from vanilla's side nothing is
+  wrong. The tables that cannot be added to are answered ahead of; the two that
+  are read inline in several places are replaced whole; the composter's, which
+  is mutable, is written into at `apply()`.
 
-Two things worth writing down because they *look* missing and are not:
+- **Potions and brewing** ✅ — `Registrar.potion` registers a potion; `Brewing`
+  says what makes it. Both halves are needed and the second is the one that is
+  easy to miss: vanilla builds its brewing table once per server from a fixed
+  list and throws the builder away, so a registered potion that nothing brews
+  into can be given by command and made by no brewing stand in the world. Fenix
+  catches the builder while it is still open and fills it through the same public
+  methods vanilla just used, so a mod's mixes survive a datapack reload the way
+  vanilla's do.
+- **More events** ✅ — a tooltip being built, this client joining or leaving a
+  world, the HUD being drawn, and a loot table being read. The tooltip event
+  hands over a live, writable list so a mod can put a line where it belongs
+  relative to what is already there. The HUD event is taken on `Hud` rather than
+  `Gui`: the graphics object is a local in `Gui.extractRenderState` and a
+  parameter one level in, so the same moment is reachable without capturing a
+  local. `LootEvents.LOADING` catches tables while they are still a map, before
+  they are frozen into a registry, and `addPool` adds to a table rather than
+  replacing it — two mods can both drop something from stone, which is exactly
+  what overriding the file in a datapack cannot do.
+
+Three things worth writing down because they *look* missing and are not:
 
 - **Render layers.** 26.2 derives them from the texture's own alpha, in
   `BakedQuad.MaterialInfo.of` via `ChunkSectionLayer.byTransparency`, so glass
   and plants render correctly with no registration at all. The
   `ItemBlockRenderTypes` table earlier versions needed is gone.
 - **Enchantments.** Datapack data since 1.21, not a code registry.
+- **Paintings.** Likewise: `PAINTING_VARIANT` is loaded by `RegistryDataLoader`
+  in 26.2, so a painting is a JSON file rather than something to register. It
+  belongs to Ember, whenever Ember grows a provider for it.
 
 ## Phase 6 — Ember ✅
 
@@ -181,12 +239,16 @@ sprites is still written by hand.
   is the Maven repository, and a repository can only serve one Pages site. It
   needs either a custom domain or a `D4EMONDEV.github.io` user site; nothing
   in CI builds or deploys `website/` today.
+- A project generator on the website ✅ — the form, the templates and the zip
+  writer all run in the browser, so the page stays a static file. It ships the
+  Gradle wrapper too: without it the first line of the README it writes,
+  `./gradlew runClient`, names a file the reader does not have.
 - Generated API documentation ✅ — `./gradlew apiDocsSite` writes the reference
   into the website as Markdown, versioned with the rest of the documentation.
   Written by a doclet rather than by hand, so the reference cannot describe an
   API the compiler does not have. `./gradlew apiDocs` still produces plain
   Javadoc, for anyone who wants it.
-- A conformance suite broad enough to trust a release — twelve checks today, each
+- A conformance suite broad enough to trust a release — nineteen checks today, each
   verified to fail when the thing it covers is sabotaged. Untested end to end:
   the installer against a real `.minecraft`, and Ember's output against a real
   resource load.

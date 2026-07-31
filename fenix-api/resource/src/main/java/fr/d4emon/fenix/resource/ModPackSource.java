@@ -1,11 +1,13 @@
 package fr.d4emon.fenix.resource;
 
+import fr.d4emon.fenix.api.ModInfo;
 import fr.d4emon.fenix.loader.launch.FenixHooks;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.FilePackResources;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackCompatibility;
 import net.minecraft.server.packs.repository.PackSource;
@@ -13,6 +15,7 @@ import net.minecraft.server.packs.repository.RepositorySource;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +53,11 @@ public final class ModPackSource implements RepositorySource {
 
     @Override
     public void loadPacks(Consumer<Pack> consumer) {
+        Map<String, String> versions = new LinkedHashMap<>();
+        for (ModInfo mod : FenixHooks.loadedMods()) {
+            versions.put(mod.id(), mod.version().toString());
+        }
+
         for (Map.Entry<String, Path> mod : FenixHooks.modJars().entrySet()) {
             String modId = mod.getKey();
             Path jar = mod.getValue();
@@ -57,18 +65,32 @@ public final class ModPackSource implements RepositorySource {
             if (!hasResources(jar, type)) {
                 continue;
             }
-            Pack pack = create(modId, jar);
+            Pack pack = create(modId, jar, versions.getOrDefault(modId, "0.0.0"));
             if (pack != null) {
                 consumer.accept(pack);
             }
         }
     }
 
-    private Pack create(String modId, Path jar) {
+    private Pack create(String modId, Path jar, String version) {
         Component title = Component.literal(modId);
         PackLocationInfo location = new PackLocationInfo(
                 // Namespaced so a mod can never collide with a player's pack.
-                "fenix/" + modId, title, PackSource.BUILT_IN, Optional.empty());
+                "fenix/" + modId, title, PackSource.BUILT_IN,
+                // A mod jar is exactly what a KnownPack describes: a pack both
+                // sides identify by name and version, so the server need not
+                // send its contents to a client that already has the mod —
+                // which Fenix's registry sync has already insisted upon.
+                //
+                // Declaring it also settles the "Experimental Features" warning
+                // every world creation used to raise. Vanilla decides the
+                // lifecycle of a datapack registry entry by whether the pack it
+                // came from is known: no KnownPack means Lifecycle.experimental,
+                // one experimental registry makes allRegistriesLifecycle()
+                // experimental, and CreateWorldScreen warns on anything that is
+                // not stable. A mod with one worldgen file was enough to trip
+                // it, and nothing in the message pointed at a mod.
+                Optional.of(new KnownPack(modId, "fenix/" + modId, version)));
 
         Pack.Metadata metadata = new Pack.Metadata(
                 Component.literal("Resources of " + modId),

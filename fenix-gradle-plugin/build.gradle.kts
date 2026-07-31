@@ -14,7 +14,11 @@ val rootProperties = Properties().apply {
 }
 
 group = rootProperties.getProperty("group")
-version = rootProperties.getProperty("version")
+// Its own line, like every other module. It read the repository's umbrella
+// version instead, which happened to agree and so hid that the declared key was
+// never consulted — the same drift that had this plugin asking for three
+// artifacts nobody had published.
+version = rootProperties.getProperty("version_gradle_plugin")
 
 description = "Gradle plugin mod authors apply to build and run a Fenix mod."
 
@@ -41,22 +45,35 @@ dependencies {
 }
 
 val minecraftVersion = rootProperties.getProperty("minecraft_version")
-// The API carries the game version; the loader does not. Both are baked in so a
-// mod's build file names neither.
+// Every coordinate the plugin writes, read from the one file that decides them.
+// Each module moves on its own, so none of these may be assumed equal to
+// another or to this plugin's own version — they were, and every one of them
+// pointed at an artifact that had never been published.
+//
+// Anything compiled against Minecraft carries the game version; the loader, the
+// processor and the build tooling carry no such tie and stay plain. All of them
+// are baked in so a mod's build file names none of them.
+val loaderVersion = rootProperties.getProperty("version_loader")
 val apiVersion = rootProperties.getProperty("version_api") + "+mc" + minecraftVersion
+val emberVersion = rootProperties.getProperty("version_ember") + "+mc" + minecraftVersion
+val processorVersion = rootProperties.getProperty("version_processor")
 val vineflowerVersion = libs.versions.vineflower.get()
 
 tasks.processResources {
     // Declared as inputs so a version bump actually re-expands the file rather
     // than reusing a stale, cached result.
-    inputs.property("version", version)
+    inputs.property("loaderVersion", loaderVersion)
     inputs.property("apiVersion", apiVersion)
+    inputs.property("emberVersion", emberVersion)
+    inputs.property("processorVersion", processorVersion)
     inputs.property("minecraftVersion", minecraftVersion)
     inputs.property("vineflowerVersion", vineflowerVersion)
     filesMatching("fenix-plugin.properties") {
         expand(
-            "version" to version,
+            "loader_version" to loaderVersion,
             "api_version" to apiVersion,
+            "ember_version" to emberVersion,
+            "processor_version" to processorVersion,
             "minecraft_version" to minecraftVersion,
             "vineflower_version" to vineflowerVersion,
         )

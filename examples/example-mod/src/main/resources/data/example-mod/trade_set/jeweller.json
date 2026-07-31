@@ -1,0 +1,7 @@
+{
+  "amount": 2.0,
+  "trades": [
+    "example-mod:buy_ruby",
+    "example-mod:sell_ruby"
+  ]
+}

@@ -38,14 +38,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EventMixinTest {
 
     /** Target class to a handler that must end up inside it. */
-    private static final Map<String, String> EXPECTED_HANDLERS = new LinkedHashMap<>(Map.of(
-            "net.minecraft.server.MinecraftServer", "fenix$onTickStart",
-            "net.minecraft.server.level.ServerPlayerGameMode", "fenix$onBreak",
-            "net.minecraft.client.Minecraft", "fenix$onTickStart",
-            "net.minecraft.client.multiplayer.MultiPlayerGameMode", "fenix$onAttack",
-            "net.minecraft.server.players.PlayerList", "fenix$joined",
-            "net.minecraft.world.entity.LivingEntity", "fenix$died",
-            "net.minecraft.server.level.ServerLevel", "fenix$spawning"));
+    // ofEntries rather than of: Map.of stops at ten pairs, and there are more
+    // events than that now.
+    private static final Map<String, String> EXPECTED_HANDLERS = new LinkedHashMap<>(Map.ofEntries(
+            Map.entry("net.minecraft.server.MinecraftServer", "fenix$onTickStart"),
+            Map.entry("net.minecraft.server.level.ServerPlayerGameMode", "fenix$onBreak"),
+            Map.entry("net.minecraft.client.Minecraft", "fenix$onTickStart"),
+            Map.entry("net.minecraft.client.multiplayer.MultiPlayerGameMode", "fenix$onAttack"),
+            Map.entry("net.minecraft.server.players.PlayerList", "fenix$joined"),
+            Map.entry("net.minecraft.world.entity.LivingEntity", "fenix$died"),
+            Map.entry("net.minecraft.server.level.ServerLevel", "fenix$spawning"),
+            // A tooltip line and a client that has joined a world: both are
+            // drawn or read on the client alone, and both are silent when the
+            // injection stops landing — no tooltip line, no event, no message.
+            Map.entry("net.minecraft.world.item.ItemStack", "fenix$tooltip"),
+            Map.entry("net.minecraft.client.multiplayer.ClientPacketListener", "fenix$connected"),
+            // Drawing over the HUD, and catching loot tables while they are
+            // still a map rather than a frozen registry.
+            Map.entry("net.minecraft.client.gui.Hud", "fenix$hudRender"),
+            Map.entry("net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener",
+                    "fenix$loadedLootTables")));
 
     @Test
     @DisplayName("every event mixin lands on its real Minecraft target")

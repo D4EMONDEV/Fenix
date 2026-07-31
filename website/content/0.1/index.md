@@ -1,51 +1,37 @@
 ---
-title: Documentation
-description: What Fenix is, and where to start depending on why you are here.
+title: Fenix API
+description: The API reference and practical guides for writing Fenix mods.
 order: 0
 ---
 
-Fenix is a mod loader for **Minecraft 26.2**. It launches the game, loads mods
-into it, and gives those mods an API that absorbs the vanilla bookkeeping they
-would otherwise skip and crash on.
+Fenix API is the code a mod uses after the game has started: lifecycle,
+registries, events, resources, networking, configuration and client helpers.
+The API bundle is versioned independently from this website: this documentation
+is for **Fenix API 0.2.0**, targeting **Minecraft 26.2**.
 
-It is pre-1.0 and honest about that: it works, it is tested against the real
-game, and the API still changes without notice.
+## Start here
 
-## Start where you are
-
-| You want to | Go to |
+| If you need to… | Read… |
 |---|---|
-| Play with Fenix mods | [Install Fenix](/docs/0.1/play/install) |
-| Add mods to your game | [Adding mods](/docs/0.1/play/mods) |
-| Write a mod | [Getting started](/docs/0.1/guides/getting-started) |
-| Generate assets and data | [Ember](/docs/0.1/guides/ember) |
-| Look something up | [`fenix.mod.json`](/docs/0.1/reference/mod-metadata) |
-| Know how it compares | [Compared to other loaders](/docs/0.1/why/comparison) |
+| Create a minimal mod project | [Getting started](/docs/0.2.0/guides/getting-started) |
+| Understand how registrations are organised | [Content and registries](/docs/0.2.0/guides/content) |
+| Generate assets or data | [Ember](/docs/0.2.0/guides/ember) |
+| Browse exact classes and methods | [API reference](/docs/0.2.0/api/index) |
 
-## The three pieces
+## What belongs to Fenix API
 
-**The loader** starts the game and starts your mods inside it: discovery,
-dependency resolution, class transformation and Mixin.
+- `fr.d4emon.fenix.api` is the mod lifecycle and context.
+- `fr.d4emon.fenix.registry` registers game content safely.
+- `fr.d4emon.fenix.event`, `network`, `config` and `resource` cover common mod
+  integrations.
+- `fr.d4emon.fenix.ember` generates resource and data files from Java.
 
-**The installer** is a double-click application that adds a Fenix profile to the
-Minecraft Launcher. It carries its own Java.
+Your own mod classes do not belong to Fenix API. Names such as `ModContent`,
+`ModItems` or `MyBlocks` are conventions you create to keep your code organised;
+the API only provides the building blocks those classes use.
 
-**Ember** generates a mod's assets and data from Java — models, loot tables,
-recipes, tags, translations, sounds and ore placement.
-
-## What a mod's build file looks like
-
-```kotlin
-plugins { id("fr.d4emon.fenix.dev") version "0.1.3" }
-
-fenix { minecraft = "26.2" }
-```
-
-That is the whole thing. The plugin downloads the game, compiles the mod against
-it, and gives you `runClient` and `runServer`.
-
-:::caution[Before 1.0]
-Anything on these pages can change. Versions are published per module, so a mod
-that uses only events does not look out of date when the registry changes — see
-[`fenix.mod.json`](/docs/0.1/reference/mod-metadata) for how to depend on them.
+:::note[Minecraft compatibility]
+Fenix begins at Minecraft **26.2** and is never designed or backported for an
+older game version. A Fenix release targets one exact Minecraft version. When a
+new game release is supported, it is published as a new Fenix release.
 :::

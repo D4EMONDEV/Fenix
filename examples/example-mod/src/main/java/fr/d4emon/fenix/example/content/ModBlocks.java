@@ -2,6 +2,7 @@ package fr.d4emon.fenix.example.content;
 
 import fr.d4emon.fenix.registry.Holder;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 
 /**
@@ -48,6 +49,37 @@ public final class ModBlocks {
             .from(RubySafeBlock::new)
             .withItem()
             .register();
+
+    /** Runs a recipe of the mod's own type: put an item in, take a reforged one out. */
+    public static final Holder<Block> RUBY_REFORGING = ModContent.REGISTRAR.newBlock("ruby_reforging")
+            .strength(4f, 12f)
+            .requiresTool()
+            .sound(SoundType.METAL)
+            .from(RubyReforgingBlock::new)
+            .withItem()
+            .register();
+
+    /**
+     * A log, so there is something for an axe to strip and a fire to catch.
+     *
+     * <p>{@code RotatedPillarBlock} is what gives it an axis, which stripping
+     * carries across so a sideways log stays sideways.
+     */
+    public static final Holder<Block> RUBY_LOG = ModContent.REGISTRAR.newBlock("ruby_log")
+            .strength(2f)
+            .sound(SoundType.WOOD)
+            .from(RotatedPillarBlock::new)
+            .withItem()
+            .register();
+
+    /** What it strips into. */
+    public static final Holder<Block> STRIPPED_RUBY_LOG =
+            ModContent.REGISTRAR.newBlock("stripped_ruby_log")
+                    .strength(2f)
+                    .sound(SoundType.WOOD)
+                    .from(RotatedPillarBlock::new)
+                    .withItem()
+                    .register();
 
     /** Ruby ore as it appears in stone. */
     public static final Holder<Block> RUBY_ORE = ModContent.REGISTRAR.newBlock("ruby_ore")

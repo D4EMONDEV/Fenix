@@ -1,10 +1,9 @@
 /**
  * The documentation, read off disk at build time.
  *
- * Every page is a Markdown file under `content/<version>/…`, and the path is
- * the route: `content/0.1/guides/getting-started.md` is served at
- * `/docs/0.1/guides/getting-started`. Nothing registers a page anywhere — a
- * file that exists is a page, which is the only arrangement that cannot drift.
+ * Every page is a Markdown file under `content/<line>/…`. A line is mapped to
+ * the published Fenix API release it documents, so readers never have to guess
+ * whether a number is a website version or an artifact version.
  */
 
 const files = import.meta.glob('../../content/**/*.md', {
@@ -14,7 +13,7 @@ const files = import.meta.glob('../../content/**/*.md', {
 }) as Record<string, string>;
 
 export interface Doc {
-  /** The version this page belongs to, e.g. `0.1`. */
+  /** The published Fenix API version this page documents, e.g. `0.2.0`. */
   version: string;
   /** The path within a version, e.g. `guides/getting-started`. */
   slug: string;
@@ -26,6 +25,17 @@ export interface Doc {
   order: number;
   body: string;
 }
+
+/**
+ * The source directory is an editorial line. The public route and picker use
+ * the API bundle version, which is what a mod author installs.
+ *
+ * Add a line here only when publishing a new Fenix API release with its own
+ * documentation snapshot.
+ */
+const API_VERSION_FOR_LINE: Record<string, string> = {
+  '0.1': '0.2.0',
+};
 
 /**
  * Splits the `---` block off the top of a file.
@@ -60,12 +70,12 @@ export const docs: Doc[] = Object.entries(files)
   .map(([path, raw]) => {
     // ../../content/0.1/guides/getting-started.md
     const relative = path.replace(/^.*\/content\//, '').replace(/\.md$/, '');
-    const [version, ...rest] = relative.split('/');
+    const [line, ...rest] = relative.split('/');
     const slug = rest.join('/') || 'index';
     const { data, body } = readFrontMatter(raw);
 
     return {
-      version,
+      version: API_VERSION_FOR_LINE[line] ?? line,
       slug,
       group: rest.length > 1 ? rest[0] : '',
       title: data.title || titleFromSlug(slug),
@@ -74,7 +84,9 @@ export const docs: Doc[] = Object.entries(files)
       // The page renders its own title from the front matter, so a leading H1
       // in the body would be the same words twice. Pages written for another
       // renderer keep theirs, and this is what lets them be copied unedited.
-      body: body.replace(/^\s*#\s+.*(\r?\n)+/, ''),
+      body: body
+        .replace(/^\s*#\s+.*(\r?\n)+/, '')
+        .replaceAll('/docs/0.1/', `/docs/${API_VERSION_FOR_LINE['0.1']}/`),
     };
   })
   .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
@@ -85,7 +97,7 @@ export const versions: string[] = [...new Set(docs.map((doc) => doc.version))].s
 );
 
 /** The version a bare `/docs` link lands on. */
-export const latestVersion = versions[0] ?? '0.1';
+export const latestVersion = versions[0] ?? '0.2.0';
 
 export function findDoc(version: string, slug: string): Doc | undefined {
   return docs.find((doc) => doc.version === version && doc.slug === slug);
@@ -100,16 +112,18 @@ export interface SidebarGroup {
 
 /** How the groups are named and ordered; anything unlisted follows, as-is. */
 const GROUPS: { id: string; label: string }[] = [
-  { id: '', label: 'Start here' },
-  { id: 'why', label: 'Why Fenix' },
-  { id: 'play', label: 'Playing' },
-  { id: 'guides', label: 'Making mods' },
-  { id: 'reference', label: 'Reference' },
+  { id: '', label: 'Fenix API' },
+  { id: 'guides', label: 'Guides' },
   { id: 'api', label: 'API reference' },
 ];
 
 export function sidebarFor(version: string): SidebarGroup[] {
-  const pages = docs.filter((doc) => doc.version === version);
+  const pages = docs.filter(
+    (doc) =>
+      doc.version === version &&
+      (doc.group === '' || doc.group === 'guides' || doc.group === 'api') &&
+      !doc.slug.startsWith('api/fr-d4emon-fenix-loader-'),
+  );
   const ids = [...new Set(pages.map((page) => page.group))];
 
   ids.sort((a, b) => {

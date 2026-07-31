@@ -5,6 +5,8 @@ import fr.d4emon.fenix.loader.classloader.FenixClassLoader;
 import fr.d4emon.fenix.loader.mixin.MixinSetup;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.io.TempDir;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -94,6 +97,51 @@ class ResourceMixinTest {
             assertTrue(carriesModPacks(loader, repository),
                     "a datapack repository with no folder should still receive Fenix's source"
                             + " — without it a mod contributes nothing to a new world, silently");
+        }
+    }
+
+    @Test
+    @DisplayName("a mod's datapack is a known pack, so a new world is not called experimental")
+    void modPacksAreKnownPacks(@TempDir(cleanup = CleanupMode.NEVER) Path gameDir) throws Exception {
+        Path clientJar = requiredFile("fenix.test.clientJar");
+        Path resourceJar = requiredFile("fenix.test.resourceJar");
+
+        Path mods = Files.createDirectories(gameDir.resolve("mods"));
+        Files.copy(resourceJar, mods.resolve(resourceJar.getFileName()));
+        writeDataCarryingMod(mods.resolve("datamod.jar"));
+
+        // The probe throws on a failed check and the loader propagates it here.
+        assertDoesNotThrow(() -> fr.d4emon.fenix.loader.launch.Launch.run(new String[] {
+                "--fenix.gameJar", clientJar.toAbsolutePath().toString(),
+                "--fenix.gameMain", "fr.d4emon.fenix.probe.ResourceProbe",
+                "--fenix.gameDir", gameDir.toAbsolutePath().toString(),
+        }), "the probe reports a failed check by throwing");
+    }
+
+    /**
+     * A mod jar with one datapack file, which is all it takes.
+     *
+     * <p>One file in a datapack registry directory is enough to make that
+     * registry's lifecycle experimental, and so to put the warning in front of
+     * every new world — which is why the fixture carries exactly one.
+     */
+    private static void writeDataCarryingMod(Path jar) throws Exception {
+        String metadata = """
+                {
+                  "schema": 1,
+                  "id": "datamod",
+                  "version": "1.2.3",
+                  "depends": { "fenix": ">=0.1.0" }
+                }
+                """;
+        try (java.util.zip.ZipOutputStream out =
+                     new java.util.zip.ZipOutputStream(Files.newOutputStream(jar))) {
+            out.putNextEntry(new java.util.zip.ZipEntry("fenix.mod.json"));
+            out.write(metadata.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.closeEntry();
+            out.putNextEntry(new java.util.zip.ZipEntry("data/datamod/tags/block/example.json"));
+            out.write("{\"values\": []}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.closeEntry();
         }
     }
 

@@ -7,7 +7,148 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-07-23
+
+Six new areas of the API, and the two fixes that made the demo honest: every
+new world asking to confirm experimental features, and a Gradle plugin that
+named artifact versions nobody had published.
+
+Module versions this release pins: loader `0.1.1`, API set `0.2.0`
+(registry `0.2.0`, event `0.2.0`, resource `0.1.1`, core `0.1.0`,
+network `0.1.0`, command `0.1.1`, config `0.1.0`), Ember `0.1.1`,
+processor `0.1.0`, installer `0.1.2`, Gradle plugin `0.1.4`.
+
+### Added
+
+- **Potions and brewing.** `Registrar.potion` registers a potion — taking the
+  effect as a handle and building the instance later, so it can be declared
+  beside the effect it names rather than after it. `Brewing.mix` and its
+  neighbours say what makes it. The second half is the one that is easy to miss:
+  vanilla builds its brewing table once per server from a fixed list and throws
+  the builder away, so a registered potion nothing brews into can be given by
+  command and made by no brewing stand anywhere. Fenix catches the builder while
+  it is open and fills it through the same public methods vanilla just used, so a
+  mod's mixes also survive a datapack reload. A conformance check reads the mix
+  back out of the table a server actually builds.
+- **Loot table modification.** `LootEvents.LOADING` fires for each table as it is
+  read, and `addPool` adds to it rather than replacing it — so two mods can both
+  drop something from stone, which is exactly what overriding the file in a
+  datapack cannot do: the second copy wins and the first mod's drop is gone with
+  nothing said. Loot tables became a datapack registry, so there is no "load one
+  table" method to hook; this catches them while they are still a map, the one
+  moment they are both parsed and still changeable. Rebuilding a table needs its
+  private constructor, which Fenix widens from the manifest — a conformance check
+  runs the whole thing through a real launch, since nothing about that
+  transformation is visible on an ordinary classpath.
+- **HUD rendering.** `HudRenderEvents.RENDER` fires once a frame after vanilla's
+  own HUD, only while a world is on screen. Taken on `Hud` rather than `Gui`,
+  where the pass looks like it starts: `Gui.extractRenderState` builds the
+  graphics object as a local and hands it down, and one level in it is a
+  parameter — the same moment, without capturing a local.
+- **Two more events.** `ItemTooltipEvents.BUILD` fires as a tooltip is assembled
+  and hands over a live, writable list, so a mod can place a line relative to
+  what is already there rather than only at the end. `ClientEvents.CONNECTED`
+  and `DISCONNECTED` fire when this client joins or leaves a world — the latter
+  at `close`, which covers being kicked and the connection dropping, not only a
+  polite exit, since those are the occasions stale per-world state matters most.
+- **Block interactions — the behaviour vanilla keeps in tables.** `BlockInteractions`
+  covers flammability, composting, stripping, waxing, oxidation and furnace fuel,
+  one line each. Every one of those lives in a table somewhere else in the game,
+  filled once at bootstrap from a list of vanilla's own content, so a modded wood
+  type looks and behaves like wood and quietly is not: it will not catch fire, an
+  axe does nothing to it, and a furnace refuses it. Nothing warns, because from
+  vanilla's side nothing is wrong — the block simply is not in the table. The
+  immutable tables are answered ahead of; the waxing table, which four unrelated
+  places read inline, is replaced whole so every reader finds mod entries in both
+  directions; the composter's, which is mutable, is written into at `apply()`.
+  Blocks are resolved the first time the game asks, so these can be declared in
+  any order relative to registration. Five of the six are proven by behaviour
+  against real Minecraft — asking vanilla's own lookups what a modded block burns
+  like, strips into, waxes into and weathers into — and each was verified to fail
+  when sabotaged.
+- **Custom recipes.** `Registrar.recipeType` and `Registrar.recipeSerializer`
+  register the two halves a mod's own recipe kind needs — the type a station
+  looks up by, and the pair of codecs that read the recipe from a datapack and
+  send it over the wire. A mod writes the recipe itself on vanilla's
+  `SingleItemRecipe` (the stonecutter's base) or any `Recipe`, and its station
+  finds a match with `getRecipeFor(TYPE, input, level)`. `example-mod` gains the
+  crafting screen the roadmap asked for: a reforging table — a block, a two-slot
+  menu, a block entity that reforges on a timer, and a recipe type of its own.
+  A conformance check registers a custom type and serializer in real Minecraft
+  and round-trips a recipe through its own codec.
+- **Villager professions and trades.** `Registrar.poiType` registers a job-site
+  point of interest — and redoes the block-state bookkeeping vanilla does once
+  at bootstrap, without which the job site is in the registry but invisible to
+  the villager AI, so the profession exists and no villager ever takes it.
+  `Registrar.villagerProfession` registers the profession that claims it. Trades
+  became datapack data in 26.2 — a `trade_set` of `villager_trade` entries a
+  profession names by level — so the API registers the profession and points it
+  at the sets, which a mod ships as JSON; `example-mod` adds a jeweller who works
+  at the reforging table and trades in rubies. A conformance check proves the
+  profession and point of interest register, that the job-site block resolves to
+  the point of interest, and that the profession accepts it — each verified to
+  fail when sabotaged.
+
+  A mod must also add its job site to the `minecraft:acquirable_job_site` tag,
+  and Fenix now says so when it has not: an unemployed villager searches with the
+  `none` profession's predicate, which is that tag rather than the registry, so a
+  job site outside it is never looked for and every other part can be correct
+  while no villager ever takes the job. Fenix does not write the tag — a datapack
+  may legitimately override it — but the moment the tags bind it names the
+  profession, the job site and the file to write. Found by playing the demo, not
+  by the suite, which is why two checks were added: one that the guard can see
+  the failure, one that `example-mod` ships the tag.
+- **Fluids, in one call.** `Registrar.newFluid` registers the four things a
+  fluid actually is — a still form, a flowing form, the block it becomes in the
+  world, and the bucket that carries it — wired to each other in a single pass.
+  A `FenixFlowingFluid` mirrors vanilla's `WaterFluid`, configured through a
+  builder instead of subclassed. On the client, `FluidRendering` names the still
+  and flowing sprites: 26.2 stopped hardcoding water and lava in the fluid
+  renderer and bakes their models into a two-entry map, and a mixin adds a mod's
+  fluids to it — so a modded fluid draws instead of showing the missing-texture
+  checkerboard. A conformance check proves the four registrations name each
+  other, against real Minecraft.
+- **Attachments — typed data on entities and block entities.** `Registrar.attachment`
+  declares a piece of state a mod hangs on an `Entity` or a `BlockEntity`
+  without editing either class, the way Forge's capabilities did. A mixin makes
+  both an `AttachmentHolder`; a persistent attachment carries a codec and is
+  written beside the thing it belongs to, at the very methods that thing already
+  saves itself with, so it survives a world reload with no storage of its own. A
+  transient attachment carries no codec and is never written. `get` returns a
+  default without storing it, so reading one off every mob in a level does not
+  quietly attach a default to all of them and grow the save. A conformance check
+  round-trips a block entity through its own save path — and verifies the mixin
+  reached `Entity` — against real Minecraft.
+- **A project generator on the website.** Fill in a name and a package, tick
+  what you want, and download a zip that builds: sources, `fenix.mod.json`, the
+  build files and the Gradle wrapper. Everything happens in the browser —
+  nothing is uploaded, and there is no service to keep running.
+
 ### Fixed
+
+- **Every new world asked the player to confirm experimental features.** A mod
+  jar was handed to the game as a pack with no `KnownPack`, and vanilla decides
+  the lifecycle of a datapack registry entry by exactly that: no known pack means
+  `Lifecycle.experimental`, one experimental registry makes
+  `allRegistriesLifecycle()` experimental, and `CreateWorldScreen` warns on
+  anything that is not stable. One worldgen file in one mod was enough, and the
+  warning named no mod, no file and no pack — so it read as something Fenix was
+  doing to the game rather than a missing field. Mod packs now declare a
+  `KnownPack` of the mod's own namespace, id and version, which is what the field
+  is for: it tells a joining client which packs it already has, and Fenix's
+  registry sync has already insisted the client has the same mods. A conformance
+  check drives the real pack source inside a launch and fails without it.
+
+- **The Gradle plugin named versions that had never been published.** It wrote
+  one version into three coordinates — `fenix-loader`, `fenix-processor` and
+  `ember` all took the repository's umbrella version — and each module is
+  versioned on its own axis, so each asked for an artifact that does not exist.
+  Nothing here could see it: a composite build substitutes the projects and
+  never reads the number, so every mod in this repository resolved fine while
+  every mod outside it failed at `compileJava`. The plugin now bakes in the four
+  real versions, each expanded from `gradle.properties` at build time. Found by
+  generating a project from the website and building it, which is the first
+  thing that ever consumed the published plugin the way a mod author does.
 
 Ore generation, which needed four fixes and none of them showed up outside the
 game. The feature is applied to 55 biomes now; before, it reached none.

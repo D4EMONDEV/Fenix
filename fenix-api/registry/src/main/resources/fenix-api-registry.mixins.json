@@ -7,10 +7,20 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "AxeItemMixin",
+    "BlockEntityAttachmentMixin",
     "CreativeModeTabMixin",
     "CreativeTabValidationMixin",
     "DefaultAttributesMixin",
+    "EntityAttachmentMixin",
+    "FireBlockMixin",
+    "FuelValuesMixin",
+    "HoneycombItemMixin",
+    "PoiTagBindingMixin",
+    "PoiTypesInvoker",
+    "PotionBrewingBuilderMixin",
     "SpawnPlacementsInvoker",
+    "WeatheringCopperMixin",
     "BiomeGenerationSettingsMixin",
     "RegistryDataLoaderMixin"
   ],
@@ -18,6 +28,7 @@
     "CreativeModeTabsMixin",
     "CreativeScreenMixin",
     "EntityRenderersAccessor",
+    "FluidStateModelSetMixin",
     "MenuScreensAccessor",
     "OptionsMixin",
     "ParticleResourcesMixin"

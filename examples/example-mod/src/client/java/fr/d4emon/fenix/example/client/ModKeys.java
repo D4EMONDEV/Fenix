@@ -27,6 +27,15 @@ public final class ModKeys {
     public static final KeyMapping COUNT_WISPS = KeyBindings.register(
             Identifier.parse("example-mod:count_wisps"), InputConstants.KEY_K, CATEGORY);
 
+    /**
+     * The last count, so the key can say what changed since it was pressed.
+     *
+     * <p>Per-world by nature: carrying it into the next world would report a
+     * difference against a number from somewhere else entirely. Cleared on
+     * disconnect — see {@link #forget()}.
+     */
+    private static Long lastCount;
+
     private ModKeys() {
     }
 
@@ -41,6 +50,11 @@ public final class ModKeys {
         });
     }
 
+    /** Drops what belonged to the world just left. Called on disconnect. */
+    static void forget() {
+        lastCount = null;
+    }
+
     private static void count(Minecraft client) {
         if (client.player == null || client.level == null) {
             return;
@@ -49,6 +63,9 @@ public final class ModKeys {
         long wisps = client.level.getEntities(client.player, nearby, entity ->
                 entity.getType() == ModContent.RUBY_WISP.get()).size();
 
-        client.player.sendSystemMessage(Component.literal("Wisps within 16 blocks: " + wisps));
+        String since = lastCount == null ? "" : " (was " + lastCount + ")";
+        lastCount = wisps;
+        client.player.sendSystemMessage(
+                Component.literal("Wisps within 16 blocks: " + wisps + since));
     }
 }

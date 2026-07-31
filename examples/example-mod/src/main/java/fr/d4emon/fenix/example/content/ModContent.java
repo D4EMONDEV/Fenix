@@ -1,11 +1,28 @@
 package fr.d4emon.fenix.example.content;
 
+import fr.d4emon.fenix.event.LootEvents;
+import fr.d4emon.fenix.registry.BlockInteractions;
+import fr.d4emon.fenix.registry.Brewing;
 import fr.d4emon.fenix.registry.CreativeTabs;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.Potions;
 import fr.d4emon.fenix.registry.Holder;
 import fr.d4emon.fenix.registry.Registrar;
+import fr.d4emon.fenix.registry.attachment.AttachmentType;
+import fr.d4emon.fenix.registry.fluid.FluidResult;
 import fr.d4emon.fenix.registry.worldgen.BiomeModifications;
 import fr.d4emon.fenix.registry.worldgen.BiomeSelectors;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.level.levelgen.GenerationStep;
+
+import java.util.Map;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -17,6 +34,8 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 
 /**
  * The mod's one registrar, shared by {@link ModBlocks} and {@link ModItems}.
@@ -67,6 +86,51 @@ public final class ModContent {
     public static final Holder<MenuType<RubySafeMenu>> RUBY_SAFE_MENU =
             REGISTRAR.menu("ruby_safe", RubySafeMenu::new);
 
+    /** The type behind {@link ModBlocks#RUBY_REFORGING}. */
+    public static final Holder<BlockEntityType<RubyReforgingBlockEntity>> RUBY_REFORGING_ENTITY =
+            REGISTRAR.blockEntity("ruby_reforging", RubyReforgingBlockEntity::new, ModBlocks.RUBY_REFORGING);
+
+    /** The window the reforging table opens: an input slot and an output slot. */
+    public static final Holder<MenuType<RubyReforgingMenu>> RUBY_REFORGING_MENU =
+            REGISTRAR.menu("ruby_reforging", RubyReforgingMenu::new);
+
+    /**
+     * The reforging table's recipe type — the kind of recipe it runs.
+     *
+     * <p>The table finds a recipe by asking the recipe manager for this type, so
+     * it and the recipe have to name the same one. This is that one.
+     */
+    public static final Holder<RecipeType<RubyReforgingRecipe>> REFORGING_TYPE =
+            REGISTRAR.recipeType("reforging");
+
+    /** How a reforging recipe is read from a datapack and sent to the client. */
+    public static final Holder<RecipeSerializer<RubyReforgingRecipe>> REFORGING_SERIALIZER =
+            REGISTRAR.recipeSerializer("reforging", new RecipeSerializer<>(
+                    RubyReforgingRecipe.MAP_CODEC, RubyReforgingRecipe.STREAM_CODEC));
+
+    /**
+     * The job site a jeweller villager claims: the reforging table.
+     *
+     * <p>One block, two features — a machine the player uses and a point of
+     * interest a villager works at. Registering the point of interest is only
+     * half of it; the other half, the block-state bookkeeping, is what the
+     * registrar does so the villager AI actually recognises the block.
+     */
+    public static final Holder<PoiType> JEWELLER_POI =
+            REGISTRAR.poiType("jeweller_poi", ModBlocks.RUBY_REFORGING);
+
+    /**
+     * A villager profession that trades in rubies.
+     *
+     * <p>A villager takes it by claiming a reforging table nearby. Its trades
+     * are datapack data — {@code data/example-mod/trade_set/jeweller.json} and
+     * the {@code villager_trade} entries it names — because 26.2 made trades data
+     * rather than code; the profession only points at the set, by level.
+     */
+    public static final Holder<VillagerProfession> JEWELLER = REGISTRAR.villagerProfession(
+            "jeweller", JEWELLER_POI, SoundEvents.VILLAGER_WORK_TOOLSMITH,
+            Map.of(1, REGISTRAR.tradeSet("jeweller")));
+
     /**
      * Hatches a wisp, so the entity can be met without a command.
      *
@@ -94,6 +158,17 @@ public final class ModContent {
             REGISTRAR.effect("ruby_glimmer", new RubyGlimmerEffect());
 
     /**
+     * A potion carrying that effect.
+     *
+     * <p>Registered late by the registrar, because an effect instance holds the
+     * effect itself rather than a promise of one — so the effect above has to
+     * exist first. Declaring the two in this order is not a requirement; the
+     * registrar arranges it.
+     */
+    public static final Holder<Potion> GLIMMERING_POTION =
+            REGISTRAR.potion("glimmering", RUBY_GLIMMER, 20 * 45);
+
+    /**
      * How many times a hammer has been swung.
      *
      * <p>Persistent so it survives saving, and network-synchronised so the
@@ -104,6 +179,29 @@ public final class ModContent {
             REGISTRAR.dataComponent("swings", builder -> builder
                     .persistent(Codec.INT)
                     .networkSynchronized(ByteBufCodecs.VAR_INT));
+
+    /**
+     * A fluid — a still form, a flowing form, the block it becomes, and a
+     * bucket, from one call.
+     *
+     * <p>It reuses vanilla's water sprites tinted red rather than shipping its
+     * own textures (see {@code ExampleModClient}), so it is a complete, drawn
+     * fluid with no art to add.
+     */
+    public static final FluidResult RUBY_BRINE = REGISTRAR.newFluid("ruby_brine")
+            .bucket()
+            .register();
+
+    /**
+     * Every hammer swing a player has ever made, kept on the player.
+     *
+     * <p>The counterpart to {@link #SWINGS}, on purpose: that component lives on
+     * one hammer and is gone when the hammer is, while this attachment lives on
+     * the player and outlasts every hammer they wear out. Persistent, so it
+     * survives logging out — the whole point of an attachment over a field.
+     */
+    public static final AttachmentType<Integer> TOTAL_SWINGS =
+            REGISTRAR.attachment("total_swings", () -> 0, Codec.INT);
 
     private ModContent() {
     }
@@ -122,11 +220,42 @@ public final class ModContent {
         // Without this the content exists but is unreachable in game except
         // through /give.
         CreativeTabs.addTo(CreativeTabs.BUILDING_BLOCKS,
-                ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK);
+                ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK,
+                ModBlocks.RUBY_LOG, ModBlocks.STRIPPED_RUBY_LOG);
         CreativeTabs.addTo(CreativeTabs.NATURAL_BLOCKS,
                 ModBlocks.RUBY_ORE, ModBlocks.DEEPSLATE_RUBY_ORE);
-        CreativeTabs.addTo(CreativeTabs.FUNCTIONAL_BLOCKS, ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE);
+        CreativeTabs.addTo(CreativeTabs.FUNCTIONAL_BLOCKS,
+                ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE, ModBlocks.RUBY_REFORGING);
         ModPayloads.listen();
+
+        // The behaviour vanilla keeps in tables rather than on the block. Each
+        // of these is one line and, left out, fails without a word: a log that
+        // will not burn, an axe that does nothing to it, a furnace that refuses
+        // a ruby. Declared after apply() only because it reads well here — the
+        // blocks are resolved when the game first asks, not now.
+        BlockInteractions.flammable(ModBlocks.RUBY_LOG, 5, 5);
+        BlockInteractions.strippable(ModBlocks.RUBY_LOG, ModBlocks.STRIPPED_RUBY_LOG);
+        BlockInteractions.compostable(ModItems.RUBY, 0.5f);
+        BlockInteractions.fuel(ModItems.RUBY, 1600);
+
+        // A potion nothing brews into can only be given by command. Vanilla
+        // builds its brewing table once per server and throws the builder away,
+        // so this is recorded and handed over while that builder is still open.
+        Brewing.mix(Potions.AWKWARD, ModItems.RUBY, GLIMMERING_POTION);
+
+        // A rare ruby from ordinary stone. Added as a pool rather than by
+        // overriding the file: two mods both dropping something from stone is
+        // exactly what a datapack override cannot do — the second copy wins and
+        // the first mod's drop is gone with nothing said.
+        LootEvents.LOADING.register(loot -> {
+            if (loot.id().equals(Identifier.parse("minecraft:blocks/stone"))) {
+                loot.addPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1))
+                        .when(LootItemRandomChanceCondition.randomChance(0.02f))
+                        .add(LootItem.lootTableItem(ModItems.RUBY.get()))
+                        .build());
+            }
+        });
 
         // Two files say what the ore is and where it may go; this says which
         // biomes actually want it. Without it the feature exists and is never
@@ -136,13 +265,14 @@ public final class ModContent {
                 REGISTRAR.placedFeature("ruby_ore"));
 
         CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
-        CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES, ModItems.RUBY_HAMMER);
+        CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES,
+                ModItems.RUBY_HAMMER, RUBY_BRINE.bucket().orElseThrow());
         CreativeTabs.addTo(CreativeTabs.SPAWN_EGGS, RUBY_WISP_SPAWN_EGG);
 
         // And again in the mod's own tab, where a player looking for this mod
         // in particular will go. Content belongs in both.
         CreativeTabs.addTo(TAB, ModBlocks.RUBY_BLOCK, ModBlocks.GLOWING_RUBY_BLOCK,
-                ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE, ModItems.RUBY, ModItems.RUBY_HAMMER,
-                RUBY_WISP_SPAWN_EGG);
+                ModBlocks.RUBY_TALLY, ModBlocks.RUBY_SAFE, ModBlocks.RUBY_REFORGING,
+                ModItems.RUBY, ModItems.RUBY_HAMMER, RUBY_WISP_SPAWN_EGG);
     }
 }

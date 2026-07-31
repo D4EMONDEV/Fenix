@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "example-mod:block/stripped_ruby_log"
+    }
+  }
+}

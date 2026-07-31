@@ -46,6 +46,7 @@ class RegistryConformanceTest {
             "fr/d4emon/fenix/probe/ProbeMachineBlock.class",
             "fr/d4emon/fenix/probe/ProbeMenu.class",
             "fr/d4emon/fenix/probe/ProbeMod.class",
+            "fr/d4emon/fenix/probe/ProbeReforgingRecipe.class",
             "fr/d4emon/fenix/probe/RegistryProbe.class");
 
     private static final String MOD_METADATA = """

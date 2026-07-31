@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { findDoc, latestVersion, sidebarFor, versions } from '../lib/content';
 import { render } from '../lib/markdown';
+import { MINECRAFT_VERSION } from '../lib/template';
 
 export function Docs() {
   const { version = latestVersion, '*': slug = 'index' } = useParams();
@@ -23,10 +24,13 @@ export function Docs() {
   }
 
   return (
-    <div className="docs shell">
+    <div className="docs-shell">
       <aside className="sidebar" aria-label="Documentation">
+        <Link className="docs-brand" to={`/docs/${latestVersion}/index`}>
+          <span>Fenix</span> API Documentation
+        </Link>
         <label className="version-picker">
-          <span>Version</span>
+          <span>Fenix API version</span>
           <select value={version} onChange={(event) => switchVersion(event.target.value)}>
             {versions.map((candidate) => (
               <option key={candidate} value={candidate}>
@@ -36,6 +40,14 @@ export function Docs() {
             ))}
           </select>
         </label>
+
+        <div className="docs-release">
+          <span>Compatibility</span>
+          <strong>Minecraft {MINECRAFT_VERSION}</strong>
+          <p>
+            Fenix starts at 26.2. It is never backported to an earlier Minecraft version.
+          </p>
+        </div>
 
         {groups.map((group) => (
           <nav className="sidebar-group" key={group.id || 'root'}>
@@ -55,7 +67,7 @@ export function Docs() {
 
       {doc && rendered ? (
         <>
-          <article className="prose">
+          <article className="prose docs-prose">
             <h1>{doc.title}</h1>
             {doc.description && <p className="page-description">{doc.description}</p>}
             <div dangerouslySetInnerHTML={{ __html: rendered.html }} />
@@ -77,7 +89,7 @@ export function Docs() {
           </aside>
         </>
       ) : (
-        <article className="prose">
+        <article className="prose docs-prose">
           <h1>Not found</h1>
           <p>
             There is no page at <code>{slug}</code> in version {version}.

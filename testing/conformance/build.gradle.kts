@@ -30,6 +30,12 @@ dependencies {
     testCompileOnly(files(fenix.clientJar))
     testCompileOnly(project(":fenix-api-registry"))
     testCompileOnly(project(":fenix-api-network"))
+    // The resource probe drives ModPackSource inside a real launch, which is the
+    // only place the mods it reads exist.
+    testCompileOnly(project(":fenix-api-resource"))
+    // The loot probe rebuilds a loot table, which needs the widened constructor
+    // the loader applies — so it too runs through a launch.
+    testCompileOnly(project(":fenix-api-event"))
 }
 
 // Compiling against Minecraft, and booting its registries, both need
@@ -82,8 +88,16 @@ tasks.test {
     val worldgen = rootProject.layout.projectDirectory
         .dir("examples/example-mod/src/main/generated/data/example-mod/worldgen")
     inputs.dir(worldgen).withPropertyName("worldgenData")
+
+    // Likewise the villager tag check: whether a profession is reachable is
+    // decided by a file the mod ships, not by anything the registry knows.
+    val exampleResources = rootProject.layout.projectDirectory
+        .dir("examples/example-mod/src/main/resources")
+    inputs.dir(exampleResources).withPropertyName("exampleResources")
+
     doFirst {
         systemProperty("fenix.test.worldgenDir", worldgen.asFile.absolutePath)
+        systemProperty("fenix.test.exampleResources", exampleResources.asFile.absolutePath)
     }
 
     inputs.file(eventJar).withPropertyName("eventJar")

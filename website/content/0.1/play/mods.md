@@ -18,7 +18,7 @@ it, so you install one jar rather than eight:
 
 ```
 mods/
-  fenix-api-0.1.3+mc26.2.jar
+  fenix-api-0.2.0+mc26.2.jar
   some-mod-1.2.0.jar
 ```
 
@@ -31,7 +31,7 @@ if there is a screen:
 ```
 Fenix cannot start because of 2 mod problems:
   - duplicate mod 'coollib': both a.jar and b.jar provide it — remove one of them
-  - some-mod 1.2.0 requires fenix-api >=0.2.0, but fenix-api 0.1.3 is present
+  - some-mod 1.2.0 requires fenix-api >=0.3.0, but fenix-api 0.2.0 is present
 ```
 
 Two things it deliberately does **not** treat as errors:

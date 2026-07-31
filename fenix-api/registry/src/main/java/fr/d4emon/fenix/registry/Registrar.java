@@ -34,6 +34,8 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnPlacementType;
 import net.minecraft.world.entity.SpawnPlacements;
@@ -41,6 +43,33 @@ import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.PushReaction;
+import fr.d4emon.fenix.registry.fluid.FenixFlowingFluid;
+import fr.d4emon.fenix.registry.fluid.FluidResult;
+import fr.d4emon.fenix.registry.fluid.FluidType;
+import fr.d4emon.fenix.registry.attachment.AttachmentType;
+import fr.d4emon.fenix.registry.attachment.Attachments;
+import com.mojang.serialization.Codec;
+import com.google.common.collect.ImmutableSet;
+import fr.d4emon.fenix.mixin.registry.PoiTypesInvoker;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.item.trading.TradeSet;
+import org.jspecify.annotations.Nullable;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.Objects;
 import java.util.Set;
@@ -145,6 +174,18 @@ public final class Registrar {
      */
     public ItemBuilder newItem(String name) {
         return new ItemBuilder(this, Objects.requireNonNull(name, "name"));
+    }
+
+    /**
+     * Starts describing a fluid.
+     *
+     * @param name the path part of its id, shared by the still fluid and its
+     *             block; the flowing fluid is {@code flowing_<name>} and the
+     *             bucket, if any, is {@code <name>_bucket}
+     * @return a builder; call {@code register()} when done
+     */
+    public FluidBuilder newFluid(String name) {
+        return new FluidBuilder(this, Objects.requireNonNull(name, "name"));
     }
 
     // ------------------------------------------------------------------
@@ -524,6 +565,88 @@ public final class Registrar {
     }
 
     // ------------------------------------------------------------------
+    // Fluids
+    // ------------------------------------------------------------------
+
+    /**
+     * Registers the four things one fluid is — still, flowing, block and
+     * bucket — in a single pass.
+     *
+     * <p>Called by {@link FluidBuilder#register()}; a mod reaches it through
+     * {@link #newFluid(String)}. All four share the one moment the registries
+     * are open, which is what lets each reference the others: the fluid names
+     * its block and bucket, the block is built from the fluid, and the bucket
+     * carries it. None of those links is followed until the game runs, so the
+     * order the four are created in here does not matter to them.
+     *
+     * @param name     the fluid's path
+     * @param settings what the builder collected
+     * @return handles on all four
+     */
+    FluidResult fluid(String name, FluidSettings settings) {
+        Identifier sourceId = identifier(name);
+        Identifier flowingId = identifier("flowing_" + name);
+        Identifier bucketId = identifier(name + "_bucket");
+
+        Holder<FlowingFluid> source = new Holder<>(sourceId);
+        Holder<FlowingFluid> flowing = new Holder<>(flowingId);
+        Holder<Block> block = new Holder<>(sourceId);
+        Optional<Holder<Item>> bucket =
+                settings.withBucket() ? Optional.of(new Holder<>(bucketId)) : Optional.empty();
+
+        // Built now, read later: the fluid asks these suppliers for its block
+        // and bucket only once the game is running, by which point the handles
+        // below are bound.
+        FluidType type = new FluidType(
+                source::get, flowing::get, block::get,
+                bucket.map(handle -> (Supplier<Item>) handle),
+                settings.slopeFindDistance(), settings.dropOff(), settings.tickDelay(),
+                settings.explosionResistance(), settings.canConvertToSource(),
+                settings.dripParticle(), settings.pickupSound());
+
+        defer(() -> {
+            FenixFlowingFluid.Source sourceFluid = new FenixFlowingFluid.Source(type);
+            FenixFlowingFluid.Flowing flowingFluid = new FenixFlowingFluid.Flowing(type);
+            source.bind(Registry.register(BuiltInRegistries.FLUID,
+                    ResourceKey.create(Registries.FLUID, sourceId), sourceFluid));
+            flowing.bind(Registry.register(BuiltInRegistries.FLUID,
+                    ResourceKey.create(Registries.FLUID, flowingId), flowingFluid));
+
+            ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, sourceId);
+            BlockBehaviour.Properties props =
+                    settings.blockProperties().apply(liquidBlockDefaults().setId(blockKey));
+            // LiquidBlock's constructor is protected; the manifest widens it, so
+            // this module can build the block form of a mod's fluid the same way
+            // vanilla builds water's.
+            LiquidBlock liquidBlock = new LiquidBlock(sourceFluid, props);
+            block.bind(Registry.register(BuiltInRegistries.BLOCK, blockKey, liquidBlock));
+            finaliseStates(liquidBlock);
+
+            bucket.ifPresent(handle -> {
+                ResourceKey<Item> bucketKey = ResourceKey.create(Registries.ITEM, bucketId);
+                Item.Properties bucketProps = settings.bucketProperties().apply(
+                        new Item.Properties().setId(bucketKey).craftRemainder(Items.BUCKET).stacksTo(1));
+                handle.bind(Registry.register(BuiltInRegistries.ITEM, bucketKey,
+                        new BucketItem(sourceFluid, bucketProps)));
+            });
+        });
+
+        return new FluidResult(source, flowing, block, bucket);
+    }
+
+    /** The block a fluid becomes: no collision, no drops, destroyed by pistons. */
+    private static BlockBehaviour.Properties liquidBlockDefaults() {
+        return BlockBehaviour.Properties.of()
+                .replaceable()
+                .noCollision()
+                .strength(100f)
+                .pushReaction(PushReaction.DESTROY)
+                .noLootTable()
+                .liquid()
+                .sound(SoundType.EMPTY);
+    }
+
+    // ------------------------------------------------------------------
     // Spawning
     // ------------------------------------------------------------------
 
@@ -670,6 +793,65 @@ public final class Registrar {
     }
 
     /**
+     * Declares a potion — a set of effects a bottle can carry.
+     *
+     * <pre>{@code
+     * public static final Holder<Potion> GLIMMERING =
+     *         REGISTRAR.potion("glimmering", ModContent.GLIMMER, 20 * 45);
+     * }</pre>
+     *
+     * <p>The effect is taken as a handle and the instance built later, because a
+     * {@code MobEffectInstance} holds the effect itself rather than a promise of
+     * one — building it here would mean the effect had to be registered before
+     * this line ran, which is exactly the ordering trap the rest of this class
+     * avoids.
+     *
+     * <p>This is the potion itself. Getting one in game is {@link Brewing}'s
+     * business — a potion nothing brews into can only be given by command.
+     *
+     * <p>Its name is {@code item.minecraft.potion.effect.<name>}, which is
+     * vanilla's own scheme: the potion items are Minecraft's, and only the
+     * suffix is the mod's.
+     *
+     * @param name     the path part of its id, and the suffix of its name
+     * @param effect   what drinking it applies
+     * @param duration how long that lasts, in ticks
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<Potion> potion(String name, Holder<? extends MobEffect> effect, int duration) {
+        Objects.requireNonNull(effect, "effect");
+        return potion(name, () -> List.of(new MobEffectInstance(
+                BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect.get()), duration)));
+    }
+
+    /**
+     * Declares a potion carrying whatever set of effects is wanted.
+     *
+     * <p>The general form of {@link #potion(String, Holder, int)}: the effects
+     * are built when the potion is registered rather than when it is declared,
+     * so anything they name is bound by then.
+     *
+     * @param name    the path part of its id, and the suffix of its name
+     * @param effects builds what drinking it does; called once, during
+     *                {@link #apply()}
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<Potion> potion(String name, Supplier<List<MobEffectInstance>> effects) {
+        Objects.requireNonNull(effects, "effects");
+        Identifier id = identifier(name);
+        Holder<Potion> holder = new Holder<>(id);
+
+        // Late, so a mod's own effects — registered in the ordinary pass — exist
+        // by the time the instances above are built.
+        deferLate(() -> {
+            ResourceKey<Potion> key = ResourceKey.create(Registries.POTION, id);
+            holder.bind(Registry.register(BuiltInRegistries.POTION, key,
+                    new Potion(name, effects.get().toArray(new MobEffectInstance[0]))));
+        });
+        return holder;
+    }
+
+    /**
      * Declares a data component — a typed piece of state a stack carries.
      *
      * <pre>{@code
@@ -720,6 +902,253 @@ public final class Registrar {
     }
 
     // ------------------------------------------------------------------
+    // Recipes
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a recipe type — the kind of recipe a mod's station runs.
+     *
+     * <pre>{@code
+     * public static final Holder<RecipeType<ReforgingRecipe>> REFORGING =
+     *         REGISTRAR.recipeType("reforging");
+     * }</pre>
+     *
+     * <p>The type is the key a station looks recipes up by:
+     * {@code level.recipeAccess().getRecipeFor(REFORGING.get(), input, level)}.
+     * A recipe carries its own type, so the two have to name the same thing;
+     * this is that thing.
+     *
+     * <p>The recipes themselves are datapack data, read through the serializer
+     * below. This only registers the type they are grouped under.
+     *
+     * @param <T>  the recipe class
+     * @param name the path part of its id
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public <T extends Recipe<?>> Holder<RecipeType<T>> recipeType(String name) {
+        Identifier id = identifier(name);
+        Holder<RecipeType<T>> holder = new Holder<>(id);
+
+        defer(() -> {
+            RecipeType<T> type = new RecipeType<>() {
+                @Override
+                public String toString() {
+                    return id.toString();
+                }
+            };
+            holder.bind(Registry.register(BuiltInRegistries.RECIPE_TYPE, id, type));
+        });
+        return holder;
+    }
+
+    /**
+     * Declares a recipe serializer — how a recipe of a mod's own type is read
+     * from a datapack and sent over the network.
+     *
+     * <pre>{@code
+     * public static final Holder<RecipeSerializer<ReforgingRecipe>> REFORGING =
+     *         REGISTRAR.recipeSerializer("reforging",
+     *                 new RecipeSerializer<>(ReforgingRecipe.MAP_CODEC, ReforgingRecipe.STREAM_CODEC));
+     * }</pre>
+     *
+     * <p>A {@link RecipeSerializer} is a pair of codecs — one for the JSON on
+     * disk, one for the wire. A recipe with no serializer registered is dropped
+     * from the datapack without a word, the same silent failure a worldgen file
+     * with a typo has.
+     *
+     * @param <T>        the recipe class
+     * @param name       the path part of its id
+     * @param serializer the serializer, usually built from the recipe's own
+     *                   {@code MAP_CODEC} and {@code STREAM_CODEC}
+     * @return a handle, bound once {@link #apply()} runs
+     * @throws NullPointerException if {@code serializer} is {@code null}
+     */
+    public <T extends Recipe<?>> Holder<RecipeSerializer<T>> recipeSerializer(
+            String name, RecipeSerializer<T> serializer) {
+        Objects.requireNonNull(serializer, "serializer");
+        Identifier id = identifier(name);
+        Holder<RecipeSerializer<T>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, id, serializer)));
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Villagers
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a point of interest for a job-site block — what a villager walks
+     * to and claims in order to take a profession.
+     *
+     * <pre>{@code
+     * public static final Holder<PoiType> RUBY_STALL = REGISTRAR.poiType("ruby_stall", ModBlocks.RUBY_STALL);
+     * }</pre>
+     *
+     * <p>Registering the type is only half of it, and the other half is the part
+     * that fails silently: vanilla keeps a block-state → point-of-interest map,
+     * filled in one pass at bootstrap, and a job-site block missing from it is
+     * one no villager ever recognises — so the profession exists and no villager
+     * ever takes it. This adds every state of the given blocks to that map, the
+     * way vanilla does for its own.
+     *
+     * @param name   the path part of its id
+     * @param blocks the blocks whose states are the job site; at least one
+     * @return a handle, bound once {@link #apply()} runs
+     * @throws IllegalArgumentException if no block is given
+     */
+    @SafeVarargs
+    public final Holder<PoiType> poiType(String name, Holder<Block>... blocks) {
+        if (blocks.length == 0) {
+            throw new IllegalArgumentException(name + " has no blocks — a point of interest no block "
+                    + "carries is one no villager can ever claim");
+        }
+        Identifier id = identifier(name);
+        Holder<PoiType> holder = new Holder<>(id);
+
+        defer(() -> {
+            Set<BlockState> states = new LinkedHashSet<>();
+            for (Holder<Block> block : blocks) {
+                states.addAll(block.get().getStateDefinition().getPossibleStates());
+            }
+            ResourceKey<PoiType> key = ResourceKey.create(Registries.POINT_OF_INTEREST_TYPE, id);
+            // maxTickets 1, validRange 1: one villager to a job site, and it has
+            // to be within a block of its claim, the same as a vanilla job site.
+            PoiType type = Registry.register(BuiltInRegistries.POINT_OF_INTEREST_TYPE, key,
+                    new PoiType(states, 1, 1));
+            // The bookkeeping pass, redone for this type: without it forState()
+            // never answers this block, and the job site is invisible to the AI.
+            PoiTypesInvoker.fenix$registerBlockStates(
+                    BuiltInRegistries.POINT_OF_INTEREST_TYPE.wrapAsHolder(type), states);
+            holder.bind(type);
+        });
+        return holder;
+    }
+
+    /**
+     * {@return the key of one of this mod's trade sets}
+     *
+     * <p>Names rather than registers: a trade set is datapack data in 26.2 — a
+     * {@code data/<namespace>/trade_set/<name>.json} listing the trades a
+     * profession offers at one level. What this is for is pointing a profession
+     * at one, in {@link #villagerProfession}.
+     *
+     * @param name the file's name under {@code trade_set/}
+     */
+    public ResourceKey<TradeSet> tradeSet(String name) {
+        return ResourceKey.create(Registries.TRADE_SET, identifier(name));
+    }
+
+    /**
+     * Declares a villager profession.
+     *
+     * <pre>{@code
+     * public static final Holder<VillagerProfession> JEWELLER = REGISTRAR.villagerProfession(
+     *         "jeweller", RUBY_STALL_POI, SoundEvents.VILLAGER_WORK_TOOLSMITH,
+     *         Map.of(1, REGISTRAR.tradeSet("jeweller_novice"),
+     *                2, REGISTRAR.tradeSet("jeweller_apprentice")));
+     * }</pre>
+     *
+     * <p>A villager takes this profession when it claims the job site named by
+     * {@code jobSite} — the point of interest from {@link #poiType}. The trades
+     * are keyed by level, one to five, and are datapack {@link TradeSet}s the mod
+     * ships; a level with no set simply offers nothing new.
+     *
+     * <p>Its name is {@code entity.<mod id>.villager.<name>}, which
+     * {@code EmberLanguageProvider} translates like anything else.
+     *
+     * @param name         the path part of its id
+     * @param jobSite      the point of interest a villager claims to take it,
+     *                     from {@link #poiType}
+     * @param workSound    the sound it makes working, or {@code null} for silence
+     * @param tradesByLevel the trade set for each level, one to five
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<VillagerProfession> villagerProfession(String name, Holder<PoiType> jobSite,
+                                                         @Nullable SoundEvent workSound,
+                                                         Map<Integer, ResourceKey<TradeSet>> tradesByLevel) {
+        Objects.requireNonNull(jobSite, "jobSite");
+        Objects.requireNonNull(tradesByLevel, "tradesByLevel");
+        Identifier id = identifier(name);
+        Holder<VillagerProfession> holder = new Holder<>(id);
+        // Only the key, read now: the handle need not be bound, and the
+        // profession compares job sites by key rather than by identity.
+        ResourceKey<PoiType> jobSiteKey =
+                ResourceKey.create(Registries.POINT_OF_INTEREST_TYPE, jobSite.id());
+
+        defer(() -> {
+            Int2ObjectMap<ResourceKey<TradeSet>> trades = new Int2ObjectOpenHashMap<>();
+            tradesByLevel.forEach((level, set) -> trades.put(level.intValue(), set));
+            ResourceKey<VillagerProfession> key = ResourceKey.create(Registries.VILLAGER_PROFESSION, id);
+            VillagerProfession profession = new VillagerProfession(
+                    Component.translatable("entity." + modId + ".villager." + name),
+                    poi -> poi.is(jobSiteKey),
+                    poi -> poi.is(jobSiteKey),
+                    ImmutableSet.of(),
+                    ImmutableSet.of(),
+                    workSound,
+                    trades);
+            holder.bind(Registry.register(BuiltInRegistries.VILLAGER_PROFESSION, key, profession));
+        });
+        // Recorded rather than checked: whether the job site is findable depends
+        // on a tag, and tags arrive with the datapacks, long after this. See
+        // VillagerJobSites for what goes wrong when it is not.
+        VillagerJobSites.claim(id, jobSiteKey);
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Attachments
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a transient attachment — data a mod hangs on an entity or block
+     * entity for as long as it is loaded, gone the moment it is not.
+     *
+     * <pre>{@code
+     * public static final AttachmentType<Boolean> GLIDING =
+     *         REGISTRAR.attachment("gliding", () -> false);
+     * }</pre>
+     *
+     * <p>Unlike almost everything else here this takes effect immediately, not
+     * at {@link #apply()}: an attachment is Fenix's own bookkeeping, not a
+     * vanilla registry, so there is nothing to wait for and the type is usable
+     * the moment it is declared.
+     *
+     * @param <T>          the value type
+     * @param name         the path part of its id
+     * @param defaultValue builds the value returned before anything is set
+     * @return the attachment type — keep it in a {@code static final} field
+     */
+    public <T> AttachmentType<T> attachment(String name, Supplier<T> defaultValue) {
+        return Attachments.register(identifier(name), defaultValue, null);
+    }
+
+    /**
+     * Declares a persistent attachment — data that survives saving, written
+     * beside the entity or block entity through the codec given.
+     *
+     * <pre>{@code
+     * public static final AttachmentType<Integer> MANA =
+     *         REGISTRAR.attachment("mana", () -> 0, Codec.INT);
+     * }</pre>
+     *
+     * <p>Set it with {@code Attachments.set}; a value only ever read keeps its
+     * default and saves nothing. Takes effect immediately, as the transient form
+     * does.
+     *
+     * @param <T>          the value type
+     * @param name         the path part of its id, and the key it saves under
+     * @param defaultValue builds the value returned before anything is set
+     * @param codec        how the value is written and read
+     * @return the attachment type — keep it in a {@code static final} field
+     */
+    public <T> AttachmentType<T> attachment(String name, Supplier<T> defaultValue, Codec<T> codec) {
+        Objects.requireNonNull(codec, "codec");
+        return Attachments.register(identifier(name), defaultValue, codec);
+    }
+
+    // ------------------------------------------------------------------
     // Applying
     // ------------------------------------------------------------------
 
@@ -743,6 +1172,11 @@ public final class Registrar {
         }
         pending.clear();
         pendingLate.clear();
+
+        // The one interaction table that is written to rather than answered
+        // around. Its entries are keyed by item, so they wait for exactly this
+        // moment — see BlockInteractions.compostable.
+        BlockInteractions.flushCompostables();
     }
 
     private void defer(Runnable registration) {

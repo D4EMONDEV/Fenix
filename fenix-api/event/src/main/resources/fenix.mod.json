@@ -17,5 +17,8 @@
   },
   "mixins": [
     "fenix-api-event.mixins.json"
+  ],
+  "accessible": [
+    "method net.minecraft.world.level.storage.loot.LootTable <init>"
   ]
 }

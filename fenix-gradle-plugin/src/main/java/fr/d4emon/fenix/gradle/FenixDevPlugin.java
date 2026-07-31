@@ -78,6 +78,12 @@ public final class FenixDevPlugin implements Plugin<Project> {
         String minecraft = extension.getMinecraft().get();
         String loaderVersion = extension.getLoaderVersion().get();
         String apiVersion = extension.getApiVersion().get();
+        // Not extension properties: a mod author has no reason to pick these,
+        // and every reason to get the pair that was built together. They are
+        // separate lines all the same, because the modules are versioned apart.
+        Properties versions = readPluginProperties();
+        String emberVersion = versions.getProperty("ember");
+        String processorVersion = versions.getProperty("processor");
 
         Path cacheRoot = project.getGradle().getGradleUserHomeDir().toPath().resolve("caches").resolve("fenix");
         MinecraftLibraries game = new MinecraftDownloader(cacheRoot).resolve(minecraft);
@@ -108,7 +114,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // there. Depending on the API from inside the API would be circular, and
         // there is no mod here to index or launch.
         boolean library = extension.getLibrary().get();
-        clientSourceSet(project, game, loaderVersion, apiVersion, library, minecraft, widen);
+        clientSourceSet(project, game, processorVersion, apiVersion, library, minecraft, widen);
         if (!library) {
             if (extension.getApi().get()) {
                 // fenixMod and not compileOnly, so what a mod compiles against
@@ -118,7 +124,8 @@ public final class FenixDevPlugin implements Plugin<Project> {
                 // move earlier. fenixMod feeds compileOnly, so this covers both.
                 dependencies.add(fenixMod.getName(), "fr.d4emon.fenix:fenix-api:" + apiVersion);
             }
-            dependencies.add("annotationProcessor", "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
+            dependencies.add("annotationProcessor",
+                    "fr.d4emon.fenix:fenix-processor:" + processorVersion);
         }
 
         // Let a mod template its metadata: ${version} and ${minecraft_version}
@@ -175,10 +182,10 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // own configuration keeps it out of run/mods, where it was being copied
         // into every client and server launch for nothing.
         Configuration ember = project.getConfigurations().create("fenixEmber");
-        dependencies.add(ember.getName(), "fr.d4emon.fenix:ember:" + apiVersion);
+        dependencies.add(ember.getName(), "fr.d4emon.fenix:ember:" + emberVersion);
         // Still on the compile classpath: a mod writes @Generator classes
         // against it. It is only the runtime copy that was pointless.
-        dependencies.add("compileOnly", "fr.d4emon.fenix:ember:" + apiVersion);
+        dependencies.add("compileOnly", "fr.d4emon.fenix:ember:" + emberVersion);
 
         registerRunClient(project, game, clientClasspath, fenixMod);
         registerEmber(project, game, clientClasspath, fenixMod, ember, generated);
@@ -200,7 +207,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
      * <p>Its entry class is indexed into a file of its own, so a dedicated
      * server is never told to load a class it cannot resolve.
      */
-    private void clientSourceSet(Project project, MinecraftLibraries game, String loaderVersion,
+    private void clientSourceSet(Project project, MinecraftLibraries game, String processorVersion,
                                  String apiVersion, boolean library, String minecraft,
                                  List<String> widen) {
         Directory clientJava = project.getLayout().getProjectDirectory().dir("src/client/java");
@@ -231,7 +238,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
             dependencies.add(client.getCompileOnlyConfigurationName(),
                     "fr.d4emon.fenix:fenix-api:" + apiVersion);
             dependencies.add(client.getAnnotationProcessorConfigurationName(),
-                    "fr.d4emon.fenix:fenix-processor:" + loaderVersion);
+                    "fr.d4emon.fenix:fenix-processor:" + processorVersion);
         }
 
         client.setCompileClasspath(client.getCompileClasspath().plus(main.getOutput()));

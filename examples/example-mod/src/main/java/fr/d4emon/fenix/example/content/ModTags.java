@@ -33,6 +33,7 @@ public final class ModTags {
                     .add(ModBlocks.GLOWING_RUBY_BLOCK)
                     .add(ModBlocks.RUBY_TALLY)
                     .add(ModBlocks.RUBY_SAFE)
+                    .add(ModBlocks.RUBY_REFORGING)
                     .add(ModBlocks.RUBY_ORE)
                     .add(ModBlocks.DEEPSLATE_RUBY_ORE);
 

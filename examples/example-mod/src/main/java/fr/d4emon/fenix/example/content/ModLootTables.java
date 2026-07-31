@@ -21,6 +21,9 @@ public final class ModLootTables extends EmberLootTableProvider {
         dropsSelf(ModBlocks.GLOWING_RUBY_BLOCK);
         dropsSelf(ModBlocks.RUBY_TALLY);
         dropsSelf(ModBlocks.RUBY_SAFE);
+        dropsSelf(ModBlocks.RUBY_REFORGING);
+        dropsSelf(ModBlocks.RUBY_LOG);
+        dropsSelf(ModBlocks.STRIPPED_RUBY_LOG);
 
         // Ore drops its material, not itself — the reason to reach for
         // drops(...) rather than dropsSelf(...).

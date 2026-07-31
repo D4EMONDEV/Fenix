@@ -5,7 +5,7 @@ export function Footer() {
     <footer className="site-footer">
       <div className="shell">
         <p>
-          Fenix is a mod loader for Minecraft 26.2, built by <strong>D4EMON</strong>. Apache-2.0.
+          Fenix is a mod loader for Minecraft 26.2, built by <strong>D4EMON</strong>.
         </p>
         <nav aria-label="Footer">
           <a href={`/docs/${latestVersion}/index`}>Documentation</a>

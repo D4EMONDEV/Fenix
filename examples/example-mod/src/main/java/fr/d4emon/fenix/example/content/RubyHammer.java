@@ -1,5 +1,6 @@
 package fr.d4emon.fenix.example.content;
 
+import fr.d4emon.fenix.registry.attachment.Attachments;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -42,6 +43,12 @@ public final class RubyHammer extends Item {
         int swings = hammer.getOrDefault(ModContent.SWINGS.get(), 0) + 1;
         hammer.set(ModContent.SWINGS.get(), swings);
 
+        // On the stack above; on the player here. This one outlives the hammer,
+        // and because it is persistent it survives logging out — set once, read
+        // back next session.
+        int total = Attachments.get(player, ModContent.TOTAL_SWINGS) + 1;
+        Attachments.set(player, ModContent.TOTAL_SWINGS, total);
+
         // sendParticles rather than addParticle: the server has no particles of
         // its own, it tells the clients that can see the spot.
         var pos = context.getClickedPos().above();
@@ -56,7 +63,7 @@ public final class RubyHammer extends Item {
                     BuiltInRegistries.MOB_EFFECT.wrapAsHolder(ModContent.RUBY_GLIMMER.get()),
                     20 * 10));
             player.sendSystemMessage(
-                    Component.translatable("message.example-mod.glimmer", swings));
+                    Component.translatable("message.example-mod.glimmer", swings, total));
         }
 
         hammer.hurtAndBreak(1, player, context.getHand());
