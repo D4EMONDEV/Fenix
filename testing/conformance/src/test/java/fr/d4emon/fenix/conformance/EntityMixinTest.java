@@ -34,6 +34,11 @@ class EntityMixinTest {
             "net.minecraft.world.entity.ai.attributes.DefaultAttributes";
     private static final String RENDERERS =
             "net.minecraft.client.renderer.entity.EntityRenderers";
+    private static final String BLOCK_ENTITY_RENDERERS =
+            "net.minecraft.client.renderer.blockentity.BlockEntityRenderers";
+    private static final String LAYER_DEFINITIONS =
+            "net.minecraft.client.model.geom.LayerDefinitions";
+    private static final String MOD_LAYERS = "fenix$addModLayers";
 
     private static final String MOD_SUPPLIER = "fenix$modSupplier";
     private static final String MOD_HAS_SUPPLIER = "fenix$modHasSupplier";
@@ -58,6 +63,8 @@ class EntityMixinTest {
 
             loader.loadClass(ATTRIBUTES);
             loader.loadClass(RENDERERS);
+            loader.loadClass(BLOCK_ENTITY_RENDERERS);
+            loader.loadClass(LAYER_DEFINITIONS);
 
             assertCarries(transformed, ATTRIBUTES, MOD_SUPPLIER,
                     "a mod's living entity would die in its own constructor");
@@ -65,6 +72,17 @@ class EntityMixinTest {
                     "vanilla would report a mod's entity as having no attributes");
             assertCarries(transformed, RENDERERS, PROVIDERS,
                     "a mod's entities would all be invisible");
+            // The same table, for blocks that draw more than their model: a
+            // chest lid, a sign's text, an item above a pedestal. Its register
+            // is private too, and a block entity without one simply shows
+            // nothing while the block itself renders perfectly.
+            assertCarries(transformed, BLOCK_ENTITY_RENDERERS, PROVIDERS,
+                    "a mod's block entities would draw nothing at all");
+            // Without this a mod cannot ship an entity model at all: the layer
+            // table is built once and immutable, and asking for a layer that is
+            // not in it throws while the client loads.
+            assertCarries(transformed, LAYER_DEFINITIONS, MOD_LAYERS,
+                    "a mod's entity model would fail to bake with 'No model for layer'");
         }
     }
 

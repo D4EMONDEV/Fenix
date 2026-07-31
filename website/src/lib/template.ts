@@ -1,10 +1,10 @@
 import type { ZipEntry } from './zip';
 
-export const FENIX_VERSION = '0.1.4';
+export const FENIX_VERSION = '0.1.5';
 export const MINECRAFT_VERSION = '26.2';
 
 const LOADER_VERSION = '0.1.1';
-const API_VERSION = '0.2.0';
+const API_VERSION = '0.3.0';
 
 /** The choices exposed by the project generator. Deliberately small: a new
  * project should describe the author's mod, not spend its first commit deleting ours. */
@@ -214,7 +214,7 @@ src/main/resources/    fenix.mod.json and the assets you add${options.client ? '
 
 ## Documentation
 
-<https://d4emondev.github.io/Fenix/docs/0.2.0/guides/getting-started>
+<https://d4emondev.github.io/Fenix/docs/${API_VERSION}/guides/getting-started>
 `;
 }
 

@@ -7,6 +7,97 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-23
+
+Three more registry gaps closed, Ember grown in three directions, and the site
+repaired — plus a Gradle bug that made every one of those changes invisible
+until the output directory was deleted by hand.
+
+Module versions this release pins: loader `0.1.1`, API set `0.3.0`
+(registry `0.3.0`, event `0.2.0`, resource `0.1.1`, core `0.1.0`,
+network `0.1.0`, command `0.1.1`, config `0.1.0`), Ember `0.2.0`,
+processor `0.1.0`, installer `0.1.2`, Gradle plugin `0.1.5`.
+
+### Added
+
+- **Ore loot tables that behave like ore.** `EmberLootTableProvider.dropsOre`
+  writes what a player assumes the moment a block looks like ore: its material
+  normally, itself under Silk Touch, more under Fortune. The plain `drops` table
+  gives none of the three — Silk Touch yields the material like any other pick
+  and Fortune does nothing — and nothing says the table was the reason, so it is
+  a block that works and feels broken. `example-mod`'s ruby ores had exactly that
+  table until now. `dropsWithSilkTouch` covers the other shape, the one glass
+  has. A conformance check parses every generated loot table with Minecraft's own
+  codec, which is the only thing that would notice the format changing under
+  Fenix in a game update.
+- **Ember writes any language, not only English.** `EmberLanguageProvider` takes
+  a language code — `super("fr_fr")` from a second generator, since generators
+  are built through their no-argument constructor. The code is checked, because
+  `fr_FR`, the shape Java's own `Locale` prints, writes a file the game never
+  looks for: nothing fails, the mod is simply untranslated, and the author is the
+  one person who cannot notice because they read the language they wrote.
+  `example-mod` now ships French. A conformance check compares every other
+  language against English and refuses a key English does not define — one that
+  exists only in a translation never displays, which usually means a key renamed
+  on one side only.
+
+- **Entity model layers.** `EntityModels.register` lets a mod's entity have a
+  model of its own. Vanilla builds the entire layer table in one method and
+  hands it back immutable, so there was nothing to add to — a Fenix mod could
+  only reuse a vanilla renderer, which is why the example wisp borrowed the
+  thrown-item one. A renderer asking for a layer that is not in the table throws
+  `No model for layer` from its own constructor, while the client is loading.
+- **Pillar models in Ember.** `cubeColumn` writes the upright model, the
+  horizontal one and the three-axis blockstate — the shape that keeps a log's
+  end grain when it is laid on its side. `example-mod`'s ruby log used `cubeAll`
+  as a stand-in until now. A new conformance check reads every generated
+  blockstate and asserts each model it names was actually written: a blockstate
+  pointing at a file nobody generated draws the missing-model cube, which reads
+  as a texture problem and is a filename problem, and nothing logs it.
+- **Custom command argument types.** `Registrar.commandArgument` fills both
+  tables vanilla keeps: the registry, and a map keyed by the Brigadier class
+  that it reads while writing the command tree for a joining player. Only the
+  first is obvious, and a mod that stops there has a command that works
+  perfectly in single player and then stops anybody connecting — the failure is
+  `Unrecognized argument type`, thrown from inside the join, naming a Brigadier
+  class and no mod. The conformance check calls the very method that throws, and
+  fails when the second table is skipped.
+- **Block entity renderers.** `BlockEntityRendering.register`, for the part of a
+  block its model cannot express — a chest lid, a sign's text, an item turning
+  above a pedestal. Vanilla's table is a private static map with a private
+  `register`, so a mod had no way in, and a block entity without a renderer draws
+  nothing while the block itself renders perfectly. Nothing logs, because from
+  vanilla's side nothing is wrong.
+
+### Fixed
+
+- **The website rendered unstyled.** The home page had been rewritten to markup
+  whose classes had no CSS at all, so it drew as a column of underlined links,
+  and the documentation grid had gone the same way — its class renamed without
+  the stylesheet following, which also left the sidebar unable to collapse on a
+  narrow screen. Rebuilt on the design the stylesheet already carried. Two more
+  came out of checking rather than looking: the page scrolled sideways by 63px on
+  a phone, because a grid child defaults to `min-width: auto` and refused to
+  shrink below the code block inside it; and the light theme drew near-black text
+  on near-black cards, because the contrast surface flips with the theme and the
+  colours written on it were hardcoded. Contrast on those cards went from about
+  1.0 — invisible — to 15.8.
+- **Documentation links no longer carry the version.** They named it in full, so
+  every release meant rewriting a dozen of them by hand, and one release meant
+  getting them wrong. They are written `/docs/@latest/…` now and resolved when
+  the page renders.
+- **`gradlew ember` did nothing after a change.** The task declared its output
+  directory and no inputs at all, so Gradle judged it up to date whenever that
+  directory was unchanged, however much the mod had moved — add a generator, run
+  `ember`, and nothing happens. It now takes the mod's compiled classes as its
+  input, which is where both the generators and the index naming them live.
+  Classes rather than the whole source set output, because `src/main/generated`
+  is itself a resource directory and taking the resources would make the task's
+  input contain its own output. Found by adding a generator and watching nothing
+  happen — and the first fix was incomplete: it took the mod's classes but not
+  Ember's own jar, so updating a generator left a stale directory behind. Found
+  the same way, by sabotaging a generator and watching the output not change.
+
 ## [0.2.0] — 2026-07-23
 
 Six new areas of the API, and the two fixes that made the demo honest: every

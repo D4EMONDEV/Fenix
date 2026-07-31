@@ -3,6 +3,8 @@ package fr.d4emon.fenix.probe;
 import fr.d4emon.fenix.registry.BlockInteractions;
 import fr.d4emon.fenix.registry.Brewing;
 import fr.d4emon.fenix.registry.Holder;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.Potions;
 import fr.d4emon.fenix.registry.Registrar;
@@ -144,6 +146,16 @@ public final class ProbeContent {
      */
     public static final Holder<Potion> GLIMMERING =
             REGISTRAR.potion("glimmering_potion", GLIMMER, 600);
+
+    /**
+     * A command argument of the mod's own.
+     *
+     * <p>Half of registering one is a table keyed by class that vanilla reads
+     * while describing commands to a joining player — see the probe.
+     */
+    public static final Holder<ArgumentTypeInfo<?, ?>> ORE_ARGUMENT =
+            REGISTRAR.commandArgument("ore", ProbeArgument.class,
+                    SingletonArgumentInfo.contextFree(ProbeArgument::ore));
 
     /** A block that waxes, and oxidises. */
     public static final Holder<Block> RUBY_COPPER = REGISTRAR.block("ruby_copper");

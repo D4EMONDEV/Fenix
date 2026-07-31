@@ -7,16 +7,16 @@ order: 0
 Fenix API is the code a mod uses after the game has started: lifecycle,
 registries, events, resources, networking, configuration and client helpers.
 The API bundle is versioned independently from this website: this documentation
-is for **Fenix API 0.2.0**, targeting **Minecraft 26.2**.
+is for **Fenix API 0.3.0**, targeting **Minecraft 26.2**.
 
 ## Start here
 
 | If you need to… | Read… |
 |---|---|
-| Create a minimal mod project | [Getting started](/docs/0.2.0/guides/getting-started) |
-| Understand how registrations are organised | [Content and registries](/docs/0.2.0/guides/content) |
-| Generate assets or data | [Ember](/docs/0.2.0/guides/ember) |
-| Browse exact classes and methods | [API reference](/docs/0.2.0/api/index) |
+| Create a minimal mod project | [Getting started](/docs/@latest/guides/getting-started) |
+| Understand how registrations are organised | [Content and registries](/docs/@latest/guides/content) |
+| Generate assets or data | [Ember](/docs/@latest/guides/ember) |
+| Browse exact classes and methods | [API reference](/docs/@latest/api/index) |
 
 ## What belongs to Fenix API
 

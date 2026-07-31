@@ -95,9 +95,16 @@ tasks.test {
         .dir("examples/example-mod/src/main/resources")
     inputs.dir(exampleResources).withPropertyName("exampleResources")
 
+    // And what Ember wrote: a blockstate naming a model nobody generated is a
+    // missing-model cube in game and nothing at all in a log.
+    val exampleGenerated = rootProject.layout.projectDirectory
+        .dir("examples/example-mod/src/main/generated")
+    inputs.dir(exampleGenerated).withPropertyName("exampleGenerated")
+
     doFirst {
         systemProperty("fenix.test.worldgenDir", worldgen.asFile.absolutePath)
         systemProperty("fenix.test.exampleResources", exampleResources.asFile.absolutePath)
+        systemProperty("fenix.test.exampleGenerated", exampleGenerated.asFile.absolutePath)
     }
 
     inputs.file(eventJar).withPropertyName("eventJar")

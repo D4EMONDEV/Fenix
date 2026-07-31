@@ -12,7 +12,7 @@ not change at the same speed. They are related, but they are not interchangeable
 | Name | Current value | What it identifies |
 |---|---:|---|
 | Documentation line | `0.1` | This set of guides and reference pages. |
-| Fenix API | `0.2.0` | The current published API bundle. |
+| Fenix API | `0.3.0` | The current published API bundle. |
 | Minecraft target | `26.2` | The exact game version current Fenix artifacts are built and tested against. |
 
 The `0.1` shown in the documentation picker is therefore **not** an API
@@ -26,7 +26,7 @@ backported to a Minecraft version older than 26.2.
 
 A Fenix release supports one exact Minecraft version. This matters because it
 compiles against that game's classes and its game-facing artifacts include the
-target in their version, for example `fenix-api-0.2.0+mc26.2.jar`.
+target in their version, for example `fenix-api-0.3.0+mc26.2.jar`.
 
 That means “26.2+” describes the project's direction, not a promise that one
 jar works with every future game version. A mod made for 26.2 should use the
@@ -55,7 +55,7 @@ Use the Fenix Gradle plugin version that matches the game version you want to
 target:
 
 ```kotlin
-plugins { id("fr.d4emon.fenix.dev") version "0.1.4" }
+plugins { id("fr.d4emon.fenix.dev") version "0.1.5" }
 
 fenix { minecraft = "26.2" }
 ```

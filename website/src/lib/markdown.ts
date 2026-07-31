@@ -1,4 +1,5 @@
 import { Marked } from 'marked';
+import { latestVersion } from './content';
 import hljs from 'highlight.js/lib/core';
 import java from 'highlight.js/lib/languages/java';
 import json from 'highlight.js/lib/languages/json';
@@ -105,9 +106,15 @@ export function render(markdown: string): { html: string; headings: Heading[] } 
 
       link({ href, title, tokens }) {
         const text = this.parser.parseInline(tokens);
-        const external = /^https?:\/\//.test(href);
+        // A page linking to a sibling writes /docs/@latest/..., because the
+        // version in a documentation URL is the published API version and moves
+        // with every release. Spelling it out meant rewriting a dozen links each
+        // time and getting them wrong once, which is exactly the kind of chore
+        // that should not be a chore.
+        const resolved = href.replace(/^\/docs\/@latest\//, `/docs/${latestVersion}/`);
+        const external = /^https?:\/\//.test(resolved);
         const attrs = external ? ' target="_blank" rel="noreferrer noopener"' : '';
-        return `<a href="${href}"${title ? ` title="${title}"` : ''}${attrs}>${text}</a>`;
+        return `<a href="${resolved}"${title ? ` title="${title}"` : ''}${attrs}>${text}</a>`;
       },
 
       table({ header, rows }) {

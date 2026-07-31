@@ -9,6 +9,8 @@ import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.Potions;
 import fr.d4emon.fenix.registry.Holder;
@@ -107,6 +109,18 @@ public final class ModContent {
     public static final Holder<RecipeSerializer<RubyReforgingRecipe>> REFORGING_SERIALIZER =
             REGISTRAR.recipeSerializer("reforging", new RecipeSerializer<>(
                     RubyReforgingRecipe.MAP_CODEC, RubyReforgingRecipe.STREAM_CODEC));
+
+    /**
+     * A command argument of the mod's own — see {@link ModCommands}.
+     *
+     * <p>The half that is easy to miss is not the registry entry but the table
+     * vanilla keys by Brigadier class, which it reads while describing commands
+     * to a joining player. Skip it and the command works alone and nobody can
+     * connect. {@code Registrar.commandArgument} does both.
+     */
+    public static final Holder<ArgumentTypeInfo<?, ?>> ORE_ARGUMENT =
+            REGISTRAR.commandArgument("ore", OreArgument.class,
+                    SingletonArgumentInfo.contextFree(OreArgument::ore));
 
     /**
      * The job site a jeweller villager claims: the reforging table.

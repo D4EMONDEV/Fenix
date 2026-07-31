@@ -59,7 +59,9 @@ import fr.d4emon.fenix.registry.attachment.AttachmentType;
 import fr.d4emon.fenix.registry.attachment.Attachments;
 import com.mojang.serialization.Codec;
 import com.google.common.collect.ImmutableSet;
+import fr.d4emon.fenix.mixin.registry.ArgumentTypeInfosAccessor;
 import fr.d4emon.fenix.mixin.registry.PoiTypesInvoker;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
@@ -970,6 +972,53 @@ public final class Registrar {
         Holder<RecipeSerializer<T>> holder = new Holder<>(id);
 
         defer(() -> holder.bind(Registry.register(BuiltInRegistries.RECIPE_SERIALIZER, id, serializer)));
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Commands
+    // ------------------------------------------------------------------
+
+    /**
+     * Declares a command argument type of the mod's own.
+     *
+     * <pre>{@code
+     * public static final Holder<ArgumentTypeInfo<OreArgument, ?>> ORE =
+     *         REGISTRAR.commandArgument("ore", OreArgument.class,
+     *                 SingletonArgumentInfo.contextFree(OreArgument::ore));
+     * }</pre>
+     *
+     * <p>Registering it in the registry is only half. Vanilla also keeps a map
+     * from the Brigadier class to the same info, and reads <em>that</em> one
+     * when it writes the command tree for a joining player. A type missing from
+     * it makes {@code ArgumentTypeInfos.byClass} throw
+     * "Unrecognized argument type" — so the command works perfectly in single
+     * player, and the first person to connect fails to join, with an error
+     * naming a Brigadier class and no mod at all. Both halves happen here.
+     *
+     * <p>The handle is typed as loosely as vanilla's own registry, which holds
+     * {@code ArgumentTypeInfo<?, ?>}. Pinning both parameters would make the
+     * field declaration name a template type a mod never mentions again.
+     *
+     * @param <A>       the argument type
+     * @param <T>       the template it packs into
+     * @param name      the path part of its id
+     * @param argument  the argument class, which is the key of the second table
+     * @param info      how it is written and read
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public <A extends com.mojang.brigadier.arguments.ArgumentType<?>,
+            T extends ArgumentTypeInfo.Template<A>> Holder<ArgumentTypeInfo<?, ?>> commandArgument(
+            String name, Class<? extends A> argument, ArgumentTypeInfo<A, T> info) {
+        Objects.requireNonNull(argument, "argument");
+        Objects.requireNonNull(info, "info");
+        Identifier id = identifier(name);
+        Holder<ArgumentTypeInfo<?, ?>> holder = new Holder<>(id);
+
+        defer(() -> {
+            ArgumentTypeInfosAccessor.fenix$byClass().put(argument, info);
+            holder.bind(Registry.register(BuiltInRegistries.COMMAND_ARGUMENT_TYPE, id, info));
+        });
         return holder;
     }
 

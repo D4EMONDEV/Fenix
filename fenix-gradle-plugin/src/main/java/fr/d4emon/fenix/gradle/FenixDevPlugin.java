@@ -348,6 +348,28 @@ public final class FenixDevPlugin implements Plugin<Project> {
             task.dependsOn(syncEmberMods);
             task.setClasspath(clientClasspath);
             task.getMainClass().set(LAUNCH_MAIN);
+
+            // The mod's compiled classes, which is where both the generators and
+            // the index naming them live. Without an input Gradle has only the
+            // output to judge by, so the task is "up to date" however much the
+            // mod changed — add a generator, run ember, and nothing happens.
+            //
+            // Classes rather than the whole source set output: src/main/generated
+            // is itself a resource directory, so taking the resources would make
+            // this task's input contain its own output.
+            task.getInputs().files(project.getExtensions()
+                            .getByType(org.gradle.api.tasks.SourceSetContainer.class)
+                            .getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+                            .getOutput().getClassesDirs())
+                    .withPropertyName("modClasses")
+                    .withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE);
+
+            // Ember itself, because what it writes is as much its business as
+            // the mod's: change a generator's output shape and every file
+            // downstream should be rewritten. Taking only the mod's classes
+            // leaves a stale directory behind after Ember is updated.
+            task.getInputs().files(ember).withPropertyName("ember");
+
             task.getOutputs().dir(generated);
 
             task.setArgs(List.of(

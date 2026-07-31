@@ -13,7 +13,7 @@ const files = import.meta.glob('../../content/**/*.md', {
 }) as Record<string, string>;
 
 export interface Doc {
-  /** The published Fenix API version this page documents, e.g. `0.2.0`. */
+  /** The published Fenix API version this page documents, e.g. `0.3.0`. */
   version: string;
   /** The path within a version, e.g. `guides/getting-started`. */
   slug: string;
@@ -34,7 +34,7 @@ export interface Doc {
  * documentation snapshot.
  */
 const API_VERSION_FOR_LINE: Record<string, string> = {
-  '0.1': '0.2.0',
+  '0.1': '0.3.0',
 };
 
 /**
@@ -97,7 +97,7 @@ export const versions: string[] = [...new Set(docs.map((doc) => doc.version))].s
 );
 
 /** The version a bare `/docs` link lands on. */
-export const latestVersion = versions[0] ?? '0.2.0';
+export const latestVersion = versions[0] ?? '0.3.0';
 
 export function findDoc(version: string, slug: string): Doc | undefined {
   return docs.find((doc) => doc.version === version && doc.slug === slug);

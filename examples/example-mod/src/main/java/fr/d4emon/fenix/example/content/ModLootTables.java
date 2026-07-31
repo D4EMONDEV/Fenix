@@ -25,9 +25,10 @@ public final class ModLootTables extends EmberLootTableProvider {
         dropsSelf(ModBlocks.RUBY_LOG);
         dropsSelf(ModBlocks.STRIPPED_RUBY_LOG);
 
-        // Ore drops its material, not itself — the reason to reach for
-        // drops(...) rather than dropsSelf(...).
-        drops(ModBlocks.RUBY_ORE, ModItems.RUBY);
-        drops(ModBlocks.DEEPSLATE_RUBY_ORE, ModItems.RUBY);
+        // dropsOre, not drops: an ore owes a player three things — its material
+        // normally, itself under Silk Touch, and more under Fortune. A plain
+        // table gives none of them and says nothing about it.
+        dropsOre(ModBlocks.RUBY_ORE, ModItems.RUBY);
+        dropsOre(ModBlocks.DEEPSLATE_RUBY_ORE, ModItems.RUBY);
     }
 }

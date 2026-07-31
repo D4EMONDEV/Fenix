@@ -35,7 +35,7 @@ public void onRegister(Fenix fenix) {
 
 `blockWithItem` adds both the block and its placing item. Use `block` when a
 block should have no item form, and `item` for a plain item. The full overloads
-and builders are documented in the [`registry` API reference](/docs/0.2.0/api/fr-d4emon-fenix-registry).
+and builders are documented in the [`registry` API reference](/docs/@latest/api/fr-d4emon-fenix-registry).
 
 ## Put content in a creative tab
 
@@ -55,5 +55,5 @@ use `Registrar.creativeTab` and name it with `EmberLanguageProvider`.
 
 `Registrar` only registers Java objects. A texture, model, translation, loot
 table or recipe is a resource file. You may write those files yourself, or use
-[Ember](/docs/0.2.0/guides/ember) to generate them from the `Holder` fields you
+[Ember](/docs/@latest/guides/ember) to generate them from the `Holder` fields you
 declared.

@@ -178,6 +178,32 @@ proves the loader works.
   replacing it — two mods can both drop something from stone, which is exactly
   what overriding the file in a datapack cannot do.
 
+- **Custom command arguments** ✅ — `Registrar.commandArgument` registers an
+  argument type of a mod's own. Two tables, not one: the registry, and a map
+  keyed by the Brigadier class that vanilla reads while writing the command tree
+  for a joining player. A mod that filled only the first has a command that works
+  perfectly in single player and stops anyone connecting, with
+  "Unrecognized argument type" naming a Brigadier class and no mod at all.
+- **Block entity renderers** ✅ — `BlockEntityRendering.register`, for the part
+  of a block a model cannot express: a chest lid, a sign's text, an item turning
+  above a pedestal. Vanilla's table is private, and a block entity without a
+  renderer draws nothing while the block itself renders perfectly, so there is
+  nothing to notice being wrong.
+
+- **Entity model layers** ✅ — `EntityModels.register` gives a mod's entity a
+  shape of its own. Vanilla builds the whole layer table in one method and
+  returns it immutable, so until this there was no way to add one at all and a
+  mod could only reuse a vanilla renderer; asking for a layer that is not in the
+  table throws `No model for layer` from inside the renderer's constructor,
+  while the client loads.
+- **Pillar models in Ember** ✅ — `cubeColumn` writes the upright model, the
+  horizontal one and the three-axis blockstate, which is how vanilla makes a log
+  keep its end grain when laid on its side. A blockstate naming a model nobody
+  wrote is the one modelling mistake the game says nothing about: it draws the
+  missing-model cube, which reads as a texture problem and is a filename
+  problem — so a check now reads every generated blockstate and asserts the
+  models it names exist.
+
 Three things worth writing down because they *look* missing and are not:
 
 - **Render layers.** 26.2 derives them from the texture's own alpha, in
@@ -196,6 +222,12 @@ Assets and data generated from Java, as a set of providers:
 `EmberRecipeProvider`, `EmberSoundProvider`, `EmberOreProvider` and
 `EmberTagsProvider.BlockTagsProvider`/`.ItemTagsProvider`.
 Run with `gradlew ember`; output lands in `src/main/generated`.
+
+Any language, not only English: a provider names its code through
+`super("fr_fr")`, since generators are built by their no-argument constructor.
+The code is checked, because `fr_FR` — the shape Java's own `Locale` prints —
+writes a file the game never reads, and the author is the one person who cannot
+notice, having written the language they are reading.
 
 Textures and ogg files are what it cannot generate, and so are particle
 definition files — the small `particles/<name>.json` listing a particle's
@@ -248,7 +280,7 @@ sprites is still written by hand.
   Written by a doclet rather than by hand, so the reference cannot describe an
   API the compiler does not have. `./gradlew apiDocs` still produces plain
   Javadoc, for anyone who wants it.
-- A conformance suite broad enough to trust a release — nineteen checks today, each
+- A conformance suite broad enough to trust a release — twenty-two checks today, each
   verified to fail when the thing it covers is sabotaged. Untested end to end:
   the installer against a real `.minecraft`, and Ember's output against a real
   resource load.

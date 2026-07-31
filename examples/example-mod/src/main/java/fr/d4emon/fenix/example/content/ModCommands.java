@@ -27,6 +27,20 @@ public final class ModCommands {
                                     spawn(context.getSource(), count);
                                 })))
                         .executes(run(context -> spawn(context.getSource(), 1)))));
+
+        // A command taking an argument type of the mod's own: it completes as
+        // you type and refuses an unknown name by itself. That it works for a
+        // player who *joined* rather than only in single player is the half
+        // Registrar.commandArgument exists for.
+        CommandEvents.REGISTER.register(registration -> registration.dispatcher().register(
+                literal("rubyore")
+                        .requires(operator())
+                        .then(argument("which", OreArgument.ore())
+                                .executes(run(context -> {
+                                    var ore = OreArgument.getOre(context, "which");
+                                    context.getSource().sendSuccess(
+                                            () -> Component.literal("That ore is " + ore.id()), false);
+                                })))));
     }
 
     private static void spawn(net.minecraft.commands.CommandSourceStack source, int count) {

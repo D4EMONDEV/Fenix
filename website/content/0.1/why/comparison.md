@@ -68,7 +68,7 @@ cannot drift apart.
 
 ## Every claim is checked against the game
 
-Nineteen conformance checks boot real Minecraft through the loader and inspect
+Twenty-two conformance checks boot real Minecraft through the loader and inspect
 what happened. Each one was verified to fail when the thing it covers is
 sabotaged — a check that cannot fail proves nothing.
 

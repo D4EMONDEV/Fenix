@@ -54,6 +54,27 @@ class WorldgenConformanceTest {
         }), "the probe reports a failed check by throwing");
     }
 
+    @Test
+    @DisplayName("the loot tables Ember wrote parse with Minecraft's own codec")
+    void generatedLootTablesParse() throws Exception {
+        Path clientJar = requiredFile("fenix.test.clientJar");
+        Path tables = Path.of(requiredProperty("fenix.test.exampleGenerated"))
+                .resolve("data/example-mod/loot_table/blocks");
+        assertTrue(Files.isDirectory(tables), tables + " — run :example-mod:ember");
+
+        Files.createDirectories(gameDir.resolve("mods"));
+
+        // A loot table is pure data, and the mistakes it can carry are the kind
+        // that drop the entry rather than fail: a block that quietly drops
+        // nothing, which reads as a missing table rather than a malformed one.
+        assertDoesNotThrow(() -> Launch.run(new String[] {
+                "--fenix.gameJar", clientJar.toAbsolutePath().toString(),
+                "--fenix.gameMain", "fr.d4emon.fenix.probe.LootTableFilesProbe",
+                "--fenix.gameDir", gameDir.toAbsolutePath().toString(),
+                tables.toAbsolutePath().toString(),
+        }), "the probe reports a failed check by throwing");
+    }
+
     private static String requiredProperty(String name) {
         String value = System.getProperty(name);
         assertNotNull(value, "the build must set -D" + name);

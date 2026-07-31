@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:block/cube_column",
+  "parent": "minecraft:block/cube_column_horizontal",
   "textures": {
     "end": "example-mod:block/stripped_ruby_log_top",
     "side": "example-mod:block/stripped_ruby_log"

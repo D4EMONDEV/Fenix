@@ -18,10 +18,10 @@ public final class ModModels extends EmberModelProvider {
         cubeAll(ModBlocks.RUBY_TALLY);
         cubeAll(ModBlocks.RUBY_SAFE);
         cubeAll(ModBlocks.RUBY_REFORGING);
-        // cubeAll rather than a pillar model: the demo reuses a flat texture,
-        // and what matters here is that the block strips, not how it looks.
-        cubeAll(ModBlocks.RUBY_LOG);
-        cubeAll(ModBlocks.STRIPPED_RUBY_LOG);
+        // Pillars, so a log laid on its side keeps its end grain — the shape
+        // vanilla's own logs have, and what an axis property is for.
+        cubeColumn(ModBlocks.RUBY_LOG);
+        cubeColumn(ModBlocks.STRIPPED_RUBY_LOG);
         cubeAll(ModBlocks.RUBY_ORE);
         cubeAll(ModBlocks.DEEPSLATE_RUBY_ORE);
 

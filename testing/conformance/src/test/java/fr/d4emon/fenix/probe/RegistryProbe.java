@@ -20,6 +20,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
+import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BucketItem;
@@ -117,8 +119,38 @@ public final class RegistryProbe {
         checkVillager();
         checkBlockInteractions();
         checkBrewing();
+        checkCommandArgument();
 
         System.out.println("registry conformance: all checks passed");
+    }
+
+    /**
+     * A custom command argument has to be describable to a joining client.
+     *
+     * <p>The registry entry is the easy half and proves little. Vanilla writes
+     * the command tree for each player who connects, and does it through a
+     * second table keyed by the Brigadier class — {@code ArgumentTypeInfos} —
+     * which its own {@code byClass} throws on when a class is missing.
+     *
+     * <p>So a mod that registered only into the registry works perfectly in
+     * single player, and the first person to join fails to, with
+     * "Unrecognized argument type" naming a Brigadier class and no mod. This
+     * calls the very method that throws.
+     */
+    private static void checkCommandArgument() {
+        Identifier id = Identifier.parse("probemod:ore");
+        require(BuiltInRegistries.COMMAND_ARGUMENT_TYPE.getValue(id) == ProbeContent.ORE_ARGUMENT.get(),
+                "the argument type should be in the registry, bound to its handle");
+
+        require(ArgumentTypeInfos.isClassRecognized(ProbeArgument.class),
+                "vanilla should recognise the argument's own class — the table it reads while "
+                        + "describing commands to a client is keyed by class, not by id");
+
+        // The exact call the command tree makes for a joining player. It throws
+        // when the class is absent, which is the whole failure being guarded.
+        ArgumentTypeInfo.Template<ProbeArgument> packed =
+                ArgumentTypeInfos.unpack(ProbeArgument.ore());
+        require(packed != null, "the argument should pack for the network, or nobody can join");
     }
 
     /**
