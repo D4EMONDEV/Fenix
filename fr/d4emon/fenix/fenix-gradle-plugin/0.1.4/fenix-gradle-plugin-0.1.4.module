@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-gradle-plugin",
+    "version": "0.1.4",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "fenix-gradle-plugin-0.1.4.jar",
+          "url": "fenix-gradle-plugin-0.1.4.jar",
+          "size": 36221,
+          "sha512": "7af76a5a3cfb196bc2913aade815e43657ad87d9e3a696243104405a1f9721d47ec39674af4d27426ea0935591225da2964641af918d1a9d718f799fe2ffa36b",
+          "sha256": "bb86c3035e40ed4174e42ea1359ec7f1cc84b6205b5c1b2fc785504c0afc4bf4",
+          "sha1": "b5e0f568ce366307ecae3fb91a2804ab223c0bf3",
+          "md5": "3e45b076544c10144345ce17dd4a47c6"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.google.code.gson",
+          "module": "gson",
+          "version": {
+            "requires": "2.14.0"
+          }
+        },
+        {
+          "group": "org.ow2.asm",
+          "module": "asm",
+          "version": {
+            "requires": "9.10.1"
+          }
+        },
+        {
+          "group": "org.vineflower",
+          "module": "vineflower",
+          "version": {
+            "requires": "1.12.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-gradle-plugin-0.1.4.jar",
+          "url": "fenix-gradle-plugin-0.1.4.jar",
+          "size": 36221,
+          "sha512": "7af76a5a3cfb196bc2913aade815e43657ad87d9e3a696243104405a1f9721d47ec39674af4d27426ea0935591225da2964641af918d1a9d718f799fe2ffa36b",
+          "sha256": "bb86c3035e40ed4174e42ea1359ec7f1cc84b6205b5c1b2fc785504c0afc4bf4",
+          "sha1": "b5e0f568ce366307ecae3fb91a2804ab223c0bf3",
+          "md5": "3e45b076544c10144345ce17dd4a47c6"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-gradle-plugin-0.1.4-sources.jar",
+          "url": "fenix-gradle-plugin-0.1.4-sources.jar",
+          "size": 21414,
+          "sha512": "c8f8386ce95ce25ee78a497faa930bfbc63f872a5da4dc8f7f60c62e35faf27a9a9516d6599739ae5582b5b72ddcf15ff7869a709812b6071d2c80bbd481e556",
+          "sha256": "cc952863ea1badc5e47abb1bbe33bf21a53df98dc521a40645fe770b7fd335db",
+          "sha1": "76108435fc996f8f494877f76ff66b92df9fae97",
+          "md5": "870f7b59a302aae94e2027dd7a46735f"
+        }
+      ]
+    }
+  ]
+}
