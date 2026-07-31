@@ -1,0 +1,202 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api",
+    "version": "0.3.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-command",
+          "version": {
+            "requires": "0.1.1+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-config",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-event",
+          "version": {
+            "requires": "0.2.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-network",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-registry",
+          "version": {
+            "requires": "0.3.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-resource",
+          "version": {
+            "requires": "0.1.1+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-0.3.0+mc26.2.jar",
+          "url": "fenix-api-0.3.0+mc26.2.jar",
+          "size": 205931,
+          "sha512": "6e7b7937c0cdf522cd3ac3441b8be9f67b7a870490a49cfae737dcad9a0279801f5fb422fa039f7c2f2dbb8b6ec3975b40f82b7d2b130fdb91145d1d974a9788",
+          "sha256": "50bf78b0ee1004a585cac0d96686d49383511f75abec8001c25ff6a8df69e6f3",
+          "sha1": "d0486f3ead6957419dbe024f2927c4f302648e3a",
+          "md5": "a156f01f4690dcb442a02921d6434031"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-command",
+          "version": {
+            "requires": "0.1.1+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-config",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-event",
+          "version": {
+            "requires": "0.2.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-network",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-registry",
+          "version": {
+            "requires": "0.3.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-resource",
+          "version": {
+            "requires": "0.1.1+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-0.3.0+mc26.2.jar",
+          "url": "fenix-api-0.3.0+mc26.2.jar",
+          "size": 205931,
+          "sha512": "6e7b7937c0cdf522cd3ac3441b8be9f67b7a870490a49cfae737dcad9a0279801f5fb422fa039f7c2f2dbb8b6ec3975b40f82b7d2b130fdb91145d1d974a9788",
+          "sha256": "50bf78b0ee1004a585cac0d96686d49383511f75abec8001c25ff6a8df69e6f3",
+          "sha1": "d0486f3ead6957419dbe024f2927c4f302648e3a",
+          "md5": "a156f01f4690dcb442a02921d6434031"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-0.3.0+mc26.2-sources.jar",
+          "url": "fenix-api-0.3.0+mc26.2-sources.jar",
+          "size": 1047,
+          "sha512": "c0dea21a2f82f56d15e16e51c693f1717732b0036c2d1bf70675c83a63c62ae570de699af7a858476fdbe6356f276ee261a8dcf65389da14a010a6f89d7597bc",
+          "sha256": "8c5e4ea35bfeb6b1443914c8e712e3d97bdaa6af83e39445a464c5ab3567880d",
+          "sha1": "ce09cbb366622acd45eed81293fbc73655a3fb26",
+          "md5": "4b97311c4e48bb0f6b113000c2cb6c58"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-0.3.0+mc26.2-javadoc.jar",
+          "url": "fenix-api-0.3.0+mc26.2-javadoc.jar",
+          "size": 261,
+          "sha512": "1487e5a20c9e4d74f298e07c42e96a61be11b7a768c3fbc199ee138cd68e1fc2267d1cfe3f11f288acc05df755315344d052cc5f6f751f126ab4fe1caa5125ea",
+          "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3",
+          "sha1": "2ad14aed781c4a73ed4dbb421966d408a0a06686",
+          "md5": "f43436d6bec321290f6af228ad602604"
+        }
+      ]
+    }
+  ]
+}
