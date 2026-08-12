@@ -38,7 +38,7 @@ The game version, and nothing else. Everything else is looked up for that game
 in the table the plugin carries — see [game-versions.md](game-versions.md).
 
 ```kotlin
-plugins { id("fr.d4emon.fenix.dev") version "0.2.0" }
+plugins { id("fr.d4emon.fenix.dev") version "0.2.1" }
 fenix { minecraft = "26.2" }
 ```
 

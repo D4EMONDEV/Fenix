@@ -7,22 +7,33 @@
  * that Fenix is broken — and they have no way to tell that it was the template
  * rather than something they did.
  *
- * What it generates is deliberately one shape: a mod class, a block, an item
- * and a creative tab. Mixins, networking, commands and configuration are not
- * options here. A generator with a checkbox per feature produces a project that
- * is a tour of the API rather than a starting point, and every box left ticked
- * is code somebody has to read before deleting. Those are what the guides are
- * for; this is what a first `runClient` is for.
+ * Mixins, networking, commands and configuration are not options here. A
+ * generator with a checkbox per feature produces a project that is a tour of
+ * the API rather than a starting point, and every box left ticked is code
+ * somebody has to read before deleting. Those are what the guides are for; this
+ * is what a first `runClient` is for.
+ *
+ * The starter block and item are an option, because they are the one piece
+ * somebody either wants to learn from or wants gone before they write a line.
  *
  * The version numbers come from `platforms.json` by way of {@link ./platforms},
  * so they are the ones actually published for the game version chosen.
  */
 import { currentPlatform, platforms, pluginVersion, type Platform } from './platforms';
-import { texture } from './png';
+import { writeStarterContent } from './template-content';
 import type { ZipEntry } from './zip';
 
-/** The three choices that change the shape of the project rather than its text. */
+/** The choices that change the shape of the project rather than its text. */
 export interface Features {
+  /**
+   * A block, an item, a creative tab and the classes that own them.
+   *
+   * <p>Off, the project is its entry point and nothing else — no `ModContent`,
+   * no `ModBlocks`, no `ModItems`, no generators, no placeholder art. The
+   * resource folders are still there and still empty, so nobody has to work out
+   * where a texture goes.
+   */
+  starterContent: boolean;
   /** Ember generators for models, names, loot tables and recipes. */
   ember: boolean;
   /** A `src/client` source set, kept apart from the code a server runs. */
@@ -64,7 +75,7 @@ export const DEFAULT_OPTIONS: Options = {
   description: 'A Minecraft mod built with Fenix.',
   license: 'Apache-2.0',
   minecraft: currentPlatform.minecraft,
-  features: { ember: true, splitClient: true, kotlin: true },
+  features: { starterContent: true, ember: true, splitClient: true, kotlin: true },
 };
 
 /**
@@ -312,8 +323,8 @@ org.gradle.caching=true
 
   add(`src/main/java/${path}/${main}.java`, `package ${pkg};
 
-import ${pkg}.content.ModContent;
-import fr.d4emon.fenix.api.Fenix;
+${features.starterContent ? `import ${pkg}.content.ModContent;
+` : ''}import fr.d4emon.fenix.api.Fenix;
 import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Mod;
 
@@ -324,13 +335,24 @@ import fr.d4emon.fenix.api.Mod;
  * annotation is the declaration, and the annotation processor records it while
  * this compiles. Mistype the id and the build fails rather than the launch.
  */
-@Mod("${id}")
+@Mod(${main}.MODID)
 public final class ${main} implements FenixMod {
+
+    /**
+     * The mod id, in one place.
+     *
+     * <p>The annotation above needs it, the registrar needs it, every resource
+     * path is built from it and the client half names it too. A constant is
+     * what makes all of them the same string by construction rather than by
+     * care. It has to be a compile-time constant to sit in an annotation, which
+     * {@code static final String} with a literal is.
+     */
+    public static final String MODID = "${id}";
 
     /** Instantiated by the loader from the compile-time index. */
     public ${main}() {
     }
-
+${features.starterContent ? `
     /**
      * Runs once, before the game's registries are frozen. Everything a mod adds
      * to the world is registered from here and from nowhere later.
@@ -339,7 +361,7 @@ public final class ${main} implements FenixMod {
     public void onRegister(Fenix fenix) {
         ModContent.register();
     }
-
+` : ''}
     /** Runs after registration, when a server exists and config can be read. */
     @Override
     public void onInit(Fenix fenix) {
@@ -348,258 +370,39 @@ public final class ${main} implements FenixMod {
 }
 `);
 
-  // ---------------------------------------------------------------- content
-
-  add(`src/main/java/${path}/content/ModContent.java`, `package ${pkg}.content;
-
-import fr.d4emon.fenix.registry.Registrar;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.CreativeModeTab;
-
-/**
- * Everything this mod adds to the game.
- *
- * <p>The fields are declared here and registered by {@link #register()}, which
- * the mod calls from {@code onRegister}. Declaring and registering are separate
- * on purpose: a static field initialises the first time its class is touched,
- * and a mod that registered from a field initialiser would register at whatever
- * moment something first read one — which is not a moment anybody chose.
- */
-public final class ModContent {
-
-    /** Owns the mod's namespace, and every id derived from it. */
-    public static final Registrar REGISTRAR = Registrar.of("${id}");
-
-    /** The creative tab holding this mod's items. */
-    public static final ResourceKey<CreativeModeTab> TAB =
-            REGISTRAR.creativeTab("${ns}", ModItems.${upper}_INGOT);
-
-    private ModContent() {
-    }
-
-    /** Hands every declaration above to the game. Called once, from onRegister. */
-    public static void register() {
-        // Touching the classes runs their static initialisers, which is what
-        // fills the registrar. The order does not matter; nothing reaches the
-        // game until apply().
-        ModBlocks.touch();
-        ModItems.touch();
-        REGISTRAR.apply();
-    }
-}
-`);
-
-  add(`src/main/java/${path}/content/ModBlocks.java`, `package ${pkg}.content;
-
-import fr.d4emon.fenix.registry.Holder;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
-
-/** The blocks this mod adds. */
-public final class ModBlocks {
-
-    /**
-     * A plain decorative block that drops itself.
-     *
-     * <p>{@code withItem} is what puts it in an inventory: a block and the item
-     * that places it are two registrations in Minecraft, and a block without the
-     * second one exists in the world and cannot be picked up.
-     */
-    public static final Holder<Block> ${upper}_BLOCK = ModContent.REGISTRAR
-            .newBlock("${ns}_block")
-            .strength(3.0f, 6.0f)
-            .requiresTool()
-            .sound(SoundType.METAL)
-            .withItem()
-            .register();
-
-    private ModBlocks() {
-    }
-
-    /** Loads this class, and with it every declaration above. */
-    static void touch() {
-    }
-}
-`);
-
-  add(`src/main/java/${path}/content/ModItems.java`, `package ${pkg}.content;
-
-import fr.d4emon.fenix.registry.Holder;
-import net.minecraft.world.item.Item;
-
-/** The items this mod adds. */
-public final class ModItems {
-
-    /** A crafting material. */
-    public static final Holder<Item> ${upper}_INGOT = ModContent.REGISTRAR
-            .newItem("${ns}_ingot")
-            .stacksTo(64)
-            .register();
-
-    private ModItems() {
-    }
-
-    /** Loads this class, and with it every declaration above. */
-    static void touch() {
-    }
-}
-`);
-
-  // Placeholder art, so the first launch shows a block rather than the
-  // missing-texture checker.
-  addBytes(`src/main/resources/assets/${id}/textures/block/${ns}_block.png`, texture(0x8a6a3f));
-  addBytes(`src/main/resources/assets/${id}/textures/item/${ns}_ingot.png`, texture(0xd8a44a, true));
-
-  // ---------------------------------------------------------------- resources
-
-  if (features.ember) {
-    add(`src/main/java/${path}/data/ModModels.java`, `package ${pkg}.data;
-
-import ${pkg}.content.ModBlocks;
-import ${pkg}.content.ModItems;
-import fr.d4emon.fenix.ember.EmberModelProvider;
-import fr.d4emon.fenix.ember.Generator;
-
-/** Block and item models, and the blockstate files that point at them. */
-@Generator
-public final class ModModels extends EmberModelProvider {
-
-    /** Instantiated by Ember. */
-    public ModModels() {
-    }
-
-    @Override
-    protected void models() {
-        cubeAll(ModBlocks.${upper}_BLOCK);
-        flatItem(ModItems.${upper}_INGOT);
-    }
-}
-`);
-
-    add(`src/main/java/${path}/data/ModLanguage.java`, `package ${pkg}.data;
-
-import ${pkg}.content.ModBlocks;
-import ${pkg}.content.ModItems;
-import fr.d4emon.fenix.ember.EmberLanguageProvider;
-import fr.d4emon.fenix.ember.Generator;
-
-/**
- * English names.
- *
- * <p>For another language, subclass again and pass its code to the constructor:
- * {@code super("fr_fr")}.
- */
-@Generator
-public final class ModLanguage extends EmberLanguageProvider {
-
-    /** Instantiated by Ember. */
-    public ModLanguage() {
-    }
-
-    @Override
-    protected void translations() {
-        add(ModBlocks.${upper}_BLOCK, "${options.modName} Block");
-        add(ModItems.${upper}_INGOT, "${options.modName} Ingot");
-        add("itemGroup.${id}.${ns}", "${options.modName}");
-    }
-}
-`);
-
-    add(`src/main/java/${path}/data/ModLootTables.java`, `package ${pkg}.data;
-
-import ${pkg}.content.ModBlocks;
-import fr.d4emon.fenix.ember.EmberLootTableProvider;
-import fr.d4emon.fenix.ember.Generator;
-
-/**
- * What blocks drop.
- *
- * <p>A block with no loot table drops nothing at all, silently — the single
- * most common surprise when adding a block by hand.
- */
-@Generator
-public final class ModLootTables extends EmberLootTableProvider {
-
-    /** Instantiated by Ember. */
-    public ModLootTables() {
-    }
-
-    @Override
-    protected void lootTables() {
-        dropsSelf(ModBlocks.${upper}_BLOCK);
-    }
-}
-`);
-
-    add(`src/main/java/${path}/data/ModRecipes.java`, `package ${pkg}.data;
-
-import ${pkg}.content.ModBlocks;
-import ${pkg}.content.ModItems;
-import fr.d4emon.fenix.ember.EmberRecipeProvider;
-import fr.d4emon.fenix.ember.Generator;
-
-/** Crafting recipes. */
-@Generator
-public final class ModRecipes extends EmberRecipeProvider {
-
-    /** Instantiated by Ember. */
-    public ModRecipes() {
-    }
-
-    @Override
-    protected void recipes() {
-        // Nine ingots into a block, and the block back into nine. The second
-        // needs a name of its own: both would otherwise write a file named
-        // after the result, and two recipes cannot share one.
-        shaped(ModBlocks.${upper}_BLOCK)
-                .pattern("###", "###", "###")
-                .define('#', ModItems.${upper}_INGOT)
-                .save();
-
-        shapeless(ModItems.${upper}_INGOT, 9)
-                .ingredient(ModBlocks.${upper}_BLOCK)
-                .named("${ns}_ingot_from_block")
-                .save();
-    }
-}
-`);
+  if (features.starterContent) {
+    writeStarterContent({
+      add, addBytes, id, ns, upper, pkg, path, main,
+      modName: options.modName, ember: features.ember,
+    });
   } else {
-    // Written once, by hand: a block with no model is invisible and a block
-    // with no loot table drops nothing, both without a word in the log.
-    add(`src/main/resources/assets/${id}/blockstates/${ns}_block.json`,
-      `{\n  "variants": {\n    "": { "model": "${id}:block/${ns}_block" }\n  }\n}\n`);
-    add(`src/main/resources/assets/${id}/models/block/${ns}_block.json`,
-      `{\n  "parent": "minecraft:block/cube_all",\n  "textures": { "all": "${id}:block/${ns}_block" }\n}\n`);
-    add(`src/main/resources/assets/${id}/items/${ns}_block.json`,
-      `{\n  "model": { "type": "minecraft:model", "model": "${id}:block/${ns}_block" }\n}\n`);
-    add(`src/main/resources/assets/${id}/models/item/${ns}_ingot.json`,
-      `{\n  "parent": "minecraft:item/generated",\n  "textures": { "layer0": "${id}:item/${ns}_ingot" }\n}\n`);
-    add(`src/main/resources/assets/${id}/items/${ns}_ingot.json`,
-      `{\n  "model": { "type": "minecraft:model", "model": "${id}:item/${ns}_ingot" }\n}\n`);
-    add(`src/main/resources/assets/${id}/lang/en_us.json`, `${JSON.stringify({
-      [`block.${id}.${ns}_block`]: `${options.modName} Block`,
-      [`item.${id}.${ns}_ingot`]: `${options.modName} Ingot`,
-      [`itemGroup.${id}.${ns}`]: options.modName,
-    }, null, 2)}\n`);
-    add(`src/main/resources/data/${id}/loot_table/blocks/${ns}_block.json`, `{
-  "type": "minecraft:block",
-  "pools": [
-    {
-      "rolls": 1.0,
-      "conditions": [ { "condition": "minecraft:survives_explosion" } ],
-      "entries": [ { "type": "minecraft:item", "name": "${id}:${ns}_block" } ]
+    // Ember is wired into every mod project by the Gradle plugin — it is on the
+    // compile classpath and `./gradlew ember` exists whatever is ticked here —
+    // so wanting it without the starter block is an ordinary thing to want. All
+    // that is missing is somewhere to put a generator.
+    if (features.ember) {
+      files.push({ path: `src/main/java/${path}/data`, directory: true });
     }
-  ],
-  "random_sequence": "${id}:blocks/${ns}_block"
-}
-`);
+    // No starter content, so no resources to describe — but the folders a mod
+    // will need are marked out all the same. That a texture belongs under
+    // `assets/<id>/textures/block` is a thing to look up once; an empty folder
+    // says it without a word.
+    //
+    // Real directory entries, not a placeholder file: the request was folders
+    // and nothing in them. Git does not track an empty directory, so the first
+    // commit drops them again — that is git's business, and a file put there to
+    // outwit it is exactly the content that was not wanted.
+    files.push({ path: `src/main/resources/assets/${id}`, directory: true });
+    files.push({ path: `src/main/resources/data/${id}`, directory: true });
   }
+
 
   // ---------------------------------------------------------------- client
 
   if (features.splitClient) {
     add(`src/client/java/${path}/client/${main}Client.java`, `package ${pkg}.client;
 
+import ${pkg}.${main};
 import fr.d4emon.fenix.api.Fenix;
 import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Mod;
@@ -614,7 +417,7 @@ import fr.d4emon.fenix.event.client.ClientEvents;
  * Minecraft with the client removed, so reaching for a renderer there is a
  * compile error rather than a crash on somebody else's dedicated server.
  */
-@Mod("${id}")
+@Mod(${main}.MODID)
 public final class ${main}Client implements FenixMod {
 
     /** Instantiated by the loader from the compile-time index. */
@@ -686,11 +489,24 @@ function readme(options: Options, platform: Platform, main: string, script: stri
     `- \`build.gradle${script}\` — the game version, and nothing else.`,
     `- \`src/main/java/…/${main}.java\` — the entry point. \`@Mod\` is what the loader finds.`,
     "- `src/main/resources/fenix.mod.json` — the mod's name, version and dependencies.",
-    '- `…/content/` — a block, an item, a creative tab, and the registrar that owns them.',
   ];
 
+  if (features.starterContent) {
+    lines.push('- `…/content/` — a block, an item, a creative tab, and the registrar that owns them.');
+  } else {
+    lines.push(
+      `- \`src/main/resources/assets/${options.modId}/\` and \`data/${options.modId}/\` — empty, and`,
+      "  where this mod's resources go. Git does not track an empty directory, so they",
+      '  will not survive a commit until something is in them.',
+    );
+  }
+
   if (features.ember) {
-    lines.push('- `…/data/` — Ember generators. Run `./gradlew ember` after changing one.');
+    lines.push(
+      features.starterContent
+        ? '- `…/data/` — Ember generators. Run `./gradlew ember` after changing one.'
+        : '- `…/data/` — empty, and where an Ember generator goes. Run `./gradlew ember`.',
+    );
   }
   if (features.splitClient) {
     lines.push(
@@ -699,14 +515,16 @@ function readme(options: Options, platform: Platform, main: string, script: stri
     );
   }
 
-  lines.push(
-    '',
-    '## The placeholder art',
-    '',
-    'The textures under `src/main/resources/assets/` are flat colours the generator',
-    'drew, so the first launch shows a block rather than the magenta-and-black',
-    'checker. Replace them with 16×16 PNGs of your own.',
-  );
+  if (features.starterContent) {
+    lines.push(
+      '',
+      '## The placeholder art',
+      '',
+      'The textures under `src/main/resources/assets/` are flat colours the generator',
+      'drew, so the first launch shows a block rather than the magenta-and-black',
+      'checker. Replace them with 16×16 PNGs of your own.',
+    );
+  }
 
   if (features.ember) {
     lines.push(
@@ -714,6 +532,9 @@ function readme(options: Options, platform: Platform, main: string, script: stri
       '## Generated resources',
       '',
       'Ember writes models, names, loot tables and recipes into `src/main/generated`.',
+      'It is on the compile classpath of every Fenix mod and `./gradlew ember` always',
+      'exists, so a generator can be added at any point — a class extending one of the',
+      'Ember providers and annotated `@Generator`.',
       'Whether to commit that directory is a real choice: committing it makes a diff',
       'show what a generator change actually produced, and ignoring it keeps the',
       'history smaller. `.gitignore` has the line, commented out.',

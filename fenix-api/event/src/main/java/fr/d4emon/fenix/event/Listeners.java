@@ -22,6 +22,52 @@ final class Listeners {
 
     private static final Object[] NONE = new Object[0];
 
+    /**
+     * Reports a listener that threw, and {@return nothing}.
+     *
+     * <p>An event is fired from inside Minecraft. Letting a listener's exception
+     * out of {@code fire} sends it up through the game's own call stack, which
+     * usually ends the game — with a crash report that names a Minecraft method
+     * and no mention of the mod that actually failed. One broken listener would
+     * also stop every listener registered after it, none of which did anything
+     * wrong.
+     *
+     * <p>So it is caught here, logged with the listener named, and the event
+     * carries on. The log line is the loud part: swallowing a failure silently
+     * would trade one bad outcome for a worse one, a mod that simply stops
+     * working with nothing anywhere saying why.
+     *
+     * <p>{@code Error} is deliberately not caught. An {@code OutOfMemoryError}
+     * or a {@code StackOverflowError} is not a listener misbehaving, it is the
+     * JVM in trouble, and carrying on around it helps nobody.
+     *
+     * @param listener the listener that threw
+     * @param context  what was being dispatched, named in the message
+     * @param failure  what it threw
+     */
+    static void failed(Object listener, Object context, Exception failure) {
+        // A lambda's class name is the owning class plus a generated suffix, so
+        // this still says which mod it came from — the best available, since a
+        // lambda has no name of its own.
+        LOGGER.log(System.Logger.Level.ERROR,
+                () -> "Fenix: a listener for "
+                        + (context == null ? "an event" : context.getClass().getName())
+                        + " threw and was skipped; the event carried on to the rest. Listener: "
+                        + listener.getClass().getName(),
+                failure);
+    }
+
+    /**
+     * The JDK's own logger, and not Minecraft's.
+     *
+     * <p>Everything else in this file is plain Java, which is what lets the
+     * event bus be unit-tested in milliseconds without a game. Reaching for
+     * {@code com.mojang.logging.LogUtils} for one line would put Minecraft on
+     * the test runtime classpath, and the tests fail to load without it — which
+     * is exactly what happened when this was written that way.
+     */
+    private static final System.Logger LOGGER = System.getLogger("fenix.event");
+
     /** Sorted, immutable once published. Read without locking. */
     private volatile Object[] active = NONE;
 

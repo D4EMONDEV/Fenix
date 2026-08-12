@@ -114,4 +114,28 @@ class CancellableEventTest {
 
         assertThrows(NullPointerException.class, () -> event.register(null));
     }
+
+    @Test
+    @DisplayName("a listener that throws neither cancels nor stops the rest")
+    void containsAListenerThatThrows() {
+        CancellableEvent<BlockBreak> event = CancellableEvent.create();
+        List<String> seen = new ArrayList<>();
+        event.register(broken -> {
+            seen.add("before");
+            return Flow.CONTINUE;
+        });
+        event.register(broken -> {
+            throw new IllegalStateException("this listener is broken");
+        });
+        event.register(broken -> {
+            seen.add("after");
+            return Flow.CONTINUE;
+        });
+
+        // CONTINUE, not CANCEL: a listener that threw decided nothing, and
+        // cancelling on its behalf would let one broken mod silently veto
+        // everything the event guards.
+        assertEquals(Flow.CONTINUE, event.fire(new BlockBreak("stone")));
+        assertEquals(List.of("before", "after"), seen);
+    }
 }

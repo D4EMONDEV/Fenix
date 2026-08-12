@@ -141,13 +141,24 @@ if (COMPLETED.hasListeners()) {
 }
 ```
 
-<div class="admonition danger">
-<p class="admonition-title">A listener that throws is not contained</p>
-<p><code>fire</code> does not catch. An exception thrown by a listener travels
-out through the event and into whatever Minecraft code fired it — which usually
-means a crash, blamed on the game rather than on the mod. Do the work that can
-fail before the listener, or catch inside it.</p>
-</div>
+### A listener that throws
+
+It is skipped, the failure is logged with the listener named, and the event
+carries on to the rest. An event is fired from inside Minecraft, so letting the
+exception out would send it up the game's own call stack — a crash report
+naming a vanilla method, and every listener registered after the broken one
+never running.
+
+For a `CancellableEvent`, a listener that threw counts as `CONTINUE`. It decided
+nothing, and cancelling on its behalf would let one broken mod silently veto
+everything the event guards.
+
+`Error` is deliberately not caught. An `OutOfMemoryError` is not a listener
+misbehaving, and carrying on around it helps nobody.
+
+This is containment, not forgiveness: the log line is at `ERROR` with the full
+stack trace, because a mod that silently stops working is worse than one that
+crashes.
 
 ### Client block events
 

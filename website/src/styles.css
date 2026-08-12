@@ -66,52 +66,60 @@ code { font-family: var(--mono); font-size: .88em; }
 .theme-toggle:hover { color: var(--ember); }
 
 /* Home
-   Deliberately plain. The orbits, glows, gridded backdrop, iconed cards and
-   fake terminal chrome that used to live here read as decoration standing in
-   for content; what a first-time visitor needs is the sentence and the code. */
-.intro { padding-block: 5rem 3.5rem; max-width: 46rem; }
-.kicker { margin: 0 0 1.1rem; color: var(--muted); font-family: var(--mono); font-size: .76rem; letter-spacing: .02em; }
-.intro h1 { margin: 0; font-family: var(--display); font-size: clamp(2.1rem, 4.2vw, 3.1rem); font-weight: 400; letter-spacing: -.03em; line-height: 1.14; }
-.lead { max-width: 58ch; margin: 1.4rem 0 0; color: var(--muted); font-size: 1.02rem; }
-.actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 2rem; }
-.button { display: inline-flex; align-items: center; padding: .6rem 1rem; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--text); cursor: pointer; font: inherit; font-size: .85rem; font-weight: 600; text-decoration: none; }
+   Restrained, not bare. No orbits, glows or fake terminal chrome — but the mark
+   is present, the sections alternate surface, and the type has a scale rather
+   than one size. A page with nothing on it reads as unfinished, which is its
+   own kind of loud. */
+.hero { border-bottom: 1px solid var(--line); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 4rem; align-items: center; padding-block: 5.5rem 5rem; }
+.kicker { margin: 0 0 1.2rem; color: var(--faint); font-family: var(--mono); font-size: .74rem; letter-spacing: .04em; }
+.hero h1 { max-width: 16ch; margin: 0; font-family: var(--display); font-size: clamp(2.4rem, 4.6vw, 3.6rem); font-weight: 400; letter-spacing: -.035em; line-height: 1.08; }
+.hero h1 em { color: var(--ember-hot); font-style: italic; }
+.lead { max-width: 54ch; margin: 1.5rem 0 0; color: var(--muted); font-size: 1.03rem; }
+.actions { display: flex; flex-wrap: wrap; gap: .7rem; margin: 2.1rem 0 0; }
+
+.button { display: inline-flex; align-items: center; padding: .62rem 1.05rem; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--text); cursor: pointer; font: inherit; font-size: .86rem; font-weight: 600; text-decoration: none; transition: border-color .15s ease, color .15s ease; }
 .button:hover { border-color: var(--ember); color: var(--ember-hot); }
 .button.primary { border-color: var(--ember); background: var(--ember); color: #1b0e05; }
 .button.primary:hover { background: var(--ember-hot); border-color: var(--ember-hot); color: #1b0e05; }
 
-.home section { padding-block: 2.6rem; border-top: 1px solid var(--line); }
-.home h2 { margin: 0 0 .8rem; font-family: var(--display); font-size: 1.45rem; font-weight: 400; letter-spacing: -.02em; }
+/* The mark, given a surface of its own rather than a halo. */
+.mark-panel { display: grid; justify-items: center; gap: 1.6rem; padding: 2.2rem 1.6rem 1.4rem; border: 1px solid var(--line); border-radius: 8px; background: var(--ink-raised); }
+.mark-versions { display: grid; grid-template-columns: auto auto; gap: .3rem 1.4rem; width: 100%; margin: 0; padding-top: 1.3rem; border-top: 1px solid var(--line); }
+.mark-versions > div { display: contents; }
+.mark-versions dt { color: var(--faint); font-family: var(--mono); font-size: .72rem; }
+.mark-versions dd { margin: 0; color: var(--muted); font-family: var(--mono); font-size: .72rem; text-align: right; }
+
+.home h2 { margin: 0 0 .9rem; font-family: var(--display); font-size: 1.7rem; font-weight: 400; letter-spacing: -.025em; }
 .home p { color: var(--muted); }
 
-.start { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 3rem; align-items: start; }
-.start p { max-width: 44ch; margin: 0 0 1rem; }
-.start a { color: var(--ember-hot); font-size: .86rem; font-weight: 600; text-decoration: none; }
-.start figure.code { margin: 0; }
+.quickstart { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 3.5rem; align-items: center; padding-block: 4.5rem; }
+.quickstart p { max-width: 42ch; margin: 0 0 1.3rem; }
+.quickstart figure.code { margin: 0; }
+.more { color: var(--ember-hot); font-size: .86rem; font-weight: 600; text-decoration: none; }
+.more::after { content: ' 92'; }
+.more:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-.link-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.5rem; margin: 0; padding: 0; list-style: none; }
-.link-list li { border-bottom: 1px solid var(--line); }
-.link-list li:last-child, .link-list li:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
-.link-list a { display: block; padding: .95rem 0; text-decoration: none; }
-.link-list strong { display: block; color: var(--text); font-size: .95rem; font-weight: 600; }
-.link-list strong::after { content: ' 92'; color: var(--faint); }
-.link-list a:hover strong, .link-list a:hover strong::after { color: var(--ember-hot); }
-.link-list span { display: block; margin-top: .2rem; color: var(--muted); font-size: .86rem; }
+/* The one light band on the page, so it is not four dark blocks in a row. */
+.paths-section { padding-block: 4.5rem; background: var(--paper); color: var(--on-paper); }
+.paths-section h2 { color: var(--on-paper); }
+.paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 2rem; }
+.path { display: block; padding: 1.3rem 1.4rem; border: 1px solid var(--paper-rule); border-radius: 6px; text-decoration: none; transition: border-color .15s ease; }
+.path:hover { border-color: var(--paper-accent); }
+.path strong { display: block; color: var(--on-paper); font-size: 1rem; font-weight: 600; }
+.path strong::after { content: ' 92'; color: var(--paper-accent); }
+.path span { display: block; margin-top: .35rem; color: var(--on-paper-muted); font-size: .87rem; line-height: 1.55; }
 
-.notes dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6rem 2.5rem; margin: 0; }
-.notes dt { margin-bottom: .3rem; color: var(--text); font-size: .93rem; font-weight: 600; }
-.notes dd { max-width: 46ch; margin: 0; color: var(--muted); font-size: .87rem; }
-
-.versions table { max-width: 26rem; }
-.versions th { width: 12rem; font-weight: 600; }
-.versions td { font-family: var(--mono); font-size: .85rem; }
-.note { margin: 1rem 0 0; color: var(--faint); font-size: .82rem; }
+.notes { padding-block: 4.5rem; }
+.notes ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.8rem 3rem; margin: 2rem 0 0; padding: 0; list-style: none; counter-reset: note; }
+.notes li { counter-increment: note; padding-left: 2.2rem; }
+.notes li::before { content: counter(note, decimal-leading-zero); float: left; margin-left: -2.2rem; color: var(--ember-dim); font-family: var(--mono); font-size: .74rem; line-height: 1.9; }
+.notes h3 { margin: 0 0 .3rem; font-size: .96rem; font-weight: 600; }
+.notes p { max-width: 46ch; margin: 0; font-size: .87rem; }
+.note { margin: 2.6rem 0 0; padding-top: 1.4rem; border-top: 1px solid var(--line); color: var(--faint); font-size: .82rem; }
 .note a { color: var(--muted); }
 
-/* A grid item defaults to min-width: auto, so it refuses to shrink below its
-   widest content — a line of code inside it widens the whole track, and the
-   page scrolls sideways however carefully the columns were sized. Every grid
-   child that can hold a <pre> or a long word needs this. */
-.start > *, .docs-shell > *, .generate-body > * { min-width: 0; }
+.hero-grid > *, .quickstart > *, .path, .notes li, .docs-shell > *, .generate-body > * { min-width: 0; }
 
 /* Documentation */
 .docs-shell { width: min(100%, var(--shell)); margin: 0 auto; display: grid; grid-template-columns: 235px minmax(0, 1fr) 190px; gap: 3rem; align-items: start; padding: 3.2rem 2rem 6rem; }
@@ -174,5 +182,5 @@ figure.code { position: relative; margin: 1.5rem 0; overflow: hidden; border: 1p
 /* Footer */
 .site-footer { border-top: 1px solid var(--line); padding-block: 2rem; color: var(--faint); font-size: .78rem; }.site-footer .shell { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }.site-footer p { margin: 0; }.site-footer nav { display: flex; flex-wrap: wrap; gap: 1.1rem; }.site-footer a { color: var(--muted); text-decoration: none; }.site-footer a:hover { color: var(--ember-hot); }
 
-@media (max-width: 980px) { .docs-shell { grid-template-columns: 200px minmax(0, 1fr); gap: 2rem; }.toc { display: none; }.start { grid-template-columns: 1fr; gap: 2rem; } }
-@media (max-width: 760px) { .shell { padding-inline: 1.25rem; }.site-header .shell { height: 60px; gap: .8rem; }.site-nav { display: none; }.header-cta { margin-left: auto; }.wordmark { display: none; }.intro { padding-block: 3rem 2.5rem; }.link-list, .notes dl { grid-template-columns: 1fr; }.link-list li:nth-last-child(2):nth-child(odd) { border-bottom: 1px solid var(--line); }.generate-body, .docs-shell { grid-template-columns: 1fr; gap: 2rem; }.generate-preview, .sidebar { position: static; }.sidebar { max-height: none; padding-bottom: 1.6rem; border-bottom: 1px solid var(--line); }.sidebar-group { display: none; }.site-footer .shell { display: block; }.site-footer nav { margin-top: .8rem; } }
+@media (max-width: 980px) { .docs-shell { grid-template-columns: 200px minmax(0, 1fr); gap: 2rem; }.toc { display: none; }.hero-grid { grid-template-columns: minmax(0, 1fr) 240px; gap: 2.5rem; }.quickstart { grid-template-columns: 1fr; gap: 2rem; } }
+@media (max-width: 760px) { .shell { padding-inline: 1.25rem; }.site-header .shell { height: 60px; gap: .8rem; }.site-nav { display: none; }.header-cta { margin-left: auto; }.wordmark { display: none; }.hero-grid { grid-template-columns: 1fr; gap: 2.5rem; padding-block: 3.2rem 3rem; }.mark-panel { max-width: 300px; }.paths, .notes ol { grid-template-columns: 1fr; }.generate-body, .docs-shell { grid-template-columns: 1fr; gap: 2rem; }.generate-preview, .sidebar { position: static; }.sidebar { max-height: none; padding-bottom: 1.6rem; border-bottom: 1px solid var(--line); }.sidebar-group { display: none; }.site-footer .shell { display: block; }.site-footer nav { margin-top: .8rem; } }

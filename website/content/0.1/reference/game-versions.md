@@ -50,7 +50,7 @@ line. Most do not.
 It states the game version and nothing else:
 
 ```kotlin
-plugins { id("fr.d4emon.fenix.dev") version "0.2.0" }
+plugins { id("fr.d4emon.fenix.dev") version "0.2.1" }
 fenix { minecraft = "26.2" }
 ```
 

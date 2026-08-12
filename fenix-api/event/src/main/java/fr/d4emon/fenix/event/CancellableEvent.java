@@ -102,7 +102,17 @@ public final class CancellableEvent<C> {
             @SuppressWarnings("unchecked") // only register() puts listeners in here
             Listener<C> typed = (Listener<C>) listener;
 
-            Flow flow = typed.on(context);
+            Flow flow;
+            try {
+                flow = typed.on(context);
+            } catch (Exception failure) {
+                // Contained rather than propagated: see Listeners.failed. A
+                // listener that threw has not decided anything, so it counts as
+                // CONTINUE — cancelling on its behalf would let a broken mod
+                // silently veto everything the event guards.
+                Listeners.failed(typed, context, failure);
+                continue;
+            }
             if (flow == null) {
                 throw new NullPointerException(typed.getClass().getName()
                         + " returned null; a listener must return Flow.CONTINUE or Flow.CANCEL");

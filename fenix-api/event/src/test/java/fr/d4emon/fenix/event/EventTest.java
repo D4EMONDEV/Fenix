@@ -38,6 +38,25 @@ class EventTest {
         }
 
         @Test
+        @DisplayName("a listener that throws is skipped, and the rest still run")
+        void containsAListenerThatThrows() {
+            Event<Tick> event = Event.create();
+            List<String> seen = new ArrayList<>();
+            event.register(tick -> seen.add("before"));
+            event.register(tick -> {
+                throw new IllegalStateException("this listener is broken");
+            });
+            event.register(tick -> seen.add("after"));
+
+            // The point of the whole thing: fire is called from inside
+            // Minecraft, so letting this out would take the game down and blame
+            // a vanilla method for a mod's bug.
+            event.fire(new Tick(1));
+
+            assertEquals(List.of("before", "after"), seen);
+        }
+
+        @Test
         void firingWithNoListenersDoesNothing() {
             Event<Tick> event = Event.create();
 

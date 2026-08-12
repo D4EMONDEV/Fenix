@@ -21,6 +21,19 @@ export interface ZipEntry {
   data?: Uint8Array;
   /** Marks the entry executable, for the shell script that starts a build. */
   executable?: boolean;
+  /**
+   * An empty directory rather than a file.
+   *
+   * <p>A generated project can want a folder with nothing in it — somewhere to
+   * put textures, marked out so nobody has to work out where they go. A zip
+   * records those as their own entries, named with a trailing slash and no
+   * content; without one the folder simply is not there after extraction,
+   * because a zip has no other notion of a directory.
+   *
+   * <p>Git does not track empty directories, so one committed as-is disappears
+   * on the next clone. That is git's business, not the archive's.
+   */
+  directory?: boolean;
 }
 
 /**
@@ -105,10 +118,14 @@ export function zip(entries: ZipEntry[]): Blob {
     size: number;
     offset: number;
     executable: boolean;
+    directory: boolean;
   }[] = [];
 
   for (const entry of entries) {
-    const name = encoder.encode(entry.path);
+    // A directory entry is named with a trailing slash; that slash is the only
+    // thing that makes it one.
+    const path = entry.directory && !entry.path.endsWith('/') ? `${entry.path}/` : entry.path;
+    const name = encoder.encode(path);
     // CRLF for text, because a generated project is opened on Windows more
     // often than not and a file that is one long line in Notepad looks broken.
     // Bytes are written exactly as they arrived: a jar rewritten line by line
@@ -133,7 +150,14 @@ export function zip(entries: ZipEntry[]): Blob {
     out.raw(name);
     out.raw(data);
 
-    directory.push({ name, crc, size: data.length, offset, executable: !!entry.executable });
+    directory.push({
+      name,
+      crc,
+      size: data.length,
+      offset,
+      executable: !!entry.executable,
+      directory: !!entry.directory,
+    });
   }
 
   const directoryStart = out.size;
@@ -155,8 +179,10 @@ export function zip(entries: ZipEntry[]): Blob {
     out.u16(0); // internal attributes
     // Unix permissions live in the top sixteen bits. Without them `gradlew`
     // arrives unreadable by the shell on macOS and Linux, and the first thing
-    // the README asks for fails.
-    out.u32(((file.executable ? 0o100755 : 0o100644) << 16) >>> 0);
+    // the README asks for fails. The low bits are MS-DOS attributes, where 0x10
+    // marks a directory — Windows Explorer reads those and not the Unix mode.
+    const mode = file.directory ? 0o040755 : file.executable ? 0o100755 : 0o100644;
+    out.u32((((mode << 16) >>> 0) | (file.directory ? 0x10 : 0)) >>> 0);
     out.u32(file.offset);
     out.raw(file.name);
   }

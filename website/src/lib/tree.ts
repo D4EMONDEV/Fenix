@@ -22,11 +22,17 @@ interface Node {
   name: string;
   path: string;
   children: Map<string, Node>;
-  /** Set on leaves only. */
-  file?: unknown;
+  /**
+   * Set when the entry itself said it was a directory.
+   *
+   * <p>Having children is the usual proof, and it is not enough: a project can
+   * ship an empty folder on purpose, and one inferred from its children alone
+   * would be drawn as a file.
+   */
+  empty?: boolean;
 }
 
-function insert(root: Node, path: string, file: unknown) {
+function insert(root: Node, path: string, directory: boolean) {
   const segments = path.split('/');
   let node = root;
   segments.forEach((segment, at) => {
@@ -41,7 +47,9 @@ function insert(root: Node, path: string, file: unknown) {
     }
     node = child;
   });
-  node.file = file;
+  if (directory) {
+    node.empty = true;
+  }
 }
 
 /**
@@ -55,13 +63,18 @@ function insert(root: Node, path: string, file: unknown) {
  *
  * @return the deepest node the chain reaches, and the name to show for it
  */
+function isDirectory(node: Node): boolean {
+  return node.children.size > 0 || !!node.empty;
+}
+
 function fold(node: Node): { node: Node; name: string } {
   let deepest = node;
   let name = node.name;
-  while (deepest.children.size === 1) {
+  while (deepest.children.size === 1 && !deepest.empty) {
     const only = [...deepest.children.values()][0];
-    // A directory holding one file is not a chain; the file is the content.
-    if (only.children.size === 0) {
+    // A directory holding one file is not a chain; the file is the content. An
+    // empty one is, though — `assets/my-mod/` reads better than two rows.
+    if (!isDirectory(only)) {
       break;
     }
     name += `/${only.name}`;
@@ -73,8 +86,8 @@ function fold(node: Node): { node: Node; name: string } {
 /** Directories first, then files; alphabetical within each. */
 function ordered(node: Node): Node[] {
   return [...node.children.values()].sort((a, b) => {
-    const aDir = a.children.size > 0;
-    const bDir = b.children.size > 0;
+    const aDir = isDirectory(a);
+    const bDir = isDirectory(b);
     if (aDir !== bDir) {
       return aDir ? -1 : 1;
     }
@@ -85,13 +98,16 @@ function ordered(node: Node): Node[] {
 /**
  * {@return the rows to draw, in order}
  *
- * @param paths every file in the project
- * @param root  the name to show at the top, usually the mod id
+ * @param entries every file in the project, and any folder meant to stay empty
+ * @param root    the name to show at the top, usually the mod id
  */
-export function treeRows(paths: string[], root: string): TreeRow[] {
+export function treeRows(
+  entries: { path: string; directory?: boolean }[],
+  root: string,
+): TreeRow[] {
   const top: Node = { name: root, path: '', children: new Map() };
-  for (const path of paths) {
-    insert(top, path, true);
+  for (const entry of entries) {
+    insert(top, entry.path, !!entry.directory);
   }
 
   const rows: TreeRow[] = [{ prefix: '', name: `${root}/`, path: '', directory: true }];
@@ -105,7 +121,7 @@ export function treeRows(paths: string[], root: string): TreeRow[] {
       const last = at === children.length - 1;
       const prefix = ancestors.map((done) => (done ? '    ' : '│   ')).join('')
           + (last ? '└── ' : '├── ');
-      if (child.children.size === 0) {
+      if (!isDirectory(child)) {
         rows.push({ prefix, name: child.name, path: child.path, directory: false });
         return;
       }

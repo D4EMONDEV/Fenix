@@ -103,7 +103,12 @@ public final class Event<C> {
         for (Object listener : listeners.active()) {
             @SuppressWarnings("unchecked") // only register() puts listeners in here
             Listener<C> typed = (Listener<C>) listener;
-            typed.on(context);
+            try {
+                typed.on(context);
+            } catch (Exception failure) {
+                // Contained rather than propagated: see Listeners.failed.
+                Listeners.failed(typed, context, failure);
+            }
         }
     }
 

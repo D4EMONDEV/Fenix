@@ -7,6 +7,76 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-08-12
+
+A listener that throws no longer takes the game with it, a generated project can
+come with nothing in it, and the website is composed again rather than merely
+plain.
+
+Published artifacts that changed: the event module `0.2.0` → `0.3.0`, the API
+set `0.3.0` → `0.4.0` because one of its modules moved, and the Gradle plugin
+`0.2.0` → `0.2.1` because it carries `platforms.json` and that now names the new
+API. Loader `0.1.1`, Ember `0.2.0`, processor `0.1.0` and installer `0.1.2` are
+unchanged.
+
+### Fixed
+
+- **A listener that throws is contained.** `Event.fire` and
+  `CancellableEvent.fire` let the exception out, and an event is fired from
+  inside Minecraft — so one broken listener ended the game with a crash report
+  naming a vanilla method, and stopped every listener registered after it, none
+  of which had done anything wrong. It is now caught, logged at `ERROR` with the
+  stack trace and the listener named, and the event carries on. For a
+  cancellable event a listener that threw counts as `CONTINUE`: it decided
+  nothing, and cancelling on its behalf would let one broken mod silently veto
+  everything the event guards.
+
+  `Error` is deliberately still not caught — an `OutOfMemoryError` is not a
+  listener misbehaving.
+
+  Covered by a test on each path, and each was checked by removing the
+  containment and watching it fail with the listener's own exception. The logger
+  is the JDK's `System.Logger` and not Minecraft's: the event bus is otherwise
+  plain Java, which is what lets it be unit-tested in milliseconds, and reaching
+  for `com.mojang.logging.LogUtils` for one line put the game on the test
+  runtime classpath and broke every test in the module.
+
+### Added
+
+- **Starter content is an option.** Off, a generated project is its entry point
+  and its build files — no `ModContent`, no `ModBlocks`, no `ModItems`, no
+  generators, no placeholder art. The resource folders are still there and still
+  empty, so nobody has to work out where a texture goes. That needed real
+  directory entries in the zip writer: a zip has no other notion of a folder,
+  and a `.gitkeep` put there to outwit git is exactly the content that was not
+  wanted. Git still will not track them, which is git's business and is said in
+  the generated README.
+- **Ember is offered whether or not there is starter content.** The Gradle
+  plugin puts Ember on every mod's compile classpath and registers `ember`
+  whatever the generator wrote, so wanting it without the starter block is an
+  ordinary thing to want — all that was missing was somewhere to put a
+  generator, and the empty `data` package is now written for it. The checkbox
+  used to grey itself out here, which said the opposite of what was true.
+- **The generated mod class keeps its id in a constant.** `@Mod(MyMod.MODID)`
+  rather than a literal repeated in the annotation, the registrar, the client
+  half and every resource path. It has to be a compile-time constant to sit in
+  an annotation, which `static final String` with a literal is; the annotation
+  processor resolves it and writes the same index it always did — checked by
+  reading `fenix.index.json` and `fenix.index.client.json` out of a built jar,
+  because a build that succeeds while the index comes out empty is exactly the
+  silent failure this would hide.
+
+### Changed
+
+- **The website is composed again rather than merely plain.** The previous pass
+  took the decoration off and stopped there, which left a page with no mark on
+  it, one type size and nothing to look at. The mark is back and given a surface
+  of its own, the sections alternate between the dark page and the paper band,
+  and the type has a scale. No orbits, glows or fake terminal chrome return.
+- The file tree in the generator draws folders that are meant to stay empty, and
+  the starter content moved to `template-content.ts` — it is most of what the
+  generator writes and none of what the generator decides.
+
 ## [0.5.0] — 2026-08-12
 
 A `fenix { }` block that reads as one list, a generator that asks three

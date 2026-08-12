@@ -19,10 +19,16 @@ import type { ZipEntry } from '../lib/zip';
 
 const FEATURES: { id: keyof Features; label: string; blurb: string }[] = [
   {
-    id: 'ember',
-    label: 'Ember',
+    id: 'starterContent',
+    label: 'Starter content',
     blurb:
-      'Generate the models, names, loot tables and recipes from the Java that declares them, instead of writing the JSON by hand.',
+      'A block, an item and a creative tab, with the classes that own them. Off, you get the entry point and empty resource folders.',
+  },
+  {
+    id: 'ember',
+    label: 'Ember generators',
+    blurb:
+      'Write the models, names, loot tables and recipes as Java instead of JSON. Ember is wired into every project either way; this adds generators to start from.',
   },
   {
     id: 'splitClient',
@@ -123,7 +129,7 @@ export function Generate() {
   }
 
   const rows = useMemo(
-    () => treeRows(files.map((file) => file.path), options.modId),
+    () => treeRows(files, options.modId),
     [files, options.modId],
   );
 
@@ -256,7 +262,11 @@ export function Generate() {
                 />
                 <span>
                   <strong>{feature.label}</strong>
-                  <em>{feature.blurb}</em>
+                  <em>
+                    {feature.id === 'ember' && !options.features.starterContent
+                      ? 'No starter content to generate for, so you get the empty package and the ember task, ready for your own.'
+                      : feature.blurb}
+                  </em>
                 </span>
               </label>
             ))}
