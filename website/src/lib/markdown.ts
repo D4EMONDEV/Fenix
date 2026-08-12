@@ -1,20 +1,6 @@
 import { Marked } from 'marked';
 import { latestVersion } from './content';
-import hljs from 'highlight.js/lib/core';
-import java from 'highlight.js/lib/languages/java';
-import json from 'highlight.js/lib/languages/json';
-import bash from 'highlight.js/lib/languages/bash';
-import kotlin from 'highlight.js/lib/languages/kotlin';
-import xml from 'highlight.js/lib/languages/xml';
-
-// Registered one by one rather than pulling in the full language pack: the
-// whole of highlight.js is larger than everything else on this site put
-// together, and Fenix documentation is written in five languages.
-hljs.registerLanguage('java', java);
-hljs.registerLanguage('json', json);
-hljs.registerLanguage('bash', bash);
-hljs.registerLanguage('kotlin', kotlin);
-hljs.registerLanguage('xml', xml);
+import hljs from './highlight';
 
 /** A heading, for the table of contents down the right-hand side. */
 export interface Heading {

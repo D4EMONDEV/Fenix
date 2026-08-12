@@ -44,7 +44,6 @@
             <option value="$PROJECT_DIR$/testing/demo-mod" />
             <option value="$PROJECT_DIR$/testing/harness" />
             <option value="$PROJECT_DIR$/testmod" />
-            <option value="$PROJECT_DIR$/tools/api-doclet" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="true" />

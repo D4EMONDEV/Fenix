@@ -7,6 +7,63 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-08-12
+
+A `fenix { }` block that reads as one list, a generator that asks three
+questions instead of eight, and a website with the decoration taken off.
+
+One published artifact changed: the Gradle plugin, `0.1.6` → `0.2.0`. The minor
+rather than the patch, because the extension's property names changed and a
+build using the old ones no longer configures. Everything else keeps the
+versions 0.3.0 pinned — loader `0.1.1`, API set `0.3.0` (registry `0.3.0`,
+event `0.2.0`, resource `0.1.1`, core `0.1.0`, network `0.1.0`, command `0.1.1`,
+config `0.1.0`), Ember `0.2.0`, processor `0.1.0`, installer `0.1.2`.
+
+### Migrating
+
+| Before | Now |
+|---|---|
+| `fenix { loaderVersion = "…" }` | `fenix { loader = "…" }` |
+| `fenix { apiVersion = "0.3.0+mc26.2" }` | `fenix { api = "0.3.0" }` |
+| `fenix { api = false }` | `fenix { bundle = false }` |
+
+A build that names only `minecraft` needs no change, which is nearly all of
+them.
+
+### Changed
+
+- **`fenix { }` names every Fenix version, one line each.** `loader`, `api` and
+  `ember` are now overridable, which is what testing an unreleased loader or a
+  locally built Ember looks like. Each defaults to the lookup for the game
+  version, so a build that names only `minecraft` is unchanged.
+
+  Two renames come with it, and they break a build that used the old names.
+  `loaderVersion` is now `loader`, so the block reads as one list rather than
+  one property spelled unlike its neighbours. `apiVersion` is now `api` — which
+  the boolean previously held, so that boolean is now `bundle`, named for what
+  it turns off: `fenix-api` is a bundle jar carrying every module, and a mod
+  that sets it to `false` is still very much using the API.
+
+  `api` and `ember` accept a bare version or one carrying `+mc26.2`; the suffix
+  is appended from `minecraft` when it is missing, because that is the number
+  a build file actually wants to write.
+- **The project generator asks three questions instead of eight.** Mixins,
+  networking, commands, configuration and CI are gone from it. A checkbox per
+  feature produces a project that is a tour of the API rather than a starting
+  point, and every box left ticked is code somebody reads before deleting.
+  What is left changes the shape of the project rather than its text: Ember,
+  whether to split `src/client` from `src/main`, and Kotlin or Groovy build
+  scripts. The mod id follows the mod name until a checkbox hands it over.
+  Verified by building all four combinations of Ember and build-script language.
+- **The generated preview shows a real tree.** Connectors rather than a flat
+  list grouped under path headings, with single-child directory chains folded
+  the way an IDE folds middle packages — `com/example/mymod/` on one row instead
+  of three, which is most of the depth of a Java project and none of its shape.
+- **The site is plainer.** The orbit rings, radial glows, gridded backdrop,
+  iconed cards, numbered feature columns and fake terminal chrome are gone.
+  They were decoration standing in for content on a page whose job is a
+  sentence and a code sample.
+
 ## [0.4.0] — 2026-08-12
 
 One resolution bug that made Fenix unusable on a machine with a half-populated

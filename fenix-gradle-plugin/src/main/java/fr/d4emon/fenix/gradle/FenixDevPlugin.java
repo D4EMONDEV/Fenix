@@ -59,12 +59,14 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // the one this plugin was built against: the two are the same only for
         // the current line, and silently handing a mod on an older game the
         // newest API is how a build succeeds and the game then fails to load it.
-        extension.getLoaderVersion().convention(extension.getMinecraft()
+        extension.getLoader().convention(extension.getMinecraft()
                 .map(minecraft -> platforms.forMinecraft(minecraft).loader()));
-        extension.getApiVersion().convention(extension.getMinecraft()
-                .map(minecraft -> platforms.forMinecraft(minecraft).api() + "+mc" + minecraft));
+        extension.getApi().convention(extension.getMinecraft()
+                .map(minecraft -> platforms.forMinecraft(minecraft).api()));
+        extension.getEmber().convention(extension.getMinecraft()
+                .map(minecraft -> platforms.forMinecraft(minecraft).ember()));
         extension.getLibrary().convention(false);
-        extension.getApi().convention(true);
+        extension.getBundle().convention(true);
 
         addRepositories(project);
 
@@ -79,18 +81,32 @@ public final class FenixDevPlugin implements Plugin<Project> {
         project.afterEvaluate(unused -> configure(project, extension, clientClasspath, fenixMod));
     }
 
+    /**
+     * {@return {@code version}, carrying the game version it was built against}
+     *
+     * <p>The API and Ember are compiled against Minecraft, so their coordinates
+     * end in {@code +mc26.2}. A build that names one writes the number and not
+     * the suffix nine times out of ten; appending it here means both forms work
+     * and neither has to be looked up.
+     *
+     * @param version   what the build asked for
+     * @param minecraft the game version it asked for
+     */
+    private static String gameTied(String version, String minecraft) {
+        return version.contains("+mc") ? version : version + "+mc" + minecraft;
+    }
+
     private void configure(Project project, FenixExtension extension,
                            Configuration clientClasspath, Configuration fenixMod) {
         String minecraft = extension.getMinecraft().get();
-        String loaderVersion = extension.getLoaderVersion().get();
-        String apiVersion = extension.getApiVersion().get();
-        // Not extension properties: a mod author has no reason to pick these,
-        // and every reason to get the pair that was built together. They are
-        // separate lines all the same, because the modules are versioned apart.
-        // Looked up by the game version for the same reason as the API above.
-        Platforms.Platform platform = Platforms.load().forMinecraft(minecraft);
-        String emberVersion = platform.ember() + "+mc" + minecraft;
-        String processorVersion = platform.processor();
+        String loaderVersion = extension.getLoader().get();
+        String apiVersion = gameTied(extension.getApi().get(), minecraft);
+        String emberVersion = gameTied(extension.getEmber().get(), minecraft);
+        // Not an extension property: the processor writes the mod index at
+        // compile time and there is no reason for a build to pick a version of
+        // it. It is a separate line all the same, because the modules are
+        // versioned apart.
+        String processorVersion = Platforms.load().forMinecraft(minecraft).processor();
 
         Path cacheRoot = project.getGradle().getGradleUserHomeDir().toPath().resolve("caches").resolve("fenix");
         MinecraftLibraries game = new MinecraftDownloader(cacheRoot).resolve(minecraft);
@@ -123,7 +139,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         boolean library = extension.getLibrary().get();
         clientSourceSet(project, game, processorVersion, apiVersion, library, minecraft, widen);
         if (!library) {
-            if (extension.getApi().get()) {
+            if (extension.getBundle().get()) {
                 // fenixMod and not compileOnly, so what a mod compiles against
                 // is also what is there when it runs. The two disagreeing is
                 // how you get a mod that builds and then cannot find the class

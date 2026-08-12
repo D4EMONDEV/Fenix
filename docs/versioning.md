@@ -34,22 +34,34 @@ stay plain.
 
 ## What a mod writes
 
-Nothing. The Gradle plugin knows both the loader and API versions it was built
-with:
+The game version, and nothing else. Everything else is looked up for that game
+in the table the plugin carries — see [game-versions.md](game-versions.md).
 
 ```kotlin
-plugins { id("fr.d4emon.fenix.dev") version "0.1.0" }
+plugins { id("fr.d4emon.fenix.dev") version "0.2.0" }
 fenix { minecraft = "26.2" }
 ```
 
-Override either if you need to:
+Any of those lookups can be overridden, one line each, which is what testing an
+unreleased loader or a locally built Ember looks like:
 
 ```kotlin
 fenix {
-    loaderVersion = "0.2.0"
-    apiVersion = "0.2.0+mc26.2"
+    minecraft = "26.2"
+    loader = "0.1.2"
+    api = "0.4.0"
+    ember = "0.2.1"
 }
 ```
+
+`api` and `ember` are built against the game, so their real coordinates end in
+`+mc26.2`. Write either form: a version without the suffix gets the one for
+`minecraft` appended. `loader` carries no suffix, because almost nothing in the
+loader touches a Minecraft class.
+
+An override is taken exactly as written, so overriding one does not move the
+others. That is the point, and also the risk — a loader and an API from
+different releases are a pair nobody tested.
 
 ## Adding a module
 

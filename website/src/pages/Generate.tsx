@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import hljs from 'highlight.js/lib/core';
+import hljs from '../lib/highlight';
 import {
   DEFAULT_OPTIONS,
   LICENSES,
   classOf,
   generate,
+  idFromName,
   packageOf,
   validate,
   type Features,
@@ -12,84 +13,43 @@ import {
   type Options,
 } from '../lib/template';
 import { platforms } from '../lib/platforms';
+import { treeRows } from '../lib/tree';
 import { zip } from '../lib/zip';
 import type { ZipEntry } from '../lib/zip';
 
-/** What each toggle adds, in the order a mod author meets them. */
 const FEATURES: { id: keyof Features; label: string; blurb: string }[] = [
   {
-    id: 'content',
-    label: 'A block and an item',
-    blurb: 'Registered through a Registrar, in a creative tab, with placeholder textures.',
-  },
-  {
     id: 'ember',
-    label: 'Data generation',
-    blurb: 'Ember writes the models, names, loot tables and recipes from the Java above.',
+    label: 'Ember',
+    blurb:
+      'Generate the models, names, loot tables and recipes from the Java that declares them, instead of writing the JSON by hand.',
   },
   {
-    id: 'client',
-    label: 'A client source set',
-    blurb: 'src/client, where rendering and key bindings go. A dedicated server never loads it.',
+    id: 'splitClient',
+    label: 'Split main and client',
+    blurb:
+      'Add a src/client source set. Code a dedicated server never runs lives there, and the compiler stops the common half reaching for it.',
   },
   {
-    id: 'config',
-    label: 'Configuration',
-    blurb: 'Settings as a record: the field names are the JSON keys and the types are the checking.',
-  },
-  {
-    id: 'commands',
-    label: 'A command',
-    blurb: 'Registered through the event bus, so it survives a datapack reload.',
-  },
-  {
-    id: 'networking',
-    label: 'Networking',
-    blurb: 'One payload each way, with the codec that puts it on the wire.',
-  },
-  {
-    id: 'mixins',
-    label: 'A mixin',
-    blurb: 'For the cases the API has no event for. Comes with the rules that make one work.',
-  },
-  {
-    id: 'ci',
-    label: 'GitHub Actions',
-    blurb: 'A workflow that builds the mod on every push and keeps the jar.',
+    id: 'kotlin',
+    label: 'Kotlin build script',
+    blurb: 'The Gradle build script will use the Kotlin programming language instead of Groovy.',
   },
 ];
-
-/** Groups the flat file list into something that reads like a directory tree. */
-function tree(files: ZipEntry[]): { dir: string; entries: ZipEntry[] }[] {
-  const groups = new Map<string, ZipEntry[]>();
-  for (const file of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
-    const at = file.path.lastIndexOf('/');
-    const dir = at === -1 ? '' : file.path.slice(0, at);
-    const list = groups.get(dir);
-    if (list) {
-      list.push(file);
-    } else {
-      groups.set(dir, [file]);
-    }
-  }
-  return [...groups.entries()]
-    .sort(([a], [b]) => (a === '' ? -1 : b === '' ? 1 : a.localeCompare(b)))
-    .map(([dir, entries]) => ({ dir, entries }));
-}
 
 const LANGUAGES: Record<string, string> = {
   java: 'java',
   kts: 'kotlin',
+  gradle: 'groovy',
   json: 'json',
   properties: 'properties',
   md: 'markdown',
-  yml: 'yaml',
 };
 
 export function Generate() {
   const [options, setOptions] = useState<Options>(DEFAULT_OPTIONS);
   const [files, setFiles] = useState<ZipEntry[]>([]);
-  const [selected, setSelected] = useState<string>('build.gradle.kts');
+  const [selected, setSelected] = useState<string | null>(null);
   const [building, setBuilding] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -123,6 +83,22 @@ export function Generate() {
   const set = <K extends keyof Options>(key: K, value: Options[K]) =>
     setOptions((previous) => ({ ...previous, [key]: value }));
 
+  // The id follows the name until somebody takes it over, and picks the thread
+  // back up if they hand it back.
+  const setName = (modName: string) =>
+    setOptions((previous) => ({
+      ...previous,
+      modName,
+      modId: previous.autoModId ? idFromName(modName) : previous.modId,
+    }));
+
+  const setAutoId = (autoModId: boolean) =>
+    setOptions((previous) => ({
+      ...previous,
+      autoModId,
+      modId: autoModId ? idFromName(previous.modName) : previous.modId,
+    }));
+
   const toggle = (id: keyof Features) =>
     setOptions((previous) => ({
       ...previous,
@@ -146,7 +122,15 @@ export function Generate() {
     }
   }
 
-  const shown = files.find((file) => file.path === selected) ?? files[0];
+  const rows = useMemo(
+    () => treeRows(files.map((file) => file.path), options.modId),
+    [files, options.modId],
+  );
+
+  const shown =
+    files.find((file) => file.path === selected)
+    ?? files.find((file) => file.path.endsWith(options.features.kotlin ? 'build.gradle.kts' : 'build.gradle'))
+    ?? files[0];
   const extension = shown?.path.split('.').pop() ?? '';
   const language = LANGUAGES[extension];
   const highlighted =
@@ -157,15 +141,10 @@ export function Generate() {
   return (
     <div className="generate shell">
       <div className="generate-head">
-        <p className="eyebrow">
-          <span />
-          New project
-        </p>
         <h1>Start a mod</h1>
         <p>
-          Pick what you need and take the zip. Everything it generates compiles and runs as it
-          comes — placeholder textures included, so the first launch shows a block rather than the
-          missing-texture checker.
+          A block, an item and a creative tab, in a project that builds and runs as it comes.
+          Everything else is a guide away.
         </p>
       </div>
 
@@ -173,18 +152,29 @@ export function Generate() {
         <form className="generate-form" onSubmit={(event) => event.preventDefault()}>
           <label>
             <span>Mod name</span>
-            <input
-              value={options.modName}
-              onChange={(event) => set('modName', event.target.value)}
-            />
+            <input value={options.modName} onChange={(event) => setName(event.target.value)} />
             {errors.modName && <p className="field-error">{errors.modName}</p>}
           </label>
 
-          <label>
-            <span>Mod id</span>
-            <input value={options.modId} onChange={(event) => set('modId', event.target.value)} />
+          <div className="field">
+            <div className="field-head">
+              <span>Mod id</span>
+              <label className="inline-check">
+                <input
+                  type="checkbox"
+                  checked={options.autoModId}
+                  onChange={(event) => setAutoId(event.target.checked)}
+                />
+                from the name
+              </label>
+            </div>
+            <input
+              value={options.modId}
+              disabled={options.autoModId}
+              onChange={(event) => set('modId', event.target.value)}
+            />
             {errors.modId && <p className="field-error">{errors.modId}</p>}
-          </label>
+          </div>
 
           <label>
             <span>Group</span>
@@ -192,20 +182,37 @@ export function Generate() {
             {errors.group ? (
               <p className="field-error">{errors.group}</p>
             ) : (
-              <p className="field-error" style={{ color: 'var(--faint)' }}>
-                Package: {packageOf(options)} · class: {classOf(options)}
+              <p className="field-note">
+                {packageOf(options)}.{classOf(options)}
               </p>
             )}
           </label>
 
-          <label>
-            <span>Version</span>
-            <input
-              value={options.version}
-              onChange={(event) => set('version', event.target.value)}
-            />
-            {errors.version && <p className="field-error">{errors.version}</p>}
-          </label>
+          <div className="field-pair">
+            <label>
+              <span>Version</span>
+              <input
+                value={options.version}
+                onChange={(event) => set('version', event.target.value)}
+              />
+              {errors.version && <p className="field-error">{errors.version}</p>}
+            </label>
+
+            <label>
+              <span>Minecraft</span>
+              <select
+                value={options.minecraft}
+                onChange={(event) => set('minecraft', event.target.value)}
+              >
+                {platforms.map((platform) => (
+                  <option key={platform.minecraft} value={platform.minecraft}>
+                    {platform.minecraft}
+                    {platform.status === 'current' ? '' : ` — ${platform.status}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
           <label>
             <span>Author</span>
@@ -222,21 +229,6 @@ export function Generate() {
               value={options.description}
               onChange={(event) => set('description', event.target.value)}
             />
-          </label>
-
-          <label>
-            <span>Minecraft</span>
-            <select
-              value={options.minecraft}
-              onChange={(event) => set('minecraft', event.target.value)}
-            >
-              {platforms.map((platform) => (
-                <option key={platform.minecraft} value={platform.minecraft}>
-                  {platform.minecraft}
-                  {platform.status === 'current' ? '' : ` — ${platform.status}`}
-                </option>
-              ))}
-            </select>
           </label>
 
           <label>
@@ -260,16 +252,11 @@ export function Generate() {
                 <input
                   type="checkbox"
                   checked={options.features[feature.id]}
-                  disabled={feature.id === 'ember' && !options.features.content}
                   onChange={() => toggle(feature.id)}
                 />
                 <span>
                   <strong>{feature.label}</strong>
-                  <em>
-                    {feature.id === 'ember' && !options.features.content
-                      ? 'Needs something to generate for — turn on the block and item.'
-                      : feature.blurb}
-                  </em>
+                  <em>{feature.blurb}</em>
                 </span>
               </label>
             ))}
@@ -295,32 +282,31 @@ export function Generate() {
 
         <div className="generate-preview">
           <div className="tree">
-            {tree(files).map((group) => (
-              <div key={group.dir}>
-                <div className="tree-dir">{group.dir === '' ? '.' : `${group.dir}/`}</div>
-                {group.entries.map((file) => (
-                  <button
-                    type="button"
-                    key={file.path}
-                    className={`tree-file${file.path === shown?.path ? ' selected' : ''}`}
-                    onClick={() => setSelected(file.path)}
-                  >
-                    {'  '}
-                    {file.path.split('/').pop()}
-                    {file.data ? ' · binary' : ''}
-                  </button>
-                ))}
-              </div>
-            ))}
+            {rows.map((row) =>
+              row.directory ? (
+                <div className="tree-row tree-dir" key={`d:${row.prefix}${row.name}`}>
+                  <span className="tree-prefix">{row.prefix}</span>
+                  {row.name}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  key={row.path}
+                  className={`tree-row tree-file${row.path === shown?.path ? ' selected' : ''}`}
+                  onClick={() => setSelected(row.path)}
+                >
+                  <span className="tree-prefix">{row.prefix}</span>
+                  {row.name}
+                </button>
+              ),
+            )}
           </div>
 
           <figure className="code preview-file">
             <span className="lang">{shown?.path ?? ''}</span>
             <pre>
               {shown?.data ? (
-                <code>
-                  {shown.data.length} bytes. Binary files are in the zip but not shown here.
-                </code>
+                <code>{shown.data.length} bytes. Binary, so not shown here.</code>
               ) : highlighted ? (
                 <code dangerouslySetInnerHTML={{ __html: highlighted }} />
               ) : (

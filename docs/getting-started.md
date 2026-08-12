@@ -53,7 +53,7 @@ single file. See [versioning.md](versioning.md).
 To ship against fewer modules, say so and name them:
 
 ```kotlin
-fenix { api = false }
+fenix { bundle = false }
 
 dependencies {
     fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0")

@@ -1,11 +1,18 @@
 /**
- * Builds a complete Fenix mod project, as a set of files ready to be zipped.
+ * Builds a Fenix mod project, as a set of files ready to be zipped.
  *
  * Everything here is written to compile and run as generated. That is the whole
  * standard this file is held to: a project that opens with an error, or that
  * launches into the missing-texture checker, teaches a first-time mod author
  * that Fenix is broken — and they have no way to tell that it was the template
  * rather than something they did.
+ *
+ * What it generates is deliberately one shape: a mod class, a block, an item
+ * and a creative tab. Mixins, networking, commands and configuration are not
+ * options here. A generator with a checkbox per feature produces a project that
+ * is a tour of the API rather than a starting point, and every box left ticked
+ * is code somebody has to read before deleting. Those are what the guides are
+ * for; this is what a first `runClient` is for.
  *
  * The version numbers come from `platforms.json` by way of {@link ./platforms},
  * so they are the ones actually published for the game version chosen.
@@ -14,29 +21,21 @@ import { currentPlatform, platforms, pluginVersion, type Platform } from './plat
 import { texture } from './png';
 import type { ZipEntry } from './zip';
 
-/** What the generator can add to a project, beyond the mod class itself. */
+/** The three choices that change the shape of the project rather than its text. */
 export interface Features {
-  /** A `src/client` source set: rendering, key bindings, screens. */
-  client: boolean;
-  /** A block and an item, registered, with textures and a creative tab. */
-  content: boolean;
-  /** Ember generators for models, language, loot tables and recipes. */
+  /** Ember generators for models, names, loot tables and recipes. */
   ember: boolean;
-  /** A mixin, its config file, and the metadata entry that loads it. */
-  mixins: boolean;
-  /** A record-backed configuration file. */
-  config: boolean;
-  /** A command, registered through the event bus. */
-  commands: boolean;
-  /** A payload in each direction. */
-  networking: boolean;
-  /** A GitHub Actions workflow that builds the mod on every push. */
-  ci: boolean;
+  /** A `src/client` source set, kept apart from the code a server runs. */
+  splitClient: boolean;
+  /** Kotlin build scripts rather than Groovy. */
+  kotlin: boolean;
 }
 
 export interface Options {
-  modId: string;
   modName: string;
+  modId: string;
+  /** Whether {@link modId} follows {@link modName} rather than being typed. */
+  autoModId: boolean;
   group: string;
   version: string;
   author: string;
@@ -56,24 +55,16 @@ export const LICENSES: { id: LicenseId; label: string }[] = [
 ];
 
 export const DEFAULT_OPTIONS: Options = {
-  modId: 'my-mod',
   modName: 'My Mod',
+  modId: 'my-mod',
+  autoModId: true,
   group: 'com.example',
   version: '1.0.0',
   author: '',
   description: 'A Minecraft mod built with Fenix.',
   license: 'Apache-2.0',
   minecraft: currentPlatform.minecraft,
-  features: {
-    client: true,
-    content: true,
-    ember: true,
-    mixins: false,
-    config: false,
-    commands: false,
-    networking: false,
-    ci: true,
-  },
+  features: { ember: true, splitClient: true, kotlin: true },
 };
 
 /**
@@ -86,17 +77,28 @@ export const MOD_ID_PATTERN = /^[a-z][a-z0-9_-]{1,63}$/;
 /** A Java package: dot-separated lowercase identifiers. */
 export const GROUP_PATTERN = /^[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*$/;
 
+/** `My Mod` becomes `my-mod`: what the id field holds until somebody edits it. */
+export function idFromName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+}
+
 /** {@return the errors that would stop the project building, by field} */
 export function validate(options: Options): Partial<Record<keyof Options, string>> {
   const errors: Partial<Record<keyof Options, string>> = {};
+  if (!options.modName.trim()) {
+    errors.modName = 'A name is what the mod list shows.';
+  }
   if (!MOD_ID_PATTERN.test(options.modId)) {
-    errors.modId = 'Lowercase letters, digits, underscore and dash; starting with a letter.';
+    errors.modId = options.autoModId
+      ? 'That name leaves nothing usable as an id. Set one by hand.'
+      : 'Lowercase letters, digits, underscore and dash; starting with a letter.';
   }
   if (!GROUP_PATTERN.test(options.group)) {
     errors.group = 'A Java package: lowercase words separated by dots.';
-  }
-  if (!options.modName.trim()) {
-    errors.modName = 'A name is what the mod list shows.';
   }
   if (!/^\d+(\.\d+)*(-[0-9A-Za-z.-]+)?$/.test(options.version)) {
     errors.version = 'Numbers separated by dots, optionally with a -suffix.';
@@ -143,7 +145,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.`;
 
-function licenseText(options: Options): string | null {
+function licenseText(options: Options): string {
   const year = new Date().getFullYear();
   const holder = options.author.trim() || options.modName;
   switch (options.license) {
@@ -214,6 +216,7 @@ export async function generate(options: Options): Promise<ZipEntry[]> {
   const path = pkg.replace(/\./g, '/');
   const id = options.modId;
   const ns = snake(id);
+  const upper = ns.toUpperCase();
   const { features } = options;
 
   const files: ZipEntry[] = [];
@@ -222,42 +225,61 @@ export async function generate(options: Options): Promise<ZipEntry[]> {
 
   // ---------------------------------------------------------------- build
 
-  add('settings.gradle.kts', `rootProject.name = "${id}"
+  const script = features.kotlin ? '.kts' : '';
+  const quote = features.kotlin ? '"' : "'";
 
-// Where the Fenix Gradle plugin itself is resolved from. The Fenix API and
-// loader are added by the plugin; this block is only about the plugin.
+  // `pluginManagement` first, because Gradle requires it before any other
+  // statement in a settings script. The Kotlin DSL tolerates it coming later
+  // and the Groovy one does not — it fails the build with "must appear before
+  // any other statements" — so writing it second worked for exactly as long as
+  // Kotlin was the only option.
+  //
+  // Assignment rather than Groovy's bare `name 'value'` throughout: the fenix
+  // block's members are Gradle `Property` objects, which have no such method,
+  // and `minecraft '26.2'` fails with a missing-method error naming the
+  // extension rather than the line.
+  add(`settings.gradle${script}`, features.kotlin
+    ? `// Where the Fenix Gradle plugin itself comes from. The API and the loader
+// are added by the plugin; this block is only about the plugin.
 pluginManagement {
     repositories {
         maven("https://d4emondev.github.io/Fenix/") { name = "Fenix" }
         gradlePluginPortal()
     }
 }
+
+rootProject.name = "${id}"
+`
+    : `// Where the Fenix Gradle plugin itself comes from. The API and the loader
+// are added by the plugin; this block is only about the plugin.
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fenix'
+            url = 'https://d4emondev.github.io/Fenix/'
+        }
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = '${id}'
 `);
 
-  const dependencyLines: string[] = [];
-  if (features.mixins) {
-    dependencyLines.push(
-      '',
-      '// Mixin is on the compile classpath because this mod writes one. It is',
-      '// already at run time — the loader starts it — so this is compileOnly.',
-      'dependencies {',
-      '    compileOnly("net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7")',
-      '}',
-    );
-  }
-
-  add('build.gradle.kts', `plugins {
-    id("fr.d4emon.fenix.dev") version "${pluginVersion}"
+  add(`build.gradle${script}`, `plugins {
+    id(${quote}fr.d4emon.fenix.dev${quote}) version ${quote}${pluginVersion}${quote}
 }
 
-group = "${options.group}"
-version = "${options.version}"
-description = "${options.description.replace(/"/g, '\\"')}"
+group = ${quote}${options.group}${quote}
+version = ${quote}${options.version}${quote}
+description = ${quote}${options.description.replace(/(['"])/g, '\\$1')}${quote}
 
+// The game version, and nothing else. Every other Fenix version is looked up
+// for it, so the API this compiles against is the one built for the game it
+// asked for. Override a single one — loader, api, ember — only to test a
+// release that is not out yet.
 fenix {
-    minecraft = "${options.minecraft}"
+    minecraft = ${quote}${options.minecraft}${quote}
 }
-${dependencyLines.join('\n')}
 `);
 
   add('gradle.properties', `# Minecraft ${options.minecraft} needs Java ${platform.java}; the Gradle daemon
@@ -269,13 +291,7 @@ org.gradle.caching=true
 
   // ---------------------------------------------------------------- metadata
 
-  const depends: Record<string, string> = {
-    fenix: `>=${platform.loader}`,
-    minecraft: `~${options.minecraft}`,
-    'fenix-api': `>=${platform.api}`,
-  };
-
-  const metadata: Record<string, unknown> = {
+  const metadata = {
     schema: 1,
     id,
     version: '${version}',
@@ -284,52 +300,22 @@ org.gradle.caching=true
     authors: options.author.trim() ? [options.author.trim()] : [],
     license: options.license === 'ARR' ? 'All rights reserved' : options.license,
     side: 'both',
-    depends,
+    depends: {
+      fenix: `>=${platform.loader}`,
+      minecraft: `~${options.minecraft}`,
+      'fenix-api': `>=${platform.api}`,
+    },
   };
-  if (features.mixins) {
-    metadata.mixins = [`${id}.mixins.json`];
-  }
-
   add('src/main/resources/fenix.mod.json', `${JSON.stringify(metadata, null, 2)}\n`);
 
   // ---------------------------------------------------------------- mod class
 
-  const imports = new Set<string>([
-    'fr.d4emon.fenix.api.Fenix',
-    'fr.d4emon.fenix.api.FenixMod',
-    'fr.d4emon.fenix.api.Mod',
-  ]);
-  const registerBody: string[] = [];
-  const initBody: string[] = [];
-  const fields: string[] = [];
-
-  if (features.content) {
-    imports.add(`${pkg}.content.ModContent`);
-    registerBody.push('        ModContent.register();');
-  }
-  if (features.config) {
-    imports.add('fr.d4emon.fenix.config.Config');
-    fields.push(`    /** Read once, when the mod starts. */
-    private Config<${main}Config> config;
-`);
-    initBody.push(`        config = Config.of(fenix, ${main}Config.DEFAULTS);`);
-  }
-  if (features.commands) {
-    initBody.push(`        ${main}Commands.register();`);
-  }
-  if (features.networking) {
-    initBody.push(`        ${main}Payloads.listen();`);
-  }
-
-  initBody.push(
-    features.config
-      ? `        fenix.logger().info("${options.modName} ready — greeting is {}", config.get().greeting());`
-      : `        fenix.logger().info("${options.modName} ready");`,
-  );
-
   add(`src/main/java/${path}/${main}.java`, `package ${pkg};
 
-${[...imports].sort().map((i) => `import ${i};`).join('\n')}
+import ${pkg}.content.ModContent;
+import fr.d4emon.fenix.api.Fenix;
+import fr.d4emon.fenix.api.FenixMod;
+import fr.d4emon.fenix.api.Mod;
 
 /**
  * The mod's entry point.
@@ -341,35 +327,30 @@ ${[...imports].sort().map((i) => `import ${i};`).join('\n')}
 @Mod("${id}")
 public final class ${main} implements FenixMod {
 
-${fields.join('\n')}    /** Instantiated by the loader from the compile-time index. */
+    /** Instantiated by the loader from the compile-time index. */
     public ${main}() {
     }
-${
-  registerBody.length
-    ? `
+
     /**
      * Runs once, before the game's registries are frozen. Everything a mod adds
      * to the world is registered from here and from nowhere later.
      */
     @Override
     public void onRegister(Fenix fenix) {
-${registerBody.join('\n')}
+        ModContent.register();
     }
-`
-    : ''
-}
-    /** Runs after registration, when it is safe to read config and listen. */
+
+    /** Runs after registration, when a server exists and config can be read. */
     @Override
     public void onInit(Fenix fenix) {
-${initBody.join('\n')}
+        fenix.logger().info("${options.modName} ready");
     }
 }
 `);
 
   // ---------------------------------------------------------------- content
 
-  if (features.content) {
-    add(`src/main/java/${path}/content/ModContent.java`, `package ${pkg}.content;
+  add(`src/main/java/${path}/content/ModContent.java`, `package ${pkg}.content;
 
 import fr.d4emon.fenix.registry.Registrar;
 import net.minecraft.resources.ResourceKey;
@@ -391,7 +372,7 @@ public final class ModContent {
 
     /** The creative tab holding this mod's items. */
     public static final ResourceKey<CreativeModeTab> TAB =
-            REGISTRAR.creativeTab("${ns}", ModItems.${ns.toUpperCase()}_INGOT);
+            REGISTRAR.creativeTab("${ns}", ModItems.${upper}_INGOT);
 
     private ModContent() {
     }
@@ -399,8 +380,8 @@ public final class ModContent {
     /** Hands every declaration above to the game. Called once, from onRegister. */
     public static void register() {
         // Touching the classes runs their static initialisers, which is what
-        // fills the registrar. The order does not matter; nothing is added to
-        // the game until apply() below.
+        // fills the registrar. The order does not matter; nothing reaches the
+        // game until apply().
         ModBlocks.touch();
         ModItems.touch();
         REGISTRAR.apply();
@@ -408,7 +389,7 @@ public final class ModContent {
 }
 `);
 
-    add(`src/main/java/${path}/content/ModBlocks.java`, `package ${pkg}.content;
+  add(`src/main/java/${path}/content/ModBlocks.java`, `package ${pkg}.content;
 
 import fr.d4emon.fenix.registry.Holder;
 import net.minecraft.world.level.block.Block;
@@ -424,7 +405,7 @@ public final class ModBlocks {
      * that places it are two registrations in Minecraft, and a block without the
      * second one exists in the world and cannot be picked up.
      */
-    public static final Holder<Block> ${ns.toUpperCase()}_BLOCK = ModContent.REGISTRAR
+    public static final Holder<Block> ${upper}_BLOCK = ModContent.REGISTRAR
             .newBlock("${ns}_block")
             .strength(3.0f, 6.0f)
             .requiresTool()
@@ -441,7 +422,7 @@ public final class ModBlocks {
 }
 `);
 
-    add(`src/main/java/${path}/content/ModItems.java`, `package ${pkg}.content;
+  add(`src/main/java/${path}/content/ModItems.java`, `package ${pkg}.content;
 
 import fr.d4emon.fenix.registry.Holder;
 import net.minecraft.world.item.Item;
@@ -450,7 +431,7 @@ import net.minecraft.world.item.Item;
 public final class ModItems {
 
     /** A crafting material. */
-    public static final Holder<Item> ${ns.toUpperCase()}_INGOT = ModContent.REGISTRAR
+    public static final Holder<Item> ${upper}_INGOT = ModContent.REGISTRAR
             .newItem("${ns}_ingot")
             .stacksTo(64)
             .register();
@@ -464,48 +445,14 @@ public final class ModItems {
 }
 `);
 
-    // Placeholder art, so the first launch shows a block rather than the
-    // missing-texture checker.
-    addBytes(`src/main/resources/assets/${id}/textures/block/${ns}_block.png`, texture(0x8a6a3f));
-    addBytes(`src/main/resources/assets/${id}/textures/item/${ns}_ingot.png`, texture(0xd8a44a, true));
+  // Placeholder art, so the first launch shows a block rather than the
+  // missing-texture checker.
+  addBytes(`src/main/resources/assets/${id}/textures/block/${ns}_block.png`, texture(0x8a6a3f));
+  addBytes(`src/main/resources/assets/${id}/textures/item/${ns}_ingot.png`, texture(0xd8a44a, true));
 
-    if (!features.ember) {
-      // Without Ember these files are written by hand, so the template writes
-      // them once — a block with no model is invisible, and a block with no
-      // loot table drops nothing, both silently.
-      add(`src/main/resources/assets/${id}/blockstates/${ns}_block.json`,
-        `{\n  "variants": {\n    "": { "model": "${id}:block/${ns}_block" }\n  }\n}\n`);
-      add(`src/main/resources/assets/${id}/models/block/${ns}_block.json`,
-        `{\n  "parent": "minecraft:block/cube_all",\n  "textures": { "all": "${id}:block/${ns}_block" }\n}\n`);
-      add(`src/main/resources/assets/${id}/items/${ns}_block.json`,
-        `{\n  "model": { "type": "minecraft:model", "model": "${id}:block/${ns}_block" }\n}\n`);
-      add(`src/main/resources/assets/${id}/models/item/${ns}_ingot.json`,
-        `{\n  "parent": "minecraft:item/generated",\n  "textures": { "layer0": "${id}:item/${ns}_ingot" }\n}\n`);
-      add(`src/main/resources/assets/${id}/items/${ns}_ingot.json`,
-        `{\n  "model": { "type": "minecraft:model", "model": "${id}:item/${ns}_ingot" }\n}\n`);
-      add(`src/main/resources/assets/${id}/lang/en_us.json`, `${JSON.stringify({
-        [`block.${id}.${ns}_block`]: `${options.modName} Block`,
-        [`item.${id}.${ns}_ingot`]: `${options.modName} Ingot`,
-        [`itemGroup.${id}.${ns}`]: options.modName,
-      }, null, 2)}\n`);
-      add(`src/main/resources/data/${id}/loot_table/blocks/${ns}_block.json`, `{
-  "type": "minecraft:block",
-  "pools": [
-    {
-      "rolls": 1.0,
-      "conditions": [ { "condition": "minecraft:survives_explosion" } ],
-      "entries": [ { "type": "minecraft:item", "name": "${id}:${ns}_block" } ]
-    }
-  ],
-  "random_sequence": "${id}:blocks/${ns}_block"
-}
-`);
-    }
-  }
+  // ---------------------------------------------------------------- resources
 
-  // ---------------------------------------------------------------- ember
-
-  if (features.ember && features.content) {
+  if (features.ember) {
     add(`src/main/java/${path}/data/ModModels.java`, `package ${pkg}.data;
 
 import ${pkg}.content.ModBlocks;
@@ -523,8 +470,8 @@ public final class ModModels extends EmberModelProvider {
 
     @Override
     protected void models() {
-        cubeAll(ModBlocks.${ns.toUpperCase()}_BLOCK);
-        flatItem(ModItems.${ns.toUpperCase()}_INGOT);
+        cubeAll(ModBlocks.${upper}_BLOCK);
+        flatItem(ModItems.${upper}_INGOT);
     }
 }
 `);
@@ -551,8 +498,8 @@ public final class ModLanguage extends EmberLanguageProvider {
 
     @Override
     protected void translations() {
-        add(ModBlocks.${ns.toUpperCase()}_BLOCK, "${options.modName} Block");
-        add(ModItems.${ns.toUpperCase()}_INGOT, "${options.modName} Ingot");
+        add(ModBlocks.${upper}_BLOCK, "${options.modName} Block");
+        add(ModItems.${upper}_INGOT, "${options.modName} Ingot");
         add("itemGroup.${id}.${ns}", "${options.modName}");
     }
 }
@@ -579,7 +526,7 @@ public final class ModLootTables extends EmberLootTableProvider {
 
     @Override
     protected void lootTables() {
-        dropsSelf(ModBlocks.${ns.toUpperCase()}_BLOCK);
+        dropsSelf(ModBlocks.${upper}_BLOCK);
     }
 }
 `);
@@ -601,246 +548,62 @@ public final class ModRecipes extends EmberRecipeProvider {
 
     @Override
     protected void recipes() {
-        // Nine ingots into a block, and the block back into nine ingots. The
-        // second needs a name of its own: both produce a recipe file named
+        // Nine ingots into a block, and the block back into nine. The second
+        // needs a name of its own: both would otherwise write a file named
         // after the result, and two recipes cannot share one.
-        shaped(ModBlocks.${ns.toUpperCase()}_BLOCK)
+        shaped(ModBlocks.${upper}_BLOCK)
                 .pattern("###", "###", "###")
-                .define('#', ModItems.${ns.toUpperCase()}_INGOT)
+                .define('#', ModItems.${upper}_INGOT)
                 .save();
 
-        shapeless(ModItems.${ns.toUpperCase()}_INGOT, 9)
-                .ingredient(ModBlocks.${ns.toUpperCase()}_BLOCK)
+        shapeless(ModItems.${upper}_INGOT, 9)
+                .ingredient(ModBlocks.${upper}_BLOCK)
                 .named("${ns}_ingot_from_block")
                 .save();
     }
 }
 `);
-  }
-
-  // ---------------------------------------------------------------- config
-
-  if (features.config) {
-    add(`src/main/java/${path}/${main}Config.java`, `package ${pkg};
-
-/**
- * This mod's settings.
- *
- * <p>A record, not a builder and not a map: the field names are the JSON keys,
- * the types are the validation, and a setting that is read anywhere is a field
- * the compiler knows about. The compact constructor is where a value that
- * parses but makes no sense is rejected — that happens once, at load, with the
- * file named, rather than at the point of use with nothing to point at.
- */
-public record ${main}Config(boolean enabled, int limit, String greeting) {
-
-    /** Written to disk the first time the mod runs. */
-    public static final ${main}Config DEFAULTS =
-            new ${main}Config(true, 10, "${options.modName} is loaded.");
-
-    /** @throws IllegalArgumentException if the file holds a value that cannot work */
-    public ${main}Config {
-        if (limit < 1) {
-            throw new IllegalArgumentException("limit must be at least 1");
-        }
+  } else {
+    // Written once, by hand: a block with no model is invisible and a block
+    // with no loot table drops nothing, both without a word in the log.
+    add(`src/main/resources/assets/${id}/blockstates/${ns}_block.json`,
+      `{\n  "variants": {\n    "": { "model": "${id}:block/${ns}_block" }\n  }\n}\n`);
+    add(`src/main/resources/assets/${id}/models/block/${ns}_block.json`,
+      `{\n  "parent": "minecraft:block/cube_all",\n  "textures": { "all": "${id}:block/${ns}_block" }\n}\n`);
+    add(`src/main/resources/assets/${id}/items/${ns}_block.json`,
+      `{\n  "model": { "type": "minecraft:model", "model": "${id}:block/${ns}_block" }\n}\n`);
+    add(`src/main/resources/assets/${id}/models/item/${ns}_ingot.json`,
+      `{\n  "parent": "minecraft:item/generated",\n  "textures": { "layer0": "${id}:item/${ns}_ingot" }\n}\n`);
+    add(`src/main/resources/assets/${id}/items/${ns}_ingot.json`,
+      `{\n  "model": { "type": "minecraft:model", "model": "${id}:item/${ns}_ingot" }\n}\n`);
+    add(`src/main/resources/assets/${id}/lang/en_us.json`, `${JSON.stringify({
+      [`block.${id}.${ns}_block`]: `${options.modName} Block`,
+      [`item.${id}.${ns}_ingot`]: `${options.modName} Ingot`,
+      [`itemGroup.${id}.${ns}`]: options.modName,
+    }, null, 2)}\n`);
+    add(`src/main/resources/data/${id}/loot_table/blocks/${ns}_block.json`, `{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "conditions": [ { "condition": "minecraft:survives_explosion" } ],
+      "entries": [ { "type": "minecraft:item", "name": "${id}:${ns}_block" } ]
     }
-}
-`);
-  }
-
-  // ---------------------------------------------------------------- commands
-
-  if (features.commands) {
-    add(`src/main/java/${path}/${main}Commands.java`, `package ${pkg};
-
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import fr.d4emon.fenix.command.CommandEvents;
-import net.minecraft.network.chat.Component;
-
-import static fr.d4emon.fenix.command.Commands.argument;
-import static fr.d4emon.fenix.command.Commands.literal;
-import static fr.d4emon.fenix.command.Commands.operator;
-import static fr.d4emon.fenix.command.Commands.run;
-
-/** The commands this mod adds. */
-public final class ${main}Commands {
-
-    private ${main}Commands() {
-    }
-
-    /**
-     * Listens for the registration event.
-     *
-     * <p>Registering the listener once is enough: the server fires it on start
-     * and again on every datapack reload, which is when a dispatcher is rebuilt
-     * and a command registered any other way would quietly disappear.
-     */
-    public static void register() {
-        CommandEvents.REGISTER.register(registration -> registration.dispatcher().register(
-                literal("${ns}")
-                        .requires(operator())
-                        .then(argument("times", IntegerArgumentType.integer(1, 64))
-                                .executes(run(context -> {
-                                    int times = IntegerArgumentType.getInteger(context, "times");
-                                    context.getSource().sendSuccess(
-                                            () -> Component.literal("Hello ".repeat(times)), false);
-                                })))
-                        .executes(run(context -> context.getSource().sendSuccess(
-                                () -> Component.literal("Hello from ${options.modName}"), false)))));
-    }
-}
-`);
-  }
-
-  // ---------------------------------------------------------------- network
-
-  if (features.networking) {
-    add(`src/main/java/${path}/${main}Payloads.java`, `package ${pkg};
-
-import fr.d4emon.fenix.network.ToClient;
-import fr.d4emon.fenix.network.ToServer;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.Identifier;
-
-/**
- * The messages this mod sends between the client and the server.
- *
- * <p>One record per message, with the codec that puts it on the wire. Both
- * sides read this file, so a field added to a record is added to both ends at
- * once — which is the failure this shape exists to prevent.
- */
-public final class ${main}Payloads {
-
-    /** Server to client: something happened worth showing. */
-    public record Ping(String message) {
-        static final StreamCodec<FriendlyByteBuf, Ping> CODEC = StreamCodec.of(
-                (buffer, value) -> buffer.writeUtf(value.message()),
-                buffer -> new Ping(buffer.readUtf()));
-    }
-
-    /** Client to server: the player asked for something. */
-    public record Request(int amount) {
-        static final StreamCodec<FriendlyByteBuf, Request> CODEC = StreamCodec.of(
-                (buffer, value) -> buffer.writeVarInt(value.amount()),
-                buffer -> new Request(buffer.readVarInt()));
-    }
-
-    /** Sent with {@code PING.send(player, new Ping("…"))}. */
-    public static final ToClient<Ping> PING =
-            ToClient.of(Identifier.fromNamespaceAndPath("${id}", "ping"), Ping.CODEC);
-
-    /** Sent from the client with {@code REQUEST.send(new Request(1))}. */
-    public static final ToServer<Request> REQUEST =
-            ToServer.of(Identifier.fromNamespaceAndPath("${id}", "request"), Request.CODEC);
-
-    private ${main}Payloads() {
-    }
-
-    /**
-     * Starts listening for what the client sends.
-     *
-     * <p>The handler runs on the server thread, and {@code player} is the one
-     * that sent it. Never trust the contents: a payload is whatever arrived on
-     * a socket, and checking it here is the only place it gets checked.
-     */
-    public static void listen() {
-        REQUEST.receive((request, player) -> {
-            if (request.amount() < 1 || request.amount() > 64) {
-                return;
-            }
-            PING.send(player, new Ping("asked for " + request.amount()));
-        });
-    }
-}
-`);
-  }
-
-  // ---------------------------------------------------------------- mixins
-
-  if (features.mixins) {
-    add(`src/main/resources/${id}.mixins.json`, `{
-  "required": true,
-  "minVersion": "0.8.7",
-  "package": "${pkg}.mixin",
-  "compatibilityLevel": "JAVA_${platform.java}",
-  "injectors": {
-    "_comment": "Every injection must land. An injection that stopped matching should fail loudly rather than leave a mixin that silently does nothing.",
-    "defaultRequire": 1
-  },
-  "mixins": [
-    "MinecraftServerMixin"
-  ]
-}
-`);
-
-    add(`src/main/java/${path}/mixin/MinecraftServerMixin.java`, `package ${pkg}.mixin;
-
-import com.mojang.logging.LogUtils;
-import net.minecraft.server.MinecraftServer;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.function.BooleanSupplier;
-
-/**
- * A worked example: says something the first time the server ticks.
- *
- * <p>Three rules this file is shaped by.
- *
- * <p>Everything in this package belongs to Mixin. A config owns every class
- * under the package it declares, so an ordinary helper class here fails to
- * load — put those anywhere else.
- *
- * <p>Members a mixin adds are prefixed and marked {@link Unique}. Two mods
- * mixing into the same class would otherwise collide on a field called
- * {@code announced}, and the one that lost would be silently overwritten.
- *
- * <p>{@code remap = false} because Minecraft ships unobfuscated since 26.1.
- * The name in {@code method} is the real one, and there is no mapping step
- * that could translate it.
- *
- * <p>Reach for a mixin only when the API has no event for what you need. An
- * injection is bound to a method under the name it has today, and Minecraft
- * renames things every release — an event survives that, an injection does not.
- */
-@Mixin(MinecraftServer.class)
-public class MinecraftServerMixin {
-
-    @Unique
-    private boolean ${ns}$announced;
-
-    /** Merged into MinecraftServer; never constructed directly. */
-    public MinecraftServerMixin() {
-    }
-
-    @Inject(method = "tickServer", at = @At("HEAD"), remap = false)
-    private void ${ns}$onFirstTick(BooleanSupplier hasTimeLeft, CallbackInfo ci) {
-        if (${ns}$announced) {
-            return;
-        }
-        ${ns}$announced = true;
-        LogUtils.getLogger().info("${options.modName}: the server is ticking");
-    }
+  ],
+  "random_sequence": "${id}:blocks/${ns}_block"
 }
 `);
   }
 
   // ---------------------------------------------------------------- client
 
-  if (features.client) {
-    const clientImports = new Set<string>([
-      'fr.d4emon.fenix.api.Fenix',
-      'fr.d4emon.fenix.api.FenixMod',
-      'fr.d4emon.fenix.api.Mod',
-      'fr.d4emon.fenix.event.client.ClientEvents',
-    ]);
+  if (features.splitClient) {
     add(`src/client/java/${path}/client/${main}Client.java`, `package ${pkg}.client;
 
-${[...clientImports].sort().map((i) => `import ${i};`).join('\n')}
+import fr.d4emon.fenix.api.Fenix;
+import fr.d4emon.fenix.api.FenixMod;
+import fr.d4emon.fenix.api.Mod;
+import fr.d4emon.fenix.event.client.ClientEvents;
 
 /**
  * The client half of the mod.
@@ -848,8 +611,8 @@ ${[...clientImports].sort().map((i) => `import ${i};`).join('\n')}
  * <p>A second entry point with the same id: the loader runs this one only on a
  * client, so anything here may name a client-only class. The common half may
  * not, and the build enforces that — {@code src/main} compiles against a
- * Minecraft with the client removed, so reaching for one there is a compile
- * error rather than a crash on somebody else's dedicated server.
+ * Minecraft with the client removed, so reaching for a renderer there is a
+ * compile error rather than a crash on somebody else's dedicated server.
  */
 @Mod("${id}")
 public final class ${main}Client implements FenixMod {
@@ -860,10 +623,6 @@ public final class ${main}Client implements FenixMod {
 
     @Override
     public void onInit(Fenix fenix) {
-        // Fires each time this client joins a world — the moment per-world
-        // client state should be built, and DISCONNECTED the moment it should
-        // be thrown away. Keeping a cache past a disconnect is how a mod
-        // carries one world's state into the next and is quietly wrong.
         ClientEvents.CONNECTED.register(joined ->
                 fenix.logger().info("${options.modName}: joined a world"));
     }
@@ -881,68 +640,32 @@ build/
 run/
 run-server/
 logs/
-
+${features.ember ? `
 # Ember writes here. Committing it is a choice — see the README.
 # src/main/generated/
-
+` : ''}
 # IDEs
 .idea/
 *.iml
 .vscode/
 `);
 
-  const licence = licenseText(options);
-  if (licence) {
-    add('LICENSE', licence);
-  }
-
-  add('README.md', readme(options, platform, main));
-
-  if (features.ci) {
-    add('.github/workflows/build.yml', `name: Build
-
-on:
-  push:
-    branches: ["**"]
-  pull_request:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # Minecraft ${options.minecraft} runs on Java ${platform.java}; the Gradle
-      # plugin selects that toolchain for compiling the mod itself.
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '${platform.java}'
-
-      - uses: gradle/actions/setup-gradle@v4
-
-      - run: ./gradlew build
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${id}
-          path: build/libs/*.jar
-`);
-  }
+  add('LICENSE', licenseText(options));
+  add('README.md', readme(options, platform, main, script));
 
   // ---------------------------------------------------------------- wrapper
 
-  const wrapper = await fetchWrapper();
-  files.push(...wrapper);
-
+  files.push(...await fetchWrapper());
   return files;
 }
 
-function readme(options: Options, platform: Platform, main: string): string {
+function readme(options: Options, platform: Platform, main: string, script: string): string {
   const { features } = options;
-  const lines: string[] = [];
-  lines.push(`# ${options.modName}`, '', options.description, '');
-  lines.push(
+  const lines: string[] = [
+    `# ${options.modName}`,
+    '',
+    options.description,
+    '',
     `A Minecraft ${options.minecraft} mod, built with [Fenix](https://github.com/D4EMONDEV/Fenix).`,
     '',
     '## Running it',
@@ -955,56 +678,45 @@ function readme(options: Options, platform: Platform, main: string): string {
     `so it takes a few minutes. Java ${platform.java} is needed to run the game; Gradle`,
     'selects that toolchain itself.',
     '',
-    '```',
-    './gradlew build',
-    '```',
-    '',
-    'writes the mod jar into `build/libs`. Drop it into a `mods` folder beside a',
-    'Fenix installation to play with it.',
+    '`./gradlew build` writes the mod jar into `build/libs`. Drop it into a `mods`',
+    'folder beside a Fenix installation to play with it.',
     '',
     '## What is here',
     '',
-  );
-
-  const map: [boolean, string][] = [
-    [true, `\`src/main/java/…/${main}.java\` — the entry point. \`@Mod\` is what the loader finds.`],
-    [true, '`src/main/resources/fenix.mod.json` — the mod\'s name, version and dependencies.'],
-    [features.content, '`…/content/` — the blocks and items, and the registrar that owns them.'],
-    [features.ember, '`…/data/` — Ember generators. Run `./gradlew ember` after changing them.'],
-    [features.config, `\`${main}Config.java\` — settings, as a record. Written to \`run/config/${options.modId}\`.`],
-    [features.commands, `\`${main}Commands.java\` — a command, registered through the event bus.`],
-    [features.networking, `\`${main}Payloads.java\` — one message each way, with its codec.`],
-    [features.mixins, `\`…/mixin/\` — a worked mixin. Everything in that package belongs to Mixin.`],
-    [features.client, `\`src/client/java/\` — the client half. It may name client-only classes; \`src/main\` may not.`],
+    `- \`build.gradle${script}\` — the game version, and nothing else.`,
+    `- \`src/main/java/…/${main}.java\` — the entry point. \`@Mod\` is what the loader finds.`,
+    "- `src/main/resources/fenix.mod.json` — the mod's name, version and dependencies.",
+    '- `…/content/` — a block, an item, a creative tab, and the registrar that owns them.',
   ];
-  for (const [on, text] of map) {
-    if (on) {
-      lines.push(`- ${text}`);
-    }
-  }
 
-  if (features.content) {
+  if (features.ember) {
+    lines.push('- `…/data/` — Ember generators. Run `./gradlew ember` after changing one.');
+  }
+  if (features.splitClient) {
     lines.push(
-      '',
-      '## The placeholder art',
-      '',
-      'The textures under `src/main/resources/assets/` are flat colours the',
-      'generator drew, so the first launch shows a block rather than the',
-      'magenta-and-black checker. Replace them with 16×16 PNGs of your own.',
+      '- `src/client/java/` — the client half. It may name client-only classes;',
+      '  `src/main` may not, and the compiler enforces it.',
     );
   }
+
+  lines.push(
+    '',
+    '## The placeholder art',
+    '',
+    'The textures under `src/main/resources/assets/` are flat colours the generator',
+    'drew, so the first launch shows a block rather than the magenta-and-black',
+    'checker. Replace them with 16×16 PNGs of your own.',
+  );
 
   if (features.ember) {
     lines.push(
       '',
       '## Generated resources',
       '',
-      'Ember writes models, language files, loot tables and recipes into',
-      '`src/main/generated`. Run `./gradlew ember` after changing a generator.',
-      '',
-      'Whether to commit that directory is a real choice: committing it makes a',
-      'diff show what a generator change actually produced, and ignoring it keeps',
-      'the history smaller. `.gitignore` has the line, commented out.',
+      'Ember writes models, names, loot tables and recipes into `src/main/generated`.',
+      'Whether to commit that directory is a real choice: committing it makes a diff',
+      'show what a generator change actually produced, and ignoring it keeps the',
+      'history smaller. `.gitignore` has the line, commented out.',
     );
   }
 
@@ -1019,9 +731,9 @@ function readme(options: Options, platform: Platform, main: string): string {
     `| Fenix loader | ${platform.loader} |`,
     `| Fenix API | ${platform.api} |`,
     '',
-    'The build names only the Minecraft version. The Fenix Gradle plugin looks up',
-    'the rest, so the API a mod compiles against is always the one built for the',
-    'game it asked for.',
+    'The build names only the Minecraft version. The Fenix Gradle plugin looks the',
+    'rest up, so the API a mod compiles against is always the one built for the game',
+    'it asked for.',
     '',
   );
 

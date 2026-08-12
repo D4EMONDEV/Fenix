@@ -20,5 +20,5 @@ fenix {
 // classpath and into run/mods, so what this mod is written against is what is
 // there when it runs. A mod that wants a smaller set says so:
 //
-//     fenix { api = false }
+//     fenix { bundle = false }
 //     dependencies { fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0") }

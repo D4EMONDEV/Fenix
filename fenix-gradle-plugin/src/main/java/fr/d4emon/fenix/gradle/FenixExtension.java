@@ -12,48 +12,81 @@ import org.gradle.api.provider.Property;
  * }
  * }</pre>
  *
- * <p>Both properties have defaults — the Minecraft version the plugin was built
- * against, and the plugin's own version as the loader version — so the common
- * case needs no configuration at all.
+ * <p>Naming the game version is enough. Every other version is looked up for
+ * that game in the table the plugin carries, so the API a mod compiles against
+ * is the one built for the game it asked for — see {@link Platforms}.
+ *
+ * <p>Each of those lookups can be overridden, one line each, which is what
+ * testing an unreleased loader or a locally built Ember looks like:
+ *
+ * <pre>{@code
+ * fenix {
+ *     minecraft = "26.2"
+ *     loader = "0.1.2"
+ *     ember = "0.2.1"
+ * }
+ * }</pre>
+ *
+ * <p>An override is taken exactly as written, so overriding one does not move
+ * the others — which is the point, and also the risk: a loader and an API from
+ * different releases are a pair nobody tested.
  */
 public abstract class FenixExtension {
 
     /**
-     * The Fenix API version, defaulted from the plugin.
-     *
-     * <p>Separate from {@link #getLoaderVersion()} because they say different
-     * things and move at different speeds: the loader version is the platform
-     * contract a mod's {@code depends.fenix} names, while this one is a release
-     * of the API set — and unlike the loader, it carries the game version,
-     * because it is built against it.
-     *
-     * @return the property
-     */
-    public abstract Property<String> getApiVersion();
-
-    /**
-     * Whether the whole API is a dependency of this mod, on by default.
-     *
-     * <p>Set it to {@code false} to name the modules you use instead:
-     *
-     * <pre>{@code
-     * fenix { api = false }
-     * dependencies { fenixMod("fr.d4emon.fenix:fenix-api-event:0.1.0") }
-     * }</pre>
-     *
-     * @return the property
-     */
-    public abstract Property<Boolean> getApi();
-
-    /**
      * {@return the Minecraft version to build and run against}
+     *
+     * <p>Defaults to the current line in the plugin's platform table. A version
+     * Fenix has no release for fails at configuration rather than silently
+     * pairing the game with an API built for a different one.
      */
     public abstract Property<String> getMinecraft();
 
     /**
      * {@return the Fenix loader version to compile and launch with}
+     *
+     * <p>Separate from {@link #getApi()} because they say different things and
+     * move at different speeds: this is the platform contract a mod's
+     * {@code depends.fenix} names, and it moves when the loader's promises to
+     * mods change rather than when its internals do. It carries no game version,
+     * because almost nothing in the loader touches a Minecraft class.
      */
-    public abstract Property<String> getLoaderVersion();
+    public abstract Property<String> getLoader();
+
+    /**
+     * {@return the Fenix API version}
+     *
+     * <p>A release of the API set. Unlike the loader it belongs to one game
+     * version, because it is compiled against it: {@code 0.3.0+mc26.2}. Write
+     * either form — a version with no {@code +mc} suffix gets the one for
+     * {@link #getMinecraft()} appended, so the common case is just the number.
+     */
+    public abstract Property<String> getApi();
+
+    /**
+     * {@return the Ember version, for a project that runs data generators}
+     *
+     * <p>Built against the game like the API, and accepts the same two forms.
+     */
+    public abstract Property<String> getEmber();
+
+    /**
+     * Whether the whole API bundle is a dependency of this mod, on by default.
+     *
+     * <p>Set it to {@code false} to name the modules you use instead:
+     *
+     * <pre>{@code
+     * fenix { bundle = false }
+     * dependencies { fenixMod("fr.d4emon.fenix:fenix-api-event:0.2.0") }
+     * }</pre>
+     *
+     * <p>Named for what it turns off — {@code fenix-api} is a bundle jar
+     * carrying every module — rather than for the API, which a mod that sets
+     * this to {@code false} is still very much using.
+     *
+     * @return the property
+     */
+    public abstract Property<Boolean> getBundle();
 
     /**
      * {@return whether this project is a Fenix building block rather than a mod}

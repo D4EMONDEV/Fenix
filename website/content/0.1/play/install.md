@@ -57,7 +57,7 @@ pluginManagement {
 ```
 
 ```kotlin title="build.gradle.kts"
-plugins { id("fr.d4emon.fenix.dev") version "0.1.5" }
+plugins { id("fr.d4emon.fenix.dev") version "0.2.0" }
 
 fenix { minecraft = "26.2" }
 ```

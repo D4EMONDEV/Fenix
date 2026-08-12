@@ -1,59 +1,33 @@
 import { Link } from 'react-router-dom';
-import { Logo } from '../components/Logo';
 import { latestVersion } from '../lib/content';
 import { currentPlatform, pluginVersion } from '../lib/platforms';
 
-/** One of the four things a reader can go and do. */
-interface Route {
-  kicker: string;
-  icon: string;
-  title: string;
-  body: string;
-  action: string;
-  to: string;
-  external?: boolean;
-  /** Rendered on paper rather than charcoal, to break the grid up. */
-  paper?: boolean;
-}
-
-const ROUTES: Route[] = [
+/** Where a reader can go next, in the order most of them want. */
+const LINKS: { title: string; body: string; to: string }[] = [
   {
-    kicker: 'Play',
-    icon: '▸',
     title: 'Install Fenix',
-    body: 'An installer that carries its own Java and adds a profile to the Minecraft Launcher. Nothing else to install, nothing to type.',
-    action: 'Installation guide',
+    body: 'An installer that carries its own Java and adds a profile to the Minecraft Launcher.',
     to: `/docs/${latestVersion}/play/install`,
   },
   {
-    kicker: 'Build',
-    icon: '{ }',
     title: 'Start a mod',
-    body: 'Fill in a name and a package, and download a project that builds — sources, manifest, build files and the Gradle wrapper.',
-    action: 'Open the generator',
+    body: 'A name, a package, and a project that builds and runs as it comes.',
     to: '/generate',
-    paper: true,
   },
   {
-    kicker: 'Learn',
-    icon: '¶',
-    title: `Fenix API ${latestVersion}`,
-    body: 'Guides for content, world generation, events and networking, plus a reference generated from the compiler rather than written by hand.',
-    action: 'Read the documentation',
+    title: 'Documentation',
+    body: 'Guides for content, events, networking, data generation and mixins. Written by hand.',
     to: `/docs/${latestVersion}/index`,
   },
   {
-    kicker: 'Generate',
-    icon: '✦',
-    title: 'Ember',
-    body: 'Models, loot tables, recipes, tags and translations written as Java, generated into your source tree and reviewable in a diff.',
-    action: 'Generate resources',
-    to: `/docs/${latestVersion}/guides/ember`,
+    title: 'Compared with other loaders',
+    body: 'Where Fenix does something else on purpose, and where it simply has less.',
+    to: `/docs/${latestVersion}/why/comparison`,
   },
 ];
 
 /** What is genuinely different, rather than what is merely present. */
-const SIGNALS: { title: string; body: string }[] = [
+const NOTES: { title: string; body: string }[] = [
   {
     title: 'No remapping, at all',
     body: 'Minecraft has shipped unobfuscated since 26.1. No mappings, no refmaps, no remapping step — a mixin targets the game by its real name.',
@@ -63,133 +37,123 @@ const SIGNALS: { title: string; body: string }[] = [
     body: 'An annotation processor writes an index into the jar. A misspelled entry class is a compile error rather than a silent no-op.',
   },
   {
-    title: 'The API absorbs the bookkeeping',
-    body: 'Registering a block means block state ids, the item mapping, creative tabs. Each one skipped is a crash far from its cause.',
+    title: 'The client half cannot be reached by accident',
+    body: 'Common code compiles against a Minecraft with the client removed, so touching a renderer there fails at your desk rather than on somebody else’s server.',
+  },
+  {
+    title: 'One version to name',
+    body: 'A build file names the Minecraft version. The loader, the API and Ember are looked up for it, so a mod cannot compile against an API built for a different game.',
   },
 ];
 
 export function Home() {
   return (
     <div className="home">
-      <section className="hero">
-        <div className="shell hero-grid">
-          <div className="hero-copy">
-            <p className="eyebrow">
-              <span />
-              Minecraft {currentPlatform.minecraft} · Java {currentPlatform.java}
-            </p>
-            <h1>
-              A mod loader that <em>tells you</em> what is wrong
-            </h1>
-            <p className="lead">
-              Fenix is a Minecraft mod loader and API built for a game that no longer needs
-              deobfuscating. The parts other loaders leave silent — a block missing from a
-              table, a job site outside a tag — are the parts it says out loud.
-            </p>
-            <div className="hero-actions">
-              <Link className="button primary" to={`/docs/${latestVersion}/play/install`}>
-                Install Fenix
-              </Link>
-              <Link className="button ghost" to="/generate">
-                Start a mod
-              </Link>
-            </div>
-            <div className="hero-meta">
-              <span>
-                <i />
-                API {latestVersion} · loader 0.1.1
-              </span>
-              <span>Gradle plugin {pluginVersion}</span>
-              <span>19 conformance checks</span>
-            </div>
-          </div>
+      <header className="shell intro">
+        <p className="kicker">
+          Minecraft {currentPlatform.minecraft} · Java {currentPlatform.java}
+        </p>
+        <h1>A Minecraft mod loader for a game that no longer needs deobfuscating.</h1>
+        <p className="lead">
+          Fenix loads mods, and gives them an API to write against. The parts other loaders
+          leave silent — a block missing from a table, a job site outside a tag — are the parts
+          it says out loud.
+        </p>
+        <p className="actions">
+          <Link className="button primary" to={`/docs/${latestVersion}/play/install`}>
+            Install Fenix
+          </Link>
+          <Link className="button" to="/generate">
+            Start a mod
+          </Link>
+        </p>
+      </header>
 
-          <div className="hero-mark" aria-hidden="true">
-            <div className="mark-orbit orbit-one" />
-            <div className="mark-orbit orbit-two" />
-            <div className="mark-core">
-              <Logo size={150} />
-            </div>
-            <p>fenix</p>
-            <small>MOD LOADER</small>
-          </div>
-        </div>
-      </section>
-
-      <section className="shell route-section">
-        <div className="section-intro">
-          <h2>Four ways in</h2>
-          <p className="lead">
-            Whether you want to play with mods, write one, or read how it works.
-          </p>
-        </div>
-        <div className="route-grid">
-          {ROUTES.map((route) => (
-            <article className={`route-card${route.paper ? ' dev-card' : ''}`} key={route.title}>
-              <div className="route-icon">{route.icon}</div>
-              <p className="route-kicker">{route.kicker}</p>
-              <h3>{route.title}</h3>
-              <p>{route.body}</p>
-              <Link to={route.to}>
-                {route.action} <span>→</span>
-              </Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="signal-section">
-        <div className="shell">
-          <p className="eyebrow">What is different</p>
-          <div className="signal-heading">
-            <h2>Deliberate, not merely newer</h2>
-            <Link to={`/docs/${latestVersion}/why/comparison`}>
-              Compared with Fabric, Forge and NeoForge <span>→</span>
-            </Link>
-          </div>
-          <div className="signal-grid">
-            {SIGNALS.map((signal, index) => (
-              <article key={signal.title}>
-                <span className="feature-number">0{index + 1}</span>
-                <h3>{signal.title}</h3>
-                <p>{signal.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="shell launch-section">
+      <section className="shell start">
         <div>
-          <p className="eyebrow">Getting started</p>
           <h2>One line in your build file</h2>
           <p>
-            That downloads the game, compiles your mod against it, and gives you{' '}
-            <code>runClient</code> and <code>runServer</code>. There is no mappings block, because
-            there are no mappings.
+            It downloads the game, compiles your mod against it, and adds{' '}
+            <code>runClient</code> and <code>runServer</code>. There is no mappings block,
+            because there are no mappings.
           </p>
-          <Link className="button" to={`/docs/${latestVersion}/guides/getting-started`}>
-            Getting started
-          </Link>
+          <Link to={`/docs/${latestVersion}/guides/getting-started`}>Getting started →</Link>
         </div>
 
-        <div className="launch-panel">
-          <span className="terminal-dot red" />
-          <span className="terminal-dot amber" />
-          <span className="terminal-dot green" />
+        <figure className="code">
+          <span className="lang">build.gradle.kts</span>
           <pre>
             <code>
-              <span>{'// build.gradle.kts'}</span>
-              {'\n'}
-              plugins {'{'} id(<b>"fr.d4emon.fenix.dev"</b>) version <b>"{pluginVersion}"</b> {'}'}
-              {'\n\n'}
-              fenix {'{'} minecraft = <b>"{currentPlatform.minecraft}"</b> {'}'}
-              {'\n\n'}
-              <span>$</span> ./gradlew runClient{'\n'}
-              <i>&gt; Fenix Loader 0.1.1 — client side</i>
+              {`plugins {\n    id("fr.d4emon.fenix.dev") version "${pluginVersion}"\n}\n\nfenix {\n    minecraft = "${currentPlatform.minecraft}"\n}\n`}
             </code>
           </pre>
+        </figure>
+      </section>
+
+      <section className="shell links">
+        <ul className="link-list">
+          {LINKS.map((link) => (
+            <li key={link.title}>
+              <Link to={link.to}>
+                <strong>{link.title}</strong>
+                <span>{link.body}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="shell notes">
+        <h2>What is different</h2>
+        <dl>
+          {NOTES.map((note) => (
+            <div key={note.title}>
+              <dt>{note.title}</dt>
+              <dd>{note.body}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="shell versions">
+        <h2>Current release</h2>
+        <div className="table-scroll">
+          <table>
+            <tbody>
+              <tr>
+                <th>Minecraft</th>
+                <td>{currentPlatform.minecraft}</td>
+              </tr>
+              <tr>
+                <th>Loader</th>
+                <td>{currentPlatform.loader}</td>
+              </tr>
+              <tr>
+                <th>API</th>
+                <td>{currentPlatform.api}</td>
+              </tr>
+              <tr>
+                <th>Ember</th>
+                <td>{currentPlatform.ember}</td>
+              </tr>
+              <tr>
+                <th>Gradle plugin</th>
+                <td>{pluginVersion}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+        <p className="note">
+          Every one of these is read from{' '}
+          <a
+            href="https://github.com/D4EMONDEV/Fenix/blob/main/platforms.json"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            platforms.json
+          </a>
+          , the same file the Gradle plugin carries.
+        </p>
       </section>
     </div>
   );

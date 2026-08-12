@@ -4,62 +4,79 @@ description: Which number means what, and how Fenix follows Minecraft releases.
 order: 2
 ---
 
-Fenix has different version numbers because the game, the loader and the API do
-not change at the same speed. They are related, but they are not interchangeable.
+# Versioning
 
-## The current versions
+Fenix publishes several things that change at different speeds, so they carry
+different version numbers. Every one of them is declared in
+[`gradle.properties`](https://github.com/D4EMONDEV/Fenix/blob/main/gradle.properties), which is the only place to look.
 
-| Name | Current value | What it identifies |
-|---|---:|---|
-| Documentation line | `0.1` | This set of guides and reference pages. |
-| Fenix API | `0.3.0` | The current published API bundle. |
-| Minecraft target | `26.2` | The exact game version current Fenix artifacts are built and tested against. |
+## The three lines
 
-The `0.1` shown in the documentation picker is therefore **not** an API
-download version. It lets the site keep old guides available when a later Fenix
-line changes its API.
+| | Property | What it means |
+|---|---|---|
+| **The loader** | `version_loader` | The platform contract. This is what a mod's `depends: { "fenix": ">=x" }` names, so it moves when the loader's promises to mods change — not when its internals do. |
+| **The API set** | `version_api` | A release of the modules below. The bundle carries it and pins their versions, so "Fenix API 0.2.0" names one exact collection. |
+| **One module** | `version_api_<module>` | That module's own surface. Bumped when its API changes and nothing else. |
 
-## Compatibility policy
+The point of the last one is the point of splitting the API at all: a fix in the
+registry should not make every mod that only uses events look out of date.
 
-Fenix starts at **Minecraft 26.2**. It will **never** target, support or be
-backported to a Minecraft version older than 26.2.
+## Why some versions say `+mc26.2`
 
-A Fenix release supports one exact Minecraft version. This matters because it
-compiles against that game's classes and its game-facing artifacts include the
-target in their version, for example `fenix-api-0.3.0+mc26.2.jar`.
+Anything compiled against Minecraft carries the game version as semver build
+metadata:
 
-That means “26.2+” describes the project's direction, not a promise that one
-jar works with every future game version. A mod made for 26.2 should use the
-matching Fenix build; a future Minecraft 26.3 release receives its own matching
-Fenix build.
+```
+fenix-api-registry-0.1.0+mc26.2.jar     built against Minecraft
+fenix-loader-0.1.0.jar                  not
+```
 
-## Updating for a new Minecraft version
+Those artifacts only work with the game they were built for. A coordinate that
+does not say so invites somebody to find that out at run time, in a crash
+report, rather than at resolution.
 
-When Mojang releases a new Minecraft version, Fenix moves forward as a release
-line:
+The loader, the annotation processor and the build tooling carry no such tie and
+stay plain.
 
-1. Update the repository's `minecraft_version` in `gradle.properties`.
-2. Update and test the loader, API and Gradle plugin against the new game.
-3. Run the real-game conformance tests, then publish new game-bound artifacts
-   carrying `+mc<game version>`.
-4. Publish matching installer and Gradle-plugin versions, and copy the site
-   content into a new documentation line when its instructions or APIs changed.
+## What a mod writes
 
-Old Fenix releases and their documentation remain available. A new release is
-added beside them; it does not silently change a project's target Minecraft
-version.
-
-## What mod authors do
-
-Use the Fenix Gradle plugin version that matches the game version you want to
-target:
+The game version, and nothing else. Everything else is looked up for that game
+in the table the plugin carries — see [Minecraft versions](/docs/@latest/reference/game-versions).
 
 ```kotlin
-plugins { id("fr.d4emon.fenix.dev") version "0.1.5" }
-
+plugins { id("fr.d4emon.fenix.dev") version "0.2.0" }
 fenix { minecraft = "26.2" }
 ```
 
-When support for a new Minecraft version ships, update both values to the
-versions announced by that Fenix release, test your mod, and publish a new mod
-build. Do not point a 26.2 mod at a newer game version without that work.
+Any of those lookups can be overridden, one line each, which is what testing an
+unreleased loader or a locally built Ember looks like:
+
+```kotlin
+fenix {
+    minecraft = "26.2"
+    loader = "0.1.2"
+    api = "0.4.0"
+    ember = "0.2.1"
+}
+```
+
+`api` and `ember` are built against the game, so their real coordinates end in
+`+mc26.2`. Write either form: a version without the suffix gets the one for
+`minecraft` appended. `loader` carries no suffix, because almost nothing in the
+loader touches a Minecraft class.
+
+An override is taken exactly as written, so overriding one does not move the
+others. That is the point, and also the risk — a loader and an API from
+different releases are a pair nobody tested.
+
+## Adding a module
+
+Add one line to `gradle.properties`:
+
+```properties
+version_api_command=0.1.0
+```
+
+The convention plugin derives it from the project name — `fenix-api-command`
+becomes `version_api_command` — so nothing else needs editing, and a module
+without a line of its own falls back to the repository `version`.
