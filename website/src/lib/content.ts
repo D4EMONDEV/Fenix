@@ -6,6 +6,8 @@
  * whether a number is a website version or an artifact version.
  */
 
+import { currentPlatform } from './platforms';
+
 const files = import.meta.glob('../../content/**/*.md', {
   query: '?raw',
   import: 'default',
@@ -34,7 +36,7 @@ export interface Doc {
  * documentation snapshot.
  */
 const API_VERSION_FOR_LINE: Record<string, string> = {
-  '0.1': '0.3.0',
+  '0.1': currentPlatform.api,
 };
 
 /**
@@ -97,7 +99,7 @@ export const versions: string[] = [...new Set(docs.map((doc) => doc.version))].s
 );
 
 /** The version a bare `/docs` link lands on. */
-export const latestVersion = versions[0] ?? '0.3.0';
+export const latestVersion = versions[0] ?? currentPlatform.api;
 
 export function findDoc(version: string, slug: string): Doc | undefined {
   return docs.find((doc) => doc.version === version && doc.slug === slug);
@@ -110,20 +112,22 @@ export interface SidebarGroup {
   pages: Doc[];
 }
 
-/** How the groups are named and ordered; anything unlisted follows, as-is. */
+/**
+ * How the groups are named and ordered; anything unlisted follows, as-is.
+ *
+ * Ordered the way somebody arrives: install it, write something, look a detail
+ * up, and only then read about why it is shaped like this.
+ */
 const GROUPS: { id: string; label: string }[] = [
-  { id: '', label: 'Fenix API' },
+  { id: '', label: 'Fenix' },
+  { id: 'play', label: 'Playing' },
   { id: 'guides', label: 'Guides' },
-  { id: 'api', label: 'API reference' },
+  { id: 'reference', label: 'Reference' },
+  { id: 'why', label: 'Why Fenix' },
 ];
 
 export function sidebarFor(version: string): SidebarGroup[] {
-  const pages = docs.filter(
-    (doc) =>
-      doc.version === version &&
-      (doc.group === '' || doc.group === 'guides' || doc.group === 'api') &&
-      !doc.slug.startsWith('api/fr-d4emon-fenix-loader-'),
-  );
+  const pages = docs.filter((doc) => doc.version === version);
   const ids = [...new Set(pages.map((page) => page.group))];
 
   ids.sort((a, b) => {

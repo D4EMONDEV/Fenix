@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import { findDoc, latestVersion, sidebarFor, versions } from '../lib/content';
 import { render } from '../lib/markdown';
-import { MINECRAFT_VERSION } from '../lib/template';
+import { currentPlatform } from '../lib/platforms';
 
 export function Docs() {
   const { version = latestVersion, '*': slug = 'index' } = useParams();
@@ -43,7 +43,7 @@ export function Docs() {
 
         <div className="docs-release">
           <span>Compatibility</span>
-          <strong>Minecraft {MINECRAFT_VERSION}</strong>
+          <strong>Minecraft {currentPlatform.minecraft}</strong>
           <p>
             Fenix starts at 26.2. It is never backported to an earlier Minecraft version.
           </p>

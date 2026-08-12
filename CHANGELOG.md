@@ -7,6 +7,82 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-08-12
+
+One resolution bug that made Fenix unusable on a machine with a half-populated
+`~/.m2`, the groundwork for releasing against more than one Minecraft version,
+and a website whose documentation is now written rather than generated.
+
+Only one published artifact changed: the Gradle plugin, `0.1.5` → `0.1.6`. The
+loader, the API modules, Ember, the processor and the installer are untouched
+and keep the versions 0.3.0 pinned — loader `0.1.1`, API set `0.3.0`
+(registry `0.3.0`, event `0.2.0`, resource `0.1.1`, core `0.1.0`,
+network `0.1.0`, command `0.1.1`, config `0.1.0`), Ember `0.2.0`,
+processor `0.1.0`, installer `0.1.2`.
+
+### Fixed
+
+- **A mod could not resolve Minecraft's libraries when `~/.m2` held a partial
+  copy of one.** `addRepositories` put an unscoped `mavenLocal()` first, so any
+  module with a pom in a developer's local Maven cache was claimed from there —
+  and Gradle does not fall back to another repository once one has claimed a
+  module. Maven routinely leaves a pom behind without the classified jars beside
+  it, which is how a real build failed on `com.mojang:jtracy` with only the
+  natives jar missing. The error named a Mojang library and a path in `~/.m2`,
+  so it read as a corrupt cache rather than as a line in the Fenix plugin.
+  Both `mavenLocal()` and the Fenix repository are now restricted to Fenix's own
+  coordinates; Minecraft's libraries have no business coming from `~/.m2`
+  anyway. Verified by reproducing the failure against the same half-populated
+  cache, and by putting the unscoped call back to confirm the failure returns.
+
+### Added
+
+- **Fenix can be released for more than one Minecraft version.** The API is
+  compiled against the game, so a release belongs to one game version and to no
+  other — but the Gradle plugin knew exactly one pairing, the one baked in when
+  it was built. Setting `fenix { minecraft = "26.3" }` downloaded 26.3 and left
+  the API coordinate pointing at the release for 26.2. Nothing failed at
+  configuration time; the mod compiled against a jar for the wrong game and broke
+  later, at class loading, naming a missing Minecraft method — which reads as a
+  Fenix bug rather than as a mismatched pair.
+
+  `platforms.json` now carries every game version Fenix has released for and the
+  module versions built for each. The plugin ships it and looks up whichever
+  version the mod asked for; asking for one that is not in the table fails at
+  configuration, naming the ones that are. A table baked into the jar rather
+  than fetched keeps a mod's build offline and reproducible, and costs only a
+  plugin release per game version — which a game version needs anyway.
+
+  `:fenix-gradle-plugin:checkPlatforms` fails the build if the table and
+  `gradle.properties` disagree about the current line, if the current line is
+  not listed first, or if the plugin version named for the website is not the
+  one being built. Two files stating the same release is exactly the drift this
+  release is about. [`docs/game-versions.md`](docs/game-versions.md) covers the
+  branch strategy that goes with it.
+
+### Changed
+
+- **The API reference is no longer generated from Javadoc.** `apiDocsSite` and
+  the `tools/api-doclet` module are gone, and with them the twenty-odd package
+  pages the site carried. A generated reference says a method exists; it does not
+  say which of two ways survives a datapack reload, or which mistake fails
+  silently. The documentation is now written by hand, against signatures read
+  from the source — new guides for events, client-side code, networking,
+  commands, configuration, and mixins and access widening. `apiDocs`, the plain
+  browsable Javadoc an IDE reads, is untouched.
+- **The project generator produces a complete project.** Options for a client
+  source set, content, Ember, mixins, config, commands, networking, a licence and
+  a GitHub Actions workflow — and placeholder textures the generator draws, so
+  the first launch shows a block rather than the magenta-and-black checker that
+  reads as a broken mod. Verified by generating three configurations and building
+  each: everything on, everything off, and content without Ember.
+- **The website reads its version numbers from `platforms.json`.** The Minecraft
+  version, the API version, the plugin version a build file applies and the
+  versions written into a generated project all came from constants in the site's
+  own source, which every release had to remember to edit. A generated project
+  naming a version nobody published fails on its first build, and the visitor has
+  no way to tell it was the website that was wrong.
+
 ## [0.3.0] — 2026-07-23
 
 Three more registry gaps closed, Ember grown in three directions, and the site

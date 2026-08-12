@@ -1,37 +1,63 @@
 ---
-title: Fenix API
-description: The API reference and practical guides for writing Fenix mods.
+title: Fenix
+description: Written by hand, for people writing mods.
 order: 0
 ---
 
-Fenix API is the code a mod uses after the game has started: lifecycle,
-registries, events, resources, networking, configuration and client helpers.
-The API bundle is versioned independently from this website: this documentation
-is for **Fenix API 0.3.0**, targeting **Minecraft 26.2**.
+Fenix is a Minecraft mod loader and an API for writing mods against it. This is
+its documentation: guides written by hand, not a class list generated from
+source. A generated reference tells you a method exists; it does not tell you
+which of two ways is the one that survives a datapack reload, or which mistake
+fails silently.
+
+Every code sample here is taken from code that compiles.
 
 ## Start here
 
-| If you need to… | Read… |
+| If you want to… | Read |
 |---|---|
-| Create a minimal mod project | [Getting started](/docs/@latest/guides/getting-started) |
-| Understand how registrations are organised | [Content and registries](/docs/@latest/guides/content) |
-| Generate assets or data | [Ember](/docs/@latest/guides/ember) |
-| Browse exact classes and methods | [API reference](/docs/@latest/api/index) |
+| Play with Fenix installed | [Install Fenix](/docs/@latest/play/install) |
+| Write your first mod | [Getting started](/docs/@latest/guides/getting-started) |
+| Add blocks, items, entities | [Content and registries](/docs/@latest/guides/content) |
+| Stop writing JSON by hand | [Ember](/docs/@latest/guides/ember) |
+| React to what the game does | [Events](/docs/@latest/guides/events) |
+| Draw something, or read the keyboard | [Client-side code](/docs/@latest/guides/client) |
+| Edit the game itself | [Mixins and access](/docs/@latest/guides/mixins) |
 
-## What belongs to Fenix API
+Or take a whole project from the [generator](/generate) and read the code it
+gives you.
 
-- `fr.d4emon.fenix.api` is the mod lifecycle and context.
-- `fr.d4emon.fenix.registry` registers game content safely.
-- `fr.d4emon.fenix.event`, `network`, `config` and `resource` cover common mod
-  integrations.
-- `fr.d4emon.fenix.ember` generates resource and data files from Java.
+## What Fenix is made of
 
-Your own mod classes do not belong to Fenix API. Names such as `ModContent`,
-`ModItems` or `MyBlocks` are conventions you create to keep your code organised;
-the API only provides the building blocks those classes use.
+**The loader** starts the game, finds mods, resolves what depends on what, and
+runs Mixin. It touches almost no Minecraft class, so it carries no game version
+and one build runs several.
 
-:::note[Minecraft compatibility]
-Fenix begins at Minecraft **26.2** and is never designed or backported for an
-older game version. A Fenix release targets one exact Minecraft version. When a
-new game release is supported, it is published as a new Fenix release.
-:::
+**The API** is what a mod calls once the game is up: lifecycle, registries,
+events, resources, networking, commands, configuration. It is compiled against
+Minecraft, so a release belongs to one game version —
+see [Minecraft versions](/docs/@latest/reference/game-versions).
+
+**Ember** writes the resource and data files a mod needs from the Java that
+already declares them, so a block's model and its loot table cannot drift from
+the block.
+
+**The Gradle plugin** downloads the game, wires the rest up, and adds
+`runClient`. A mod's build file names the Minecraft version and nothing else.
+
+## Two rules worth knowing early
+
+**Register in `onRegister`, listen in `onInit`.** The first runs before the
+game's registries are frozen and is the only moment content can be added. The
+second runs after, when a server exists and a config file can be read.
+
+**`src/main` cannot see the client.** It compiles against a Minecraft with the
+client half removed, so reaching for a renderer there is a compile error rather
+than a crash on somebody else's dedicated server. Client code goes in
+`src/client`.
+
+## Naming
+
+`ModContent`, `ModItems`, `ModBlocks` appear throughout these guides. They are
+conventions, not API — classes you write to keep declarations in one place.
+Fenix only provides the `Registrar` they use.

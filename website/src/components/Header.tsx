@@ -13,8 +13,8 @@ export function Header() {
         </Link>
 
         <nav className="site-nav" aria-label="Main">
-          <NavLink to={`/docs/${latestVersion}/index`}>API Documentation</NavLink>
-          <NavLink to={`/docs/${latestVersion}/guides/ember`}>Ember</NavLink>
+          <NavLink to={`/docs/${latestVersion}/index`}>Documentation</NavLink>
+          <NavLink to={`/docs/${latestVersion}/guides/getting-started`}>Guides</NavLink>
           <a href="https://github.com/D4EMONDEV/Fenix" target="_blank" rel="noreferrer noopener">
             GitHub
           </a>

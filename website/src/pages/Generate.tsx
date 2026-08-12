@@ -1,201 +1,219 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import hljs from 'highlight.js/lib/core';
 import {
-  DEFAULTS,
-  FENIX_VERSION,
-  MINECRAFT_VERSION,
-  WRAPPER,
-  classFromName,
+  DEFAULT_OPTIONS,
+  LICENSES,
+  classOf,
   generate,
-  idFromName,
-  problems,
-  wrapper,
+  packageOf,
+  validate,
+  type Features,
+  type LicenseId,
   type Options,
 } from '../lib/template';
+import { platforms } from '../lib/platforms';
 import { zip } from '../lib/zip';
+import type { ZipEntry } from '../lib/zip';
 
-/** A file tree, built from the flat paths the template produced. */
-interface Node {
-  name: string;
-  path?: string;
-  children: Node[];
-}
+/** What each toggle adds, in the order a mod author meets them. */
+const FEATURES: { id: keyof Features; label: string; blurb: string }[] = [
+  {
+    id: 'content',
+    label: 'A block and an item',
+    blurb: 'Registered through a Registrar, in a creative tab, with placeholder textures.',
+  },
+  {
+    id: 'ember',
+    label: 'Data generation',
+    blurb: 'Ember writes the models, names, loot tables and recipes from the Java above.',
+  },
+  {
+    id: 'client',
+    label: 'A client source set',
+    blurb: 'src/client, where rendering and key bindings go. A dedicated server never loads it.',
+  },
+  {
+    id: 'config',
+    label: 'Configuration',
+    blurb: 'Settings as a record: the field names are the JSON keys and the types are the checking.',
+  },
+  {
+    id: 'commands',
+    label: 'A command',
+    blurb: 'Registered through the event bus, so it survives a datapack reload.',
+  },
+  {
+    id: 'networking',
+    label: 'Networking',
+    blurb: 'One payload each way, with the codec that puts it on the wire.',
+  },
+  {
+    id: 'mixins',
+    label: 'A mixin',
+    blurb: 'For the cases the API has no event for. Comes with the rules that make one work.',
+  },
+  {
+    id: 'ci',
+    label: 'GitHub Actions',
+    blurb: 'A workflow that builds the mod on every push and keeps the jar.',
+  },
+];
 
-function tree(paths: string[]): Node {
-  const root: Node = { name: '', children: [] };
-
-  for (const path of paths) {
-    let at = root;
-    const parts = path.split('/');
-    parts.forEach((part, index) => {
-      const leaf = index === parts.length - 1;
-      let next = at.children.find((child) => child.name === part && !child.path === !leaf);
-      if (!next) {
-        next = { name: part, children: [], ...(leaf ? { path } : {}) };
-        at.children.push(next);
-      }
-      at = next;
-    });
+/** Groups the flat file list into something that reads like a directory tree. */
+function tree(files: ZipEntry[]): { dir: string; entries: ZipEntry[] }[] {
+  const groups = new Map<string, ZipEntry[]>();
+  for (const file of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
+    const at = file.path.lastIndexOf('/');
+    const dir = at === -1 ? '' : file.path.slice(0, at);
+    const list = groups.get(dir);
+    if (list) {
+      list.push(file);
+    } else {
+      groups.set(dir, [file]);
+    }
   }
-  // Directories before files, then alphabetical — the order a file manager
-  // shows, so the shape is the one the reader expects on disk.
-  const sort = (node: Node) => {
-    node.children.sort(
-      (a, b) => Number(!!a.path) - Number(!!b.path) || a.name.localeCompare(b.name),
-    );
-    node.children.forEach(sort);
-  };
-  sort(root);
-  return root;
+  return [...groups.entries()]
+    .sort(([a], [b]) => (a === '' ? -1 : b === '' ? 1 : a.localeCompare(b)))
+    .map(([dir, entries]) => ({ dir, entries }));
 }
 
-function Branch({
-  node,
-  depth,
-  selected,
-  onSelect,
-}: {
-  node: Node;
-  depth: number;
-  selected: string;
-  onSelect: (path: string) => void;
-}) {
-  return (
-    <>
-      {node.children.map((child) => (
-        <div key={child.name + (child.path ?? '/')}>
-          {child.path ? (
-            <button
-              type="button"
-              className={`tree-file${child.path === selected ? ' selected' : ''}`}
-              style={{ paddingLeft: `${depth * 0.9 + 0.6}rem` }}
-              onClick={() => onSelect(child.path!)}
-            >
-              {child.name}
-            </button>
-          ) : (
-            <div className="tree-dir" style={{ paddingLeft: `${depth * 0.9 + 0.6}rem` }}>
-              {child.name}/
-            </div>
-          )}
-          {child.children.length > 0 && (
-            <Branch node={child} depth={depth + 1} selected={selected} onSelect={onSelect} />
-          )}
-        </div>
-      ))}
-    </>
-  );
-}
-
-/**
- * What the preview says about a file it cannot show.
- *
- * The wrapper is in the archive and so it is in the tree; showing a jar as text
- * would be worse than showing nothing, and leaving it out of the tree would
- * misdescribe what the download contains.
- */
-const COPIED = `Copied into the archive when you download it, not generated here.
-
-This is the Gradle wrapper. It is why the README can say ./gradlew rather than
-asking you to install Gradle first: the wrapper fetches the exact version this
-project was written for, and everyone who builds it uses that same one.
-
-Keep all four files, and keep them in version control.`;
+const LANGUAGES: Record<string, string> = {
+  java: 'java',
+  kts: 'kotlin',
+  json: 'json',
+  properties: 'properties',
+  md: 'markdown',
+  yml: 'yaml',
+};
 
 export function Generate() {
-  const [options, setOptions] = useState<Options>(DEFAULTS);
-  // Once either is typed into, it stops following the name — otherwise a later
-  // edit to the name silently overwrites what the author chose.
-  const [touched, setTouched] = useState<{ id: boolean; className: boolean }>({
-    id: false,
-    className: false,
-  });
-  const [selected, setSelected] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState('');
+  const [options, setOptions] = useState<Options>(DEFAULT_OPTIONS);
+  const [files, setFiles] = useState<ZipEntry[]>([]);
+  const [selected, setSelected] = useState<string>('build.gradle.kts');
+  const [building, setBuilding] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
 
-  const files = useMemo(() => generate(options), [options]);
-  const invalid = useMemo(() => problems(options), [options]);
-  const ok = Object.keys(invalid).length === 0;
+  const errors = useMemo(() => validate(options), [options]);
+  const valid = Object.keys(errors).length === 0;
 
-  // Everything the archive will hold, generated and copied alike.
-  const listed = useMemo(
-    () => [
-      ...files.map((file) => ({ path: file.path, text: file.text ?? '' })),
-      ...WRAPPER.map((file) => ({ path: `${options.modId}/${file.path}`, text: COPIED })),
-    ],
-    [files, options.modId],
-  );
+  // The preview is the real thing: the same call the download makes, so what a
+  // visitor reads before downloading cannot differ from what they get.
+  useEffect(() => {
+    if (!valid) {
+      return;
+    }
+    let live = true;
+    generate(options)
+      .then((built) => {
+        if (live) {
+          setFiles(built);
+          setFailure(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (live) {
+          setFailure(error instanceof Error ? error.message : String(error));
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [options, valid]);
 
-  const shown = listed.find((file) => file.path === selected) ?? listed[0];
-  const root = useMemo(() => tree(listed.map((file) => file.path)), [listed]);
+  const set = <K extends keyof Options>(key: K, value: Options[K]) =>
+    setOptions((previous) => ({ ...previous, [key]: value }));
 
-  function set<K extends keyof Options>(key: K, value: Options[K]) {
-    setOptions((current) => ({ ...current, [key]: value }));
-  }
-
-  function setName(name: string) {
-    setOptions((current) => ({
-      ...current,
-      name,
-      modId: touched.id ? current.modId : idFromName(name),
-      className: touched.className ? current.className : classFromName(name),
+  const toggle = (id: keyof Features) =>
+    setOptions((previous) => ({
+      ...previous,
+      features: { ...previous.features, [id]: !previous.features[id] },
     }));
-  }
 
   async function download() {
-    setBusy(true);
-    setFailed('');
+    setBuilding(true);
     try {
-      // The wrapper is fetched rather than generated, so this is the one part
-      // that can fail. Better to say so than to hand out an archive that is
-      // quietly missing the file its README opens with.
-      const blob = zip([...files, ...(await wrapper(options.modId))]);
-      const url = URL.createObjectURL(blob);
+      const built = await generate(options);
+      const url = URL.createObjectURL(zip(built));
       const link = document.createElement('a');
       link.href = url;
       link.download = `${options.modId}.zip`;
       link.click();
-      // Revoked on the next turn of the loop: the click is synchronous but the
-      // browser reads the blob afterwards, and revoking too early downloads
-      // nothing.
-      setTimeout(() => URL.revokeObjectURL(url), 0);
+      URL.revokeObjectURL(url);
     } catch (error) {
-      setFailed(error instanceof Error ? error.message : String(error));
+      setFailure(error instanceof Error ? error.message : String(error));
     } finally {
-      setBusy(false);
+      setBuilding(false);
     }
   }
 
+  const shown = files.find((file) => file.path === selected) ?? files[0];
+  const extension = shown?.path.split('.').pop() ?? '';
+  const language = LANGUAGES[extension];
+  const highlighted =
+    shown?.text && language && hljs.getLanguage(language)
+      ? hljs.highlight(shown.text, { language }).value
+      : null;
+
   return (
     <div className="generate shell">
-      <header className="generate-head">
-        <p className="eyebrow">Fenix project generator</p>
-        <h1>Start with your idea.</h1>
-        <p>
-          A clean project for Minecraft <strong>{MINECRAFT_VERSION}</strong> and Fenix{' '}
-          <strong>{FENIX_VERSION}</strong>. No sample blocks, no placeholder items, no code to
-          delete. Everything is made in your browser.
+      <div className="generate-head">
+        <p className="eyebrow">
+          <span />
+          New project
         </p>
-      </header>
+        <h1>Start a mod</h1>
+        <p>
+          Pick what you need and take the zip. Everything it generates compiles and runs as it
+          comes — placeholder textures included, so the first launch shows a block rather than the
+          missing-texture checker.
+        </p>
+      </div>
 
       <div className="generate-body">
         <form className="generate-form" onSubmit={(event) => event.preventDefault()}>
           <label>
             <span>Mod name</span>
-            <input value={options.name} onChange={(event) => setName(event.target.value)} />
-            {invalid.name && <em className="field-error">{invalid.name}</em>}
+            <input
+              value={options.modName}
+              onChange={(event) => set('modName', event.target.value)}
+            />
+            {errors.modName && <p className="field-error">{errors.modName}</p>}
           </label>
 
           <label>
             <span>Mod id</span>
+            <input value={options.modId} onChange={(event) => set('modId', event.target.value)} />
+            {errors.modId && <p className="field-error">{errors.modId}</p>}
+          </label>
+
+          <label>
+            <span>Group</span>
+            <input value={options.group} onChange={(event) => set('group', event.target.value)} />
+            {errors.group ? (
+              <p className="field-error">{errors.group}</p>
+            ) : (
+              <p className="field-error" style={{ color: 'var(--faint)' }}>
+                Package: {packageOf(options)} · class: {classOf(options)}
+              </p>
+            )}
+          </label>
+
+          <label>
+            <span>Version</span>
             <input
-              value={options.modId}
-              onChange={(event) => {
-                setTouched((t) => ({ ...t, id: true }));
-                set('modId', event.target.value);
-              }}
+              value={options.version}
+              onChange={(event) => set('version', event.target.value)}
             />
-            {invalid.modId && <em className="field-error">{invalid.modId}</em>}
+            {errors.version && <p className="field-error">{errors.version}</p>}
+          </label>
+
+          <label>
+            <span>Author</span>
+            <input
+              value={options.author}
+              placeholder="Your name"
+              onChange={(event) => set('author', event.target.value)}
+            />
           </label>
 
           <label>
@@ -207,106 +225,110 @@ export function Generate() {
           </label>
 
           <label>
-            <span>Package</span>
-            <input
-              value={options.packageName}
-              onChange={(event) => set('packageName', event.target.value)}
-            />
-            {invalid.packageName && <em className="field-error">{invalid.packageName}</em>}
-          </label>
-
-          <label>
-            <span>Main class</span>
-            <input
-              value={options.className}
-              onChange={(event) => {
-                setTouched((t) => ({ ...t, className: true }));
-                set('className', event.target.value);
-              }}
-            />
-            {invalid.className && <em className="field-error">{invalid.className}</em>}
-          </label>
-
-          <label>
-            <span>Author</span>
-            <input
-              value={options.author}
-              placeholder="optional"
-              onChange={(event) => set('author', event.target.value)}
-            />
+            <span>Minecraft</span>
+            <select
+              value={options.minecraft}
+              onChange={(event) => set('minecraft', event.target.value)}
+            >
+              {platforms.map((platform) => (
+                <option key={platform.minecraft} value={platform.minecraft}>
+                  {platform.minecraft}
+                  {platform.status === 'current' ? '' : ` — ${platform.status}`}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label>
             <span>Licence</span>
-            <select value={options.license} onChange={(event) => set('license', event.target.value)}>
-              <option value="Apache-2.0">Apache-2.0</option>
-              <option value="MIT">MIT</option>
-              <option value="GPL-3.0-only">GPL-3.0-only</option>
-              <option value="LGPL-3.0-only">LGPL-3.0-only</option>
-              <option value="none">Not stated</option>
+            <select
+              value={options.license}
+              onChange={(event) => set('license', event.target.value as LicenseId)}
+            >
+              {LICENSES.map((licence) => (
+                <option key={licence.id} value={licence.id}>
+                  {licence.label}
+                </option>
+              ))}
             </select>
           </label>
 
           <fieldset className="options">
-            <legend>Options</legend>
-
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={options.ember}
-                onChange={(event) => set('ember', event.target.checked)}
-              />
-              <span>
-                <strong>Ember generator</strong>
-                <em>A blank resource generator, ready when you need generated assets or data.</em>
-              </span>
-            </label>
-
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={options.client}
-                onChange={(event) => set('client', event.target.checked)}
-              />
-              <span>
-                <strong>Client source set</strong>
-                <em>
-                  <code>src/client/java</code>, which a dedicated server never loads.
-                </em>
-              </span>
-            </label>
-
+            <legend>What to include</legend>
+            {FEATURES.map((feature) => (
+              <label className="check" key={feature.id}>
+                <input
+                  type="checkbox"
+                  checked={options.features[feature.id]}
+                  disabled={feature.id === 'ember' && !options.features.content}
+                  onChange={() => toggle(feature.id)}
+                />
+                <span>
+                  <strong>{feature.label}</strong>
+                  <em>
+                    {feature.id === 'ember' && !options.features.content
+                      ? 'Needs something to generate for — turn on the block and item.'
+                      : feature.blurb}
+                  </em>
+                </span>
+              </label>
+            ))}
           </fieldset>
 
           <button
-            className="button primary download"
             type="button"
-            disabled={!ok || busy}
+            className="button primary download"
+            disabled={!valid || building}
             onClick={download}
           >
-            {!ok ? 'Fix the fields above' : busy ? 'Packing…' : `Download ${options.modId}.zip`}
+            {building ? 'Building…' : `Download ${options.modId}.zip`}
           </button>
 
-          {failed && <p className="field-error">Could not build the archive: {failed}</p>}
-
-          <p className="generate-next">
-            Then <code>./gradlew runClient</code>. The Gradle wrapper is in the archive and the
-            plugin downloads the game itself, so that is the only command you need.
-          </p>
+          {failure ? (
+            <p className="field-error">{failure}</p>
+          ) : (
+            <p className="generate-next">
+              Unzip it, then <code>./gradlew runClient</code>
+            </p>
+          )}
         </form>
 
-        <section className="generate-preview" aria-label="Project preview">
+        <div className="generate-preview">
           <div className="tree">
-            <Branch node={root} depth={0} selected={shown.path} onSelect={setSelected} />
+            {tree(files).map((group) => (
+              <div key={group.dir}>
+                <div className="tree-dir">{group.dir === '' ? '.' : `${group.dir}/`}</div>
+                {group.entries.map((file) => (
+                  <button
+                    type="button"
+                    key={file.path}
+                    className={`tree-file${file.path === shown?.path ? ' selected' : ''}`}
+                    onClick={() => setSelected(file.path)}
+                  >
+                    {'  '}
+                    {file.path.split('/').pop()}
+                    {file.data ? ' · binary' : ''}
+                  </button>
+                ))}
+              </div>
+            ))}
           </div>
 
           <figure className="code preview-file">
-            <span className="lang">{shown.path.split('/').pop()}</span>
+            <span className="lang">{shown?.path ?? ''}</span>
             <pre>
-              <code>{shown.text}</code>
+              {shown?.data ? (
+                <code>
+                  {shown.data.length} bytes. Binary files are in the zip but not shown here.
+                </code>
+              ) : highlighted ? (
+                <code dangerouslySetInnerHTML={{ __html: highlighted }} />
+              ) : (
+                <code>{shown?.text ?? ''}</code>
+              )}
             </pre>
           </figure>
-        </section>
+        </div>
       </div>
     </div>
   );

@@ -52,11 +52,17 @@ public final class FenixDevPlugin implements Plugin<Project> {
     public void apply(Project project) {
         project.getPluginManager().apply("java-library");
 
-        Properties pluginProperties = readPluginProperties();
+        Platforms platforms = Platforms.load();
         FenixExtension extension = project.getExtensions().create("fenix", FenixExtension.class);
-        extension.getMinecraft().convention(pluginProperties.getProperty("minecraft"));
-        extension.getLoaderVersion().convention(pluginProperties.getProperty("version"));
-        extension.getApiVersion().convention(pluginProperties.getProperty("api"));
+        extension.getMinecraft().convention(platforms.current().minecraft());
+        // Read from whichever game version the mod ends up asking for, not from
+        // the one this plugin was built against: the two are the same only for
+        // the current line, and silently handing a mod on an older game the
+        // newest API is how a build succeeds and the game then fails to load it.
+        extension.getLoaderVersion().convention(extension.getMinecraft()
+                .map(minecraft -> platforms.forMinecraft(minecraft).loader()));
+        extension.getApiVersion().convention(extension.getMinecraft()
+                .map(minecraft -> platforms.forMinecraft(minecraft).api() + "+mc" + minecraft));
         extension.getLibrary().convention(false);
         extension.getApi().convention(true);
 
@@ -81,9 +87,10 @@ public final class FenixDevPlugin implements Plugin<Project> {
         // Not extension properties: a mod author has no reason to pick these,
         // and every reason to get the pair that was built together. They are
         // separate lines all the same, because the modules are versioned apart.
-        Properties versions = readPluginProperties();
-        String emberVersion = versions.getProperty("ember");
-        String processorVersion = versions.getProperty("processor");
+        // Looked up by the game version for the same reason as the API above.
+        Platforms.Platform platform = Platforms.load().forMinecraft(minecraft);
+        String emberVersion = platform.ember() + "+mc" + minecraft;
+        String processorVersion = platform.processor();
 
         Path cacheRoot = project.getGradle().getGradleUserHomeDir().toPath().resolve("caches").resolve("fenix");
         MinecraftLibraries game = new MinecraftDownloader(cacheRoot).resolve(minecraft);
@@ -561,10 +568,24 @@ public final class FenixDevPlugin implements Plugin<Project> {
         var repositories = project.getRepositories();
         // The Fenix artifacts: locally from a developer's ~/.m2, or publicly from
         // GitHub Pages. mavenLocal comes first so an in-development loader wins.
-        repositories.mavenLocal();
+        //
+        // Restricted to Fenix's own coordinates, and that restriction is the
+        // whole point. A ~/.m2 is shared with every other tool on the machine
+        // and is often half-populated: Maven leaves a pom behind without the
+        // classified jars beside it. An unrestricted mavenLocal then claims a
+        // module like com.mojang:jtracy on the strength of that pom, fails to
+        // produce jtracy-natives-windows, and the build stops — Gradle does not
+        // fall back to another repository once one has claimed a module. The
+        // error names a Mojang library and a path in ~/.m2, so it reads as a
+        // corrupt local cache rather than as this line.
+        //
+        // Minecraft's own libraries have no business coming from ~/.m2 anyway.
+        repositories.mavenLocal(repo -> repo.content(
+                content -> content.includeGroupByRegex("fr\\.d4emon\\.fenix.*")));
         repositories.maven(repo -> {
             repo.setName("Fenix");
             repo.setUrl(FENIX_REPO);
+            repo.content(content -> content.includeGroupByRegex("fr\\.d4emon\\.fenix.*"));
         });
         repositories.mavenCentral();
         repositories.maven(repo -> {

@@ -34,8 +34,8 @@ public void onRegister(Fenix fenix) {
 ```
 
 `blockWithItem` adds both the block and its placing item. Use `block` when a
-block should have no item form, and `item` for a plain item. The full overloads
-and builders are documented in the [`registry` API reference](/docs/@latest/api/fr-d4emon-fenix-registry).
+block should have no item form, and `item` for a plain item. `newBlock` and
+`newItem` open builders instead, for anything that needs properties set.
 
 ## Put content in a creative tab
 

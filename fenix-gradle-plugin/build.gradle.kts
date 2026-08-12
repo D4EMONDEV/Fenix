@@ -45,38 +45,84 @@ dependencies {
 }
 
 val minecraftVersion = rootProperties.getProperty("minecraft_version")
-// Every coordinate the plugin writes, read from the one file that decides them.
-// Each module moves on its own, so none of these may be assumed equal to
-// another or to this plugin's own version — they were, and every one of them
-// pointed at an artifact that had never been published.
-//
-// Anything compiled against Minecraft carries the game version; the loader, the
-// processor and the build tooling carry no such tie and stay plain. All of them
-// are baked in so a mod's build file names none of them.
-val loaderVersion = rootProperties.getProperty("version_loader")
-val apiVersion = rootProperties.getProperty("version_api") + "+mc" + minecraftVersion
-val emberVersion = rootProperties.getProperty("version_ember") + "+mc" + minecraftVersion
-val processorVersion = rootProperties.getProperty("version_processor")
 val vineflowerVersion = libs.versions.vineflower.get()
 
+// The plugin carries every game version Fenix has a release for, so a mod that
+// asks for an older one gets the API built for it rather than the newest. The
+// table is `platforms.json` at the repository root; it ships in the jar and
+// `fr.d4emon.fenix.gradle.Platforms` reads it.
+val platformsFile = file("../platforms.json")
+
+// Two files now state the versions for the line being developed: gradle.properties,
+// which the modules are actually built with, and platforms.json, which is what
+// mod authors are handed. They must agree, and nothing about editing one makes
+// you edit the other — so the build refuses to produce a plugin where they
+// disagree. Without this the failure surfaces as a mod resolving a version that
+// was never published, far from the file that was left behind.
+val checkPlatforms = tasks.register("checkPlatforms") {
+    val properties = rootProperties
+    val json = platformsFile
+    inputs.file(json)
+    inputs.property("versions", properties.stringPropertyNames().sorted()
+        .joinToString(",") { "$it=${properties.getProperty(it)}" })
+    // A file, so the check is up-to-date-able rather than rerun on every build.
+    val stamp = layout.buildDirectory.file("platforms-checked.txt")
+    outputs.file(stamp)
+    doLast {
+        @Suppress("UNCHECKED_CAST")
+        val parsed = groovy.json.JsonSlurper().parse(json) as Map<String, Any>
+        val platforms = parsed["platforms"] as List<Map<String, Any>>
+        val line = properties.getProperty("minecraft_version")
+        val entry = platforms.firstOrNull { it["minecraft"] == line }
+            ?: throw GradleException(
+                "platforms.json has no entry for Minecraft $line, the version this" +
+                    " repository builds against. Add one, or the plugin will refuse" +
+                    " to build a mod for the very version it was compiled from."
+            )
+        val expected = mapOf(
+            "loader" to properties.getProperty("version_loader"),
+            "api" to properties.getProperty("version_api"),
+            "ember" to properties.getProperty("version_ember"),
+            "processor" to properties.getProperty("version_processor"),
+        )
+        val drifted = expected.filter { (key, value) -> entry[key] != value }
+        if (drifted.isNotEmpty()) {
+            throw GradleException(
+                "platforms.json disagrees with gradle.properties for Minecraft $line: " +
+                    drifted.entries.joinToString(", ") { (key, value) ->
+                        "$key is ${entry[key]} there and $value here"
+                    } + ". Both describe the same release, so both have to be bumped."
+            )
+        }
+        // The website tells visitors which plugin version to apply, and reads
+        // it from here. It is this project's own version, so it drifts the
+        // moment a release bumps one file and not the other.
+        val declaredPlugin = parsed["plugin"]
+        if (declaredPlugin != version.toString()) {
+            throw GradleException(
+                "platforms.json says the plugin is $declaredPlugin, but this build produces" +
+                    " $version. That number is what the website tells people to apply."
+            )
+        }
+        if (platforms.first()["minecraft"] != line) {
+            throw GradleException(
+                "platforms.json lists ${platforms.first()["minecraft"]} first, but this" +
+                    " repository builds $line. The first entry is the default a mod gets" +
+                    " when it names no version, so it has to be the current line."
+            )
+        }
+        stamp.get().asFile.writeText("$line ok\n")
+    }
+}
+
 tasks.processResources {
+    dependsOn(checkPlatforms)
+    from(platformsFile)
     // Declared as inputs so a version bump actually re-expands the file rather
     // than reusing a stale, cached result.
-    inputs.property("loaderVersion", loaderVersion)
-    inputs.property("apiVersion", apiVersion)
-    inputs.property("emberVersion", emberVersion)
-    inputs.property("processorVersion", processorVersion)
-    inputs.property("minecraftVersion", minecraftVersion)
     inputs.property("vineflowerVersion", vineflowerVersion)
     filesMatching("fenix-plugin.properties") {
-        expand(
-            "loader_version" to loaderVersion,
-            "api_version" to apiVersion,
-            "ember_version" to emberVersion,
-            "processor_version" to processorVersion,
-            "minecraft_version" to minecraftVersion,
-            "vineflower_version" to vineflowerVersion,
-        )
+        expand("vineflower_version" to vineflowerVersion)
     }
 }
 

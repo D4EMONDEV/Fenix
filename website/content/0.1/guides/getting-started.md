@@ -94,4 +94,6 @@ of `Holder`.
 
 - [Content and registries](/docs/@latest/guides/content)
 - [Ember resource generation](/docs/@latest/guides/ember)
-- [Generated API reference](/docs/@latest/api/index)
+- [Events](/docs/@latest/guides/events)
+- [Client-side code](/docs/@latest/guides/client)
+- [Mixins and access](/docs/@latest/guides/mixins)

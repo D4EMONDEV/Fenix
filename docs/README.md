@@ -6,6 +6,7 @@ mods **with** Fenix lives on the [website](../website).
 | Document                              | What it covers                                          |
 |---------------------------------------|---------------------------------------------------------|
 | [architecture.md](architecture.md)    | How the modules fit together, and the rules between them |
+| [game-versions.md](game-versions.md)  | Supporting several Minecraft versions at once            |
 | [getting-started.md](getting-started.md) | Building the repository and writing a first mod       |
 | [mod-metadata.md](mod-metadata.md)    | The `fenix.mod.json` format                              |
 | [publishing.md](publishing.md)        | Releasing Fenix to the public Maven repository           |

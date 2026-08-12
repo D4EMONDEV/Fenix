@@ -51,5 +51,5 @@ public Fenix API; it does not require a class named `ModContent`.
 Textures and `.ogg` sound files remain files you create yourself. Ember creates
 the JSON around them, not the artwork or audio.
 
-Browse the [`ember` API reference](/docs/@latest/api/fr-d4emon-fenix-ember) for
-every provider and method.
+Every provider is an abstract class with one method to override and a handful
+of protected helpers; your IDE lists them once you extend one.

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { latestVersion } from '../lib/content';
-import { FENIX_VERSION, MINECRAFT_VERSION } from '../lib/template';
+import { currentPlatform, pluginVersion } from '../lib/platforms';
 
 /** One of the four things a reader can go and do. */
 interface Route {
@@ -76,7 +76,7 @@ export function Home() {
           <div className="hero-copy">
             <p className="eyebrow">
               <span />
-              Minecraft {MINECRAFT_VERSION} · Java 25
+              Minecraft {currentPlatform.minecraft} · Java {currentPlatform.java}
             </p>
             <h1>
               A mod loader that <em>tells you</em> what is wrong
@@ -99,7 +99,7 @@ export function Home() {
                 <i />
                 API {latestVersion} · loader 0.1.1
               </span>
-              <span>Gradle plugin {FENIX_VERSION}</span>
+              <span>Gradle plugin {pluginVersion}</span>
               <span>19 conformance checks</span>
             </div>
           </div>
@@ -181,9 +181,9 @@ export function Home() {
             <code>
               <span>{'// build.gradle.kts'}</span>
               {'\n'}
-              plugins {'{'} id(<b>"fr.d4emon.fenix.dev"</b>) version <b>"{FENIX_VERSION}"</b> {'}'}
+              plugins {'{'} id(<b>"fr.d4emon.fenix.dev"</b>) version <b>"{pluginVersion}"</b> {'}'}
               {'\n\n'}
-              fenix {'{'} minecraft = <b>"{MINECRAFT_VERSION}"</b> {'}'}
+              fenix {'{'} minecraft = <b>"{currentPlatform.minecraft}"</b> {'}'}
               {'\n\n'}
               <span>$</span> ./gradlew runClient{'\n'}
               <i>&gt; Fenix Loader 0.1.1 — client side</i>

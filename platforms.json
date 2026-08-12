@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "plugin": "0.1.6",
+  "platforms": [
+    {
+      "minecraft": "26.2",
+      "branch": "main",
+      "status": "current",
+      "java": 25,
+      "loader": "0.1.1",
+      "api": "0.3.0",
+      "ember": "0.2.0",
+      "processor": "0.1.0"
+    }
+  ]
+}
