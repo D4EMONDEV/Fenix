@@ -47,9 +47,14 @@ it does it the way it would be designed today.
 | `testing/demo-mod/`    | A Minecraft-free mod, so the fake game can exercise mod loading      |
 | `testmod/`             | Mod used to exercise the loader by hand, in the real game            |
 | `examples/`            | Samples that double as documentation                                 |
-| `website/`             | The Fenix site                                                       |
 | `docs/`                | Developer documentation and architecture decisions                   |
 | `build-logic/`         | Convention plugins for building Fenix itself                         |
+
+The site and its documentation live in a repository of their own,
+[D4EMONDEV/fenix-site](https://github.com/D4EMONDEV/fenix-site), served at
+<https://d4emondev.github.io/fenix-site/>. Separate because this repository
+already spends its one GitHub Pages site on the Maven repository mods resolve
+from.
 
 The API modules are `fenix-api-{core,event,registry,resource,network,command,config}`,
 and `fenix-api` aggregates them. Today `core`, `event`, `registry` and
