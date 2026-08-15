@@ -2,6 +2,9 @@ package fr.d4emon.fenix.ember;
 
 import fr.d4emon.fenix.registry.Holder;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -50,13 +53,24 @@ public abstract class EmberTagsProvider extends EmberProvider {
     }
 
     /**
-     * Starts describing a tag.
+     * Starts describing a tag, named by hand.
+     *
+     * <p>For a tag with no constant to name it: the mod's own, or one belonging
+     * to another mod that may not be installed. Where the game has a constant,
+     * {@link BlockTagsProvider#tag(TagKey)} and its item counterpart are safer
+     * — a misspelling here is a file the game reads, finds nothing wrong with,
+     * and never uses.
      *
      * @param tag the tag's id, such as {@code minecraft:mineable/pickaxe}
      * @return a builder to add entries to
      */
     protected final Tag tag(String tag) {
         return new Tag(tags.computeIfAbsent(Identifier.parse(tag), key -> new ArrayList<>()));
+    }
+
+    /** Shared by the two typed overloads below. */
+    final Tag tagOf(TagKey<?> tag) {
+        return new Tag(tags.computeIfAbsent(tag.location(), key -> new ArrayList<>()));
     }
 
     /** Collects the contents of one tag. */
@@ -80,6 +94,37 @@ public abstract class EmberTagsProvider extends EmberProvider {
         }
 
         /**
+         * Adds every member of another tag to this one.
+         *
+         * <p>A tag can hold tags, and vanilla leans on it: {@code fences} is
+         * {@code #wooden_fences} plus the nether brick one. A mod adding a
+         * whole family at once wants this rather than a line per block.
+         *
+         * <p>The reference is by name, so the other tag does not have to exist
+         * — which is how a mod joins a tag another mod may or may not define.
+         *
+         * @param tag the tag whose members join this one
+         * @return this builder
+         */
+        public Tag addTag(TagKey<?> tag) {
+            return addTag(tag.location().toString());
+        }
+
+        /**
+         * Adds every member of another tag, named by hand.
+         *
+         * <p>For a tag with no constant: the mod's own, or one belonging to a
+         * mod that may not be installed.
+         *
+         * @param tag the tag's id, without the leading {@code #}
+         * @return this builder
+         */
+        public Tag addTag(String tag) {
+            values.add("#" + Identifier.parse(tag));
+            return this;
+        }
+
+        /**
          * Adds something by id, for vanilla content or another mod's.
          *
          * @param id the full id, such as {@code minecraft:stone}
@@ -98,6 +143,28 @@ public abstract class EmberTagsProvider extends EmberProvider {
         protected BlockTagsProvider() {
         }
 
+        /**
+         * Starts describing one of the game's own block tags.
+         *
+         * <pre>{@code
+         * tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.RUBY_BLOCK);
+         * }</pre>
+         *
+         * <p>Preferred over the string form wherever a constant exists. The
+         * name is then javac's problem rather than the player's: a tag that
+         * does not exist will not compile, where a misspelled string writes a
+         * perfectly valid file into a tag nothing reads. That is how the demo's
+         * fences spent three releases refusing to connect.
+         *
+         * <p>Typed, so a block tag cannot be described by the item provider.
+         *
+         * @param tag the tag, from {@code BlockTags} or another mod's constants
+         * @return a builder to add entries to
+         */
+        protected final Tag tag(TagKey<Block> tag) {
+            return tagOf(tag);
+        }
+
         @Override
         String directory() {
             return "block";
@@ -109,6 +176,21 @@ public abstract class EmberTagsProvider extends EmberProvider {
 
         /** For subclasses. */
         protected ItemTagsProvider() {
+        }
+
+        /**
+         * Starts describing one of the game's own item tags.
+         *
+         * <pre>{@code
+         * tag(ItemTags.SWORDS).add(ModItems.RUBY_BLADE);
+         * }</pre>
+         *
+         * @param tag the tag, from {@code ItemTags} or another mod's constants
+         * @return a builder to add entries to
+         * @see BlockTagsProvider#tag(TagKey)
+         */
+        protected final Tag tag(TagKey<Item> tag) {
+            return tagOf(tag);
         }
 
         @Override

@@ -34,10 +34,14 @@ class BiomeMixinTest {
 
     private static final String LOADER = "net.minecraft.resources.RegistryDataLoader";
     private static final String SETTINGS = "net.minecraft.world.level.biome.BiomeGenerationSettings";
+    private static final String SPAWNS = "net.minecraft.world.level.biome.MobSpawnSettings";
 
     private static final String APPLY = "fenix$applyBiomeModifications";
     private static final String ADD = "fenix$addFeature";
     private static final String FIELD = "features";
+    private static final String ADD_SPAWN = "fenix$addSpawn";
+    private static final String REMOVE_SPAWN = "fenix$removeSpawn";
+    private static final String SPAWN_FIELD = "spawners";
 
     @Test
     @DisplayName("the biome injections still land on Minecraft's registry loader and biome settings")
@@ -58,6 +62,7 @@ class BiomeMixinTest {
 
             loader.loadClass(LOADER);
             loader.loadClass(SETTINGS);
+            loader.loadClass(SPAWNS);
 
             assertCarries(transformed, LOADER, APPLY,
                     "no modification would ever be applied, to any biome");
@@ -82,6 +87,24 @@ class BiomeMixinTest {
             assertFalse(isFinal(transformed.get(SETTINGS), FIELD),
                     "the feature list should no longer be final, or the feature is added to "
                             + "a list that is then thrown away");
+
+            // The same three things again, for spawns. A mob that is registered
+            // but never added to a biome can only be summoned by hand, and
+            // nothing in the log says why — so every step of the path that puts
+            // one in the world is worth a check of its own.
+            assertCarries(transformed, SPAWNS, ADD_SPAWN,
+                    "no mob would ever be added to a biome's spawn table");
+            assertCarries(transformed, SPAWNS, REMOVE_SPAWN,
+                    "a mod could add a spawn but never take one away");
+
+            assertTrue(interfaces(transformed.get(SPAWNS))
+                            .contains("fr/d4emon/fenix/registry/worldgen/BiomeSpawnAccess"),
+                    "MobSpawnSettings should implement BiomeSpawnAccess — without it "
+                            + "adding a spawn throws IllegalClassLoadError");
+
+            assertFalse(isFinal(transformed.get(SPAWNS), SPAWN_FIELD),
+                    "the spawn table should no longer be final, or the mob is added to "
+                            + "a map that is then thrown away");
         }
     }
 

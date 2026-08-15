@@ -64,6 +64,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
@@ -633,6 +634,20 @@ public final class RegistryProbe {
         SoundEvent sound = BuiltInRegistries.SOUND_EVENT.getValue(Identifier.parse("probemod:chime"));
         require(sound != null, "the sound event should be in the registry");
         require(sound == ProbeContent.CHIME.get(), "the handle should be bound to it");
+
+        // A block set type has to be in vanilla's own table, not merely
+        // constructed: BlockSetType.CODEC resolves by name out of that table,
+        // and the method that writes to it is private. So this proves the
+        // accessible widening reached the game as well as the compiler.
+        require(BlockSetType.values().anyMatch(type -> type == ProbeContent.PROBE_SET),
+                "the mod's block set type was built but never registered");
+        require(ProbeContent.PROBE_SET.canOpenByHand(),
+                "the set was asked to open by hand and does not");
+        require(BlockSetType.CODEC
+                        .parse(com.mojang.serialization.JsonOps.INSTANCE,
+                                new com.google.gson.JsonPrimitive("probemod:probe"))
+                        .result().orElse(null) == ProbeContent.PROBE_SET,
+                "a registered set type should read back from its own name");
     }
 
     private static void require(boolean condition, String what) {

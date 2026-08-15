@@ -1,5 +1,10 @@
 package fr.d4emon.fenix.example.client;
 
+import fr.d4emon.fenix.example.client.render.ModEntityModels;
+import fr.d4emon.fenix.example.client.render.RubySpriteRenderer;
+import fr.d4emon.fenix.example.client.screen.RubyReforgingScreen;
+import fr.d4emon.fenix.example.client.screen.RubySafeScreen;
+
 import fr.d4emon.fenix.api.Fenix;
 import fr.d4emon.fenix.api.FenixMod;
 import fr.d4emon.fenix.api.Mod;
@@ -7,13 +12,18 @@ import fr.d4emon.fenix.event.client.ClientEvents;
 import fr.d4emon.fenix.event.client.HudRenderEvents;
 import fr.d4emon.fenix.event.client.ItemTooltipEvents;
 import fr.d4emon.fenix.registry.attachment.Attachments;
-import fr.d4emon.fenix.example.content.ModContent;
-import fr.d4emon.fenix.example.content.ModItems;
-import fr.d4emon.fenix.example.content.ModPayloads;
+import fr.d4emon.fenix.example.registry.ModContent;
+import fr.d4emon.fenix.example.registry.ModItems;
+import fr.d4emon.fenix.example.network.ModPayloads;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import fr.d4emon.fenix.example.client.render.RubyTallyRenderer;
+import fr.d4emon.fenix.example.registry.ModBlocks;
+import fr.d4emon.fenix.event.Flow;
+import fr.d4emon.fenix.event.client.ClientBlockEvents;
+import fr.d4emon.fenix.registry.client.BlockEntityRendering;
 import fr.d4emon.fenix.registry.client.EntityRendering;
 import fr.d4emon.fenix.registry.client.FluidRendering;
 import fr.d4emon.fenix.registry.client.MenuScreens;
@@ -45,6 +55,11 @@ public final class ExampleModClient implements FenixMod {
         // Runs after the common half, so the entity type is already bound.
         // Vanilla's item renderer is all a wisp needs — no model file.
         EntityRendering.register(ModContent.RUBY_WISP, ThrownItemRenderer::new);
+        // A layer to bake from, then the renderer that bakes it. The order
+        // matters: baking a layer nobody declared throws while the client
+        // loads.
+        ModEntityModels.register();
+        EntityRendering.register(ModContent.RUBY_SPRITE, RubySpriteRenderer::new);
 
         // A particle type with no provider is spawned and never drawn: the
         // lookup finds nothing and the effect silently does not happen.
@@ -66,6 +81,27 @@ public final class ExampleModClient implements FenixMod {
 
         // The other half of a menu: the server opens the window, this says what
         // the player sees when it opens.
+        // A block entity that draws something of its own. Every other thing
+        // this mod draws goes through a different door; this is the one a
+        // block entity uses, and until now the demo never opened it.
+        BlockEntityRendering.register(ModContent.RUBY_TALLY, RubyTallyRenderer::new);
+
+        // Client-side block events. They fire on the client's own prediction,
+        // before the server is asked, which is the only place a mod can stop an
+        // interaction without the block first appearing to break and come back.
+        ClientBlockEvents.ATTACK.register(attack -> {
+            boolean glowing = attack.player().level().getBlockState(attack.pos())
+                    .is(ModBlocks.GLOWING_RUBY_BLOCK.get());
+            if (!glowing || attack.player().isCreative()) {
+                return Flow.CONTINUE;
+            }
+            // Above the hotbar rather than in chat: this fires on every swing
+            // at the block, and chat would fill with it in a second.
+            attack.player().sendOverlayMessage(
+                    Component.translatable("message.example-mod.too_bright"));
+            return Flow.CANCEL;
+        });
+
         MenuScreens.register(ModContent.RUBY_SAFE_MENU, RubySafeScreen::new);
         MenuScreens.register(ModContent.RUBY_REFORGING_MENU, RubyReforgingScreen::new);
 

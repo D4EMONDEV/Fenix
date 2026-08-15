@@ -1,6 +1,8 @@
 package fr.d4emon.fenix.registry;
 
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 
 import java.util.HashMap;
@@ -40,6 +42,34 @@ public final class EntityAttributes {
      */
     static void declare(EntityType<?> type, Supplier<AttributeSupplier.Builder> attributes) {
         DECLARED.put(Objects.requireNonNull(type, "type"), attributes);
+    }
+
+    /**
+     * {@return the game's own holder for an attribute this mod registered}
+     *
+     * <p>{@code AttributeSupplier.Builder.add} takes {@code net.minecraft.core.Holder},
+     * and {@link Registrar#attribute} hands back Fenix's — the two are different
+     * types doing the same job, and without this a mod has to write
+     * {@code BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute.get())} in the
+     * middle of a builder chain, which is the sort of ceremony Fenix exists to
+     * absorb.
+     *
+     * <p>They cannot simply be the same type. Fenix's holder is handed back
+     * before the attribute exists, so that content can be declared in a field;
+     * the game's is a reference the registry creates at registration and there
+     * is nothing to hand back until then. This bridges them once bound.
+     *
+     * <pre>{@code
+     * Mob.createMobAttributes().add(EntityAttributes.holder(ModContent.RUBY_CHARGE), 3.0)
+     * }</pre>
+     *
+     * @param attribute an attribute from {@link Registrar#attribute}
+     * @throws IllegalStateException if it is not registered yet — which means
+     *                               this was read before the registrar applied
+     */
+    public static net.minecraft.core.Holder<Attribute> holder(Holder<Attribute> attribute) {
+        Objects.requireNonNull(attribute, "attribute");
+        return BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute.get());
     }
 
     /**

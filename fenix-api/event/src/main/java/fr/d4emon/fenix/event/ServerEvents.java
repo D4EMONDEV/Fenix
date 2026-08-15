@@ -34,6 +34,15 @@ public final class ServerEvents {
      */
     public static final Event<Started> STARTED = Event.create();
 
+    /**
+     * Fires when the server has been told to stop, before it saves and closes.
+     *
+     * <p>The last moment anything of a mod's can be written where the world can
+     * still be reached. A listener that throws here is contained like any other,
+     * so one broken mod cannot stop a save.
+     */
+    public static final Event<Started> STOPPING = Event.create();
+
     /** Fires before each server tick. */
     public static final Event<Tick> TICK_START = Event.create();
 

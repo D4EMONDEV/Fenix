@@ -40,24 +40,38 @@ class EventMixinTest {
     /** Target class to a handler that must end up inside it. */
     // ofEntries rather than of: Map.of stops at ten pairs, and there are more
     // events than that now.
-    private static final Map<String, String> EXPECTED_HANDLERS = new LinkedHashMap<>(Map.ofEntries(
-            Map.entry("net.minecraft.server.MinecraftServer", "fenix$onTickStart"),
-            Map.entry("net.minecraft.server.level.ServerPlayerGameMode", "fenix$onBreak"),
-            Map.entry("net.minecraft.client.Minecraft", "fenix$onTickStart"),
-            Map.entry("net.minecraft.client.multiplayer.MultiPlayerGameMode", "fenix$onAttack"),
-            Map.entry("net.minecraft.server.players.PlayerList", "fenix$joined"),
-            Map.entry("net.minecraft.world.entity.LivingEntity", "fenix$died"),
-            Map.entry("net.minecraft.server.level.ServerLevel", "fenix$spawning"),
+    private static final Map<String, List<String>> EXPECTED_HANDLERS =
+            new LinkedHashMap<>(Map.ofEntries(
+            Map.entry("net.minecraft.server.MinecraftServer",
+                    List.of("fenix$onTickStart", "fenix$onStopping")),
+            Map.entry("net.minecraft.server.level.ServerPlayerGameMode",
+                    List.of("fenix$onBreak", "fenix$onUse", "fenix$onUseItem")),
+            Map.entry("net.minecraft.client.Minecraft",
+                    List.of("fenix$onTickStart", "fenix$onScreen")),
+            Map.entry("net.minecraft.client.multiplayer.MultiPlayerGameMode", List.of("fenix$onAttack")),
+            Map.entry("net.minecraft.server.players.PlayerList", List.of("fenix$joined")),
+            Map.entry("net.minecraft.world.entity.LivingEntity",
+                    List.of("fenix$died", "fenix$onHurt")),
+            // Right-clicking an entity, hooked on Player so the client
+            // predicts it too rather than only the server deciding it.
+            Map.entry("net.minecraft.world.entity.player.Player",
+                    List.of("fenix$onInteract")),
+            // Walking over an item, and arriving in another dimension.
+            Map.entry("net.minecraft.world.entity.item.ItemEntity",
+                    List.of("fenix$onPickup")),
+            Map.entry("net.minecraft.server.level.ServerPlayer",
+                    List.of("fenix$onChangedDimension")),
+            Map.entry("net.minecraft.server.level.ServerLevel", List.of("fenix$spawning")),
             // A tooltip line and a client that has joined a world: both are
             // drawn or read on the client alone, and both are silent when the
             // injection stops landing — no tooltip line, no event, no message.
-            Map.entry("net.minecraft.world.item.ItemStack", "fenix$tooltip"),
-            Map.entry("net.minecraft.client.multiplayer.ClientPacketListener", "fenix$connected"),
+            Map.entry("net.minecraft.world.item.ItemStack", List.of("fenix$tooltip")),
+            Map.entry("net.minecraft.client.multiplayer.ClientPacketListener", List.of("fenix$connected")),
             // Drawing over the HUD, and catching loot tables while they are
             // still a map rather than a frozen registry.
-            Map.entry("net.minecraft.client.gui.Hud", "fenix$hudRender"),
+            Map.entry("net.minecraft.client.gui.Hud", List.of("fenix$hudRender")),
             Map.entry("net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener",
-                    "fenix$loadedLootTables")));
+                    List.of("fenix$loadedLootTables"))));
 
     @Test
     @DisplayName("every event mixin lands on its real Minecraft target")
@@ -78,17 +92,22 @@ class EventMixinTest {
                 return bytes;
             });
 
-            for (Map.Entry<String, String> expected : EXPECTED_HANDLERS.entrySet()) {
+            for (Map.Entry<String, List<String>> expected : EXPECTED_HANDLERS.entrySet()) {
                 String target = expected.getKey();
-                String handler = expected.getValue();
-
                 loader.loadClass(target);
 
                 byte[] bytes = transformed.get(target);
                 assertNotNull(bytes, target + " was never defined through the Fenix classloader");
-                assertTrue(methodNames(bytes).stream().anyMatch(name -> name.contains(handler)),
-                        target + " should carry the mixin handler " + handler
-                                + " — the injection point has probably moved in this Minecraft version");
+
+                // Every handler the class should carry, not just one: three
+                // events now land on classes that already had an injection, and
+                // checking a single name would have shadowed them.
+                for (String handler : expected.getValue()) {
+                    assertTrue(methodNames(bytes).stream().anyMatch(name -> name.contains(handler)),
+                            target + " should carry the mixin handler " + handler
+                                    + " — the injection point has probably moved in this"
+                                    + " Minecraft version");
+                }
             }
         }
     }

@@ -98,6 +98,18 @@ public final class LootTableFilesProbe {
                         && !value.getAsString().startsWith("minecraft:")) {
                     object.addProperty("name", "minecraft:stone");
                     swapped++;
+                } else if (key.equals("block") && value.isJsonPrimitive()
+                        && value.getAsString().contains(":")
+                        && !value.getAsString().startsWith("minecraft:")) {
+                    // A block_state_property condition names a block and then
+                    // names one of its properties, and the codec checks the
+                    // second against the first. So the stand-in cannot be any
+                    // block: it has to be one that has the property, or the
+                    // check would fail on the substitution rather than on the
+                    // file. Chosen by the property, which is the only thing
+                    // here that says what kind of block this is.
+                    object.addProperty("block", standInFor(object));
+                    swapped++;
                 } else {
                     swapped += substituteModNames(value);
                 }
@@ -108,6 +120,31 @@ public final class LootTableFilesProbe {
             }
         }
         return swapped;
+    }
+
+    /**
+     * A vanilla block carrying the same property the condition asks about.
+     *
+     * @param condition the {@code block_state_property} condition being edited
+     * @return the id of a block that has that property
+     */
+    private static String standInFor(JsonObject condition) {
+        JsonElement properties = condition.get("properties");
+        if (properties != null && properties.isJsonObject()) {
+            JsonObject asked = properties.getAsJsonObject();
+            if (asked.has("type")) {
+                return "minecraft:oak_slab";
+            }
+            if (asked.has("half")) {
+                return "minecraft:oak_door";
+            }
+            if (asked.has("facing")) {
+                return "minecraft:furnace";
+            }
+        }
+        // No properties named: any block will do, and this one has none to
+        // contradict.
+        return "minecraft:stone";
     }
 
     private static void require(boolean condition, String what) {

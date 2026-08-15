@@ -266,22 +266,18 @@ sprites is still written by hand.
 
 - Publish to a public Maven repository ✅ — a plain Maven repo on GitHub Pages,
   free and login-free to consume; see [publishing.md](publishing.md)
-- The website — **written, and hosted nowhere.** React, Vite and TypeScript;
-  `npm run build` in `website/` produces a static `dist/`. `d4emondev.github.io/Fenix/`
-  is the Maven repository, and a repository can only serve one Pages site. It
-  needs either a custom domain or a `D4EMONDEV.github.io` user site; nothing
-  in CI builds or deploys `website/` today.
-- A project generator on the website ✅ — the form, the templates and the zip
-  writer all run in the browser, so the page stays a static file. It ships the
-  Gradle wrapper too: without it the first line of the README it writes,
-  `./gradlew runClient`, names a file the reader does not have.
-- Generated API documentation ✅ — `./gradlew apiDocsSite` writes the reference
-  into the website as Markdown, versioned with the rest of the documentation.
-  Written by a doclet rather than by hand, so the reference cannot describe an
-  API the compiler does not have. `./gradlew apiDocs` still produces plain
-  Javadoc, for anyone who wants it.
+- The website — **removed, to be rebuilt.** It was React, Vite and
+  TypeScript, with hand-written guides, a project generator and an editor
+  that committed to the repository. All of it is in git history at v0.6.0;
+  only the mark was kept. It will be redone from nothing, last, once the API
+  has stopped moving.
+- Browsable API documentation ✅ — `./gradlew apiDocs` builds one Javadoc site
+  covering every module a mod is written against. The Markdown reference that
+  fed the website went with the website; the doclet that wrote it was deleted at
+  0.4.0, because a generated reference says a method exists but not which of two
+  ways survives a datapack reload.
 - A conformance suite broad enough to trust a release — twenty-two checks today, each
-  verified to fail when the thing it covers is sabotaged. Untested end to end:
-  the installer against a real `.minecraft`, and Ember's output against a real
-  resource load.
+  verified to fail when the thing it covers is sabotaged. The installer has now
+  been run against a real `.minecraft` and works. Still untested end to end:
+  Ember's output against a real resource load.
 - Maven Central, once the API stabilises

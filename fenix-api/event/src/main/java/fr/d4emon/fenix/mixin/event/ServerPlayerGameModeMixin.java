@@ -1,6 +1,7 @@
 package fr.d4emon.fenix.mixin.event;
 
 import fr.d4emon.fenix.event.BlockEvents;
+import fr.d4emon.fenix.event.PlayerEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -45,6 +46,16 @@ public class ServerPlayerGameModeMixin {
             // false means "the block was not destroyed", which is exactly what
             // vanilla returns when a break fails for its own reasons.
             cir.setReturnValue(false);
+        }
+    }
+
+    @Inject(method = "useItem", at = @At("HEAD"), cancellable = true, remap = false)
+    private void fenix$onUseItem(ServerPlayer serverPlayer, Level useLevel, ItemStack stack,
+                                 InteractionHand hand,
+                                 CallbackInfoReturnable<InteractionResult> cir) {
+        if (PlayerEvents.USE_ITEM.fire(
+                new PlayerEvents.UseItem(serverPlayer, useLevel, stack, hand)).isCancelled()) {
+            cir.setReturnValue(InteractionResult.FAIL);
         }
     }
 

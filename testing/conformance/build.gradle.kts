@@ -101,6 +101,31 @@ tasks.test {
         .dir("examples/example-mod/src/main/generated")
     inputs.dir(exampleGenerated).withPropertyName("exampleGenerated")
 
+    // Two checks read Java source as text rather than as a dependency — which
+    // classes the demo declares, which shapes the provider offers — and Gradle
+    // has no way to know that from the classpath. Undeclared, they made the
+    // task up to date against a demo that had changed underneath it, so the
+    // check answered yesterday's question and passed.
+    val exampleContent = rootProject.layout.projectDirectory
+        .dir("examples/example-mod/src/main/java/fr/d4emon/fenix/example/registry")
+    inputs.dir(exampleContent).withPropertyName("exampleContent")
+
+    val emberProvider = rootProject.layout.projectDirectory
+        .file("ember/src/main/java/fr/d4emon/fenix/ember/EmberModelProvider.java")
+    inputs.file(emberProvider).withPropertyName("emberProvider")
+
+    // The log-text check reads every module's source as text, for the same
+    // reason as the two above: nothing on a classpath describes it.
+    // Leaf modules: fenix-api is a parent and has no sources of its own.
+    for (module in listOf("fenix-loader", "ember", "fenix-installer",
+            "examples/example-mod", "testing/demo-mod",
+            "fenix-api/bundle", "fenix-api/command", "fenix-api/config",
+            "fenix-api/core", "fenix-api/event", "fenix-api/network",
+            "fenix-api/registry", "fenix-api/resource")) {
+        inputs.dir(rootProject.layout.projectDirectory.dir("$module/src"))
+            .withPropertyName("logSources-" + module.replace('/', '-'))
+    }
+
     doFirst {
         systemProperty("fenix.test.worldgenDir", worldgen.asFile.absolutePath)
         systemProperty("fenix.test.exampleResources", exampleResources.asFile.absolutePath)

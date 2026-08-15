@@ -15,6 +15,7 @@
   "item.example-mod.ruby": "Rubis",
   "item.example-mod.ruby_brine_bucket": "Seau de saumure de rubis",
   "item.example-mod.ruby_hammer": "Marteau de rubis",
+  "item.example-mod.ruby_sprite_spawn_egg": "Œuf d'apparition d'esprit de rubis",
   "item.example-mod.ruby_wisp_spawn_egg": "Œuf d'apparition de feu follet de rubis",
   "item.minecraft.lingering_potion.effect.glimmering": "Potion persistante de lueur",
   "item.minecraft.potion.effect.glimmering": "Potion de lueur",
@@ -24,5 +25,6 @@
   "key.category.example-mod.example_mod": "Example Mod",
   "key.example-mod.count_wisps": "Compter les feux follets proches",
   "message.example-mod.glimmer": "Le marteau luit au coup %s — %s coups en tout.",
+  "message.example-mod.too_bright": "Ce bloc est trop lumineux pour être cassé à la main.",
   "tooltip.example-mod.ruby": "Tiède au toucher."
 }

@@ -581,6 +581,18 @@ public final class FenixDevPlugin implements Plugin<Project> {
     }
 
     private static void addRepositories(Project project) {
+        // A build whose settings declare their own repositories with
+        // PREFER_SETTINGS ignores everything added here, and warns once per
+        // repository per project while doing it. That is the Fenix build
+        // itself, which declares them in settings.gradle.kts; an ordinary mod
+        // has no such setting and wants these.
+        //
+        // A property rather than a guess: the plugin cannot read the settings
+        // mode, and adding repositories late enough to ask would be after the
+        // point they are needed.
+        if ("false".equals(String.valueOf(project.findProperty("fenix.repositories")))) {
+            return;
+        }
         var repositories = project.getRepositories();
         // The Fenix artifacts: locally from a developer's ~/.m2, or publicly from
         // GitHub Pages. mavenLocal comes first so an in-development loader wins.

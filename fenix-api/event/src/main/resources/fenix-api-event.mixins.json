@@ -8,20 +8,24 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "DimensionChangeMixin",
+    "ItemPickupMixin",
+    "LivingEntityDeathMixin",
     "LootTableAccessor",
     "LootTableLoadMixin",
     "MinecraftServerMixin",
-    "ServerPlayerGameModeMixin",
+    "PlayerInteractMixin",
     "PlayerListMixin",
-    "LivingEntityDeathMixin",
-    "ServerLevelMixin"
+    "ServerLevelMixin",
+    "ServerPlayerGameModeMixin"
   ],
   "client": [
     "ClientConnectionMixin",
     "HudRenderMixin",
     "ItemTooltipMixin",
     "MinecraftTickMixin",
-    "MultiPlayerGameModeMixin"
+    "MultiPlayerGameModeMixin",
+    "ScreenChangeMixin"
   ],
   "server": []
 }

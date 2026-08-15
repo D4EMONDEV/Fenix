@@ -30,6 +30,12 @@ public class MinecraftServerMixin {
     public MinecraftServerMixin() {
     }
 
+    @Inject(method = "halt", at = @At("HEAD"), remap = false)
+    private void fenix$onStopping(boolean waitForShutdown, CallbackInfo ci) {
+        ServerEvents.STOPPING.fire(
+                new ServerEvents.Started((MinecraftServer) (Object) this));
+    }
+
     @Inject(method = "tickServer", at = @At("HEAD"), remap = false)
     private void fenix$onTickStart(BooleanSupplier hasTimeLeft, CallbackInfo ci) {
         MinecraftServer server = (MinecraftServer) (Object) this;

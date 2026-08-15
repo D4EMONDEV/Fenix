@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "example-mod:ruby_block",
+  "result": {
+    "id": "example-mod:ruby_trapdoor"
+  }
+}

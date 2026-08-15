@@ -39,6 +39,7 @@ class RegistryConformanceTest {
 
     /** The probe classes, compiled by this module and repackaged as a mod. */
     private static final List<String> PROBE_CLASSES = List.of(
+            "fr/d4emon/fenix/probe/BehaviourProbe.class",
             "fr/d4emon/fenix/probe/ProbeArgument.class",
             "fr/d4emon/fenix/probe/ProbeBlockEntity.class",
             "fr/d4emon/fenix/probe/ProbeContent.class",
@@ -85,6 +86,26 @@ class RegistryConformanceTest {
         assertDoesNotThrow(() -> Launch.run(new String[] {
                 "--fenix.gameJar", clientJar.toAbsolutePath().toString(),
                 "--fenix.gameMain", "fr.d4emon.fenix.probe.RegistryProbe",
+                "--fenix.gameDir", gameDir.toAbsolutePath().toString(),
+        }), "the probe reports a failed check by throwing");
+    }
+
+    @Test
+    @DisplayName("a removed spawn is gone, and a game rule survives being saved")
+    void registrationsTakeEffect() throws IOException {
+        Path clientJar = requiredFile("fenix.test.clientJar");
+        Path registryJar = requiredFile("fenix.test.registryJar");
+
+        // The same mod jar as above: the rules have to be registered by a mod
+        // during onRegister, because by the time a probe's main runs the game
+        // has frozen its registries.
+        Path mods = Files.createDirectories(gameDir.resolve("mods"));
+        Files.copy(registryJar, mods.resolve(registryJar.getFileName()));
+        writeProbeMod(mods.resolve("probemod.jar"));
+
+        assertDoesNotThrow(() -> Launch.run(new String[] {
+                "--fenix.gameJar", clientJar.toAbsolutePath().toString(),
+                "--fenix.gameMain", "fr.d4emon.fenix.probe.BehaviourProbe",
                 "--fenix.gameDir", gameDir.toAbsolutePath().toString(),
         }), "the probe reports a failed check by throwing");
     }

@@ -139,7 +139,7 @@ public final class Config<T extends Record> {
         for (String key : unknown) {
             // Named, never dropped in silence. A key that does nothing is
             // almost always a typo, and the player has no way to tell.
-            fenix.logger().warn("{} has no setting called '{}' — it is ignored", file, key);
+            fenix.logger().warn("{} has no setting called '{}' - it is ignored", file, key);
         }
         current = loaded;
         writeFile(Records.write(loaded));

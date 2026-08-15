@@ -19,6 +19,9 @@ import net.minecraft.world.item.crafting.RecipeType;
 
 import java.util.Map;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -33,6 +36,8 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.gamerules.GameRule;
+import net.minecraft.world.level.gamerules.GameRuleCategory;
 
 /** The content the registry conformance check registers. */
 public final class ProbeContent {
@@ -48,11 +53,35 @@ public final class ProbeContent {
     public static final Holder<Item> RUBY = REGISTRAR.newItem("ruby").register();
 
     /**
+     * Two rules of the mod's own, one of each type Fenix can register.
+     *
+     * <p>Registered eagerly rather than deferred, because vanilla's rule
+     * registry is built during bootstrap and frozen with everything else.
+     */
+    public static final GameRule<Boolean> PROBE_FLAG =
+            REGISTRAR.gameRule("probe_flag", GameRuleCategory.MISC, false);
+
+    public static final GameRule<Integer> PROBE_LIMIT =
+            REGISTRAR.gameRule("probe_limit", GameRuleCategory.MISC, 7, 0, 64);
+
+    /**
      * A tab of the mod's own. Registering one is enough to make vanilla's
      * bootstrap validation throw, so this field alone is half the check.
      */
     public static final ResourceKey<CreativeModeTab> TAB =
             REGISTRAR.creativeTab("probemod", RUBY);
+
+    /**
+     * A block set type of the mod's own, which needs a private vanilla method
+     * widened to register at all.
+     */
+    public static final BlockSetType PROBE_SET = REGISTRAR.blockSetType(
+            "probe", true, SoundType.METAL,
+            SoundEvents.IRON_DOOR_CLOSE, SoundEvents.IRON_DOOR_OPEN,
+            SoundEvents.IRON_TRAPDOOR_CLOSE, SoundEvents.IRON_TRAPDOOR_OPEN,
+            SoundEvents.STONE_PRESSURE_PLATE_CLICK_OFF,
+            SoundEvents.STONE_PRESSURE_PLATE_CLICK_ON,
+            SoundEvents.STONE_BUTTON_CLICK_OFF, SoundEvents.STONE_BUTTON_CLICK_ON);
 
     /** A block that carries a block entity. */
     public static final Holder<Block> MACHINE =

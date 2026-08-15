@@ -170,6 +170,103 @@ public abstract class EmberLootTableProvider extends EmberProvider {
                 """.stripTrailing().indent(indent.length()).stripTrailing();
     }
 
+    /**
+     * A slab, which drops two when it was a double slab and one otherwise.
+     *
+     * <p>{@link #dropsSelf} is wrong for a slab and wrong quietly: the block
+     * breaks, one slab drops, and the other half of what the player placed is
+     * gone. Nothing says so, and it looks like an ordinary mistake in counting.
+     *
+     * @param block the slab
+     */
+    protected final void dropsSlab(Holder<Block> block) {
+        String name = block.id().getPath();
+        String id = EmberOutput.idOf(block.get()).toString();
+        // explosion_decay rather than survives_explosion: the count is what is
+        // reduced, so a slab blown up yields one instead of vanishing whole.
+        output().data("loot_table/blocks/" + name + ".json", """
+                {
+                  "type": "minecraft:block",
+                  "pools": [
+                    {
+                      "rolls": 1.0,
+                      "entries": [
+                        {
+                          "type": "minecraft:item",
+                          "name": "%s",
+                          "functions": [
+                            {
+                              "function": "minecraft:set_count",
+                              "count": 2.0,
+                              "conditions": [
+                                {
+                                  "condition": "minecraft:block_state_property",
+                                  "block": "%s",
+                                  "properties": {
+                                    "type": "double"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "function": "minecraft:explosion_decay"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "random_sequence": "%s:blocks/%s"
+                }
+                """.formatted(id, id, modId(), name));
+    }
+
+    /**
+     * A door, which drops once for the two blocks it occupies.
+     *
+     * <p>A door is two block states, and breaking either breaks both. With
+     * {@link #dropsSelf} each half rolls the table and the player gets two
+     * doors back from one — the kind of duplication that is only noticed after
+     * somebody has been doing it on purpose for a week.
+     *
+     * @param block the door
+     */
+    protected final void dropsDoor(Holder<Block> block) {
+        String name = block.id().getPath();
+        String id = EmberOutput.idOf(block.get()).toString();
+        output().data("loot_table/blocks/" + name + ".json", """
+                {
+                  "type": "minecraft:block",
+                  "pools": [
+                    {
+                      "rolls": 1.0,
+                      "conditions": [
+                        {
+                          "condition": "minecraft:survives_explosion"
+                        }
+                      ],
+                      "entries": [
+                        {
+                          "type": "minecraft:item",
+                          "name": "%s",
+                          "conditions": [
+                            {
+                              "condition": "minecraft:block_state_property",
+                              "block": "%s",
+                              "properties": {
+                                "half": "lower"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "random_sequence": "%s:blocks/%s"
+                }
+                """.formatted(id, id, modId(), name));
+    }
+
     private void write(Holder<Block> block, String dropId) {
         String name = block.id().getPath();
         output().data("loot_table/blocks/" + name + ".json", """

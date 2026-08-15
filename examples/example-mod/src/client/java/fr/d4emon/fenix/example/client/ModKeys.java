@@ -2,7 +2,7 @@ package fr.d4emon.fenix.example.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import fr.d4emon.fenix.event.client.ClientEvents;
-import fr.d4emon.fenix.example.content.ModContent;
+import fr.d4emon.fenix.example.registry.ModContent;
 import fr.d4emon.fenix.registry.client.KeyBindings;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;

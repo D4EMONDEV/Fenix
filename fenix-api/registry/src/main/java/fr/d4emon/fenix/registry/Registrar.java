@@ -11,8 +11,19 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.gamerules.GameRuleTypeVisitor;
+import net.minecraft.world.level.gamerules.GameRuleType;
+import net.minecraft.world.level.gamerules.GameRuleCategory;
+import net.minecraft.world.level.gamerules.GameRule;
+import net.minecraft.world.flag.FeatureFlagSet;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import net.minecraft.world.entity.ai.attributes.RangedAttribute;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -543,6 +554,211 @@ public final class Registrar {
     // ------------------------------------------------------------------
     // Sounds
     // ------------------------------------------------------------------
+
+    /**
+     * Registers a game rule holding {@code true} or {@code false}.
+     *
+     * <p>A game rule is the switch a server operator reaches for: it appears in
+     * {@code /gamerule}, in the world-creation screen, and is saved with the
+     * world rather than with the mod. That is what makes it the right home for
+     * "should this mod's thing happen at all" — a config file is per
+     * installation, a game rule is per world and can be changed by somebody who
+     * cannot edit files.
+     *
+     * <pre>{@code
+     * public static final GameRule<Boolean> WISPS_SPAWN =
+     *         REGISTRAR.gameRule("wisps_spawn", GameRuleCategory.SPAWNING, true);
+     *
+     * // and later, on a server:
+     * if (level.getGameRules().get(WISPS_SPAWN)) { ... }
+     * }</pre>
+     *
+     * <p>Returned directly rather than as a {@link Holder}: a game rule is
+     * registered into the built-in registry the moment this is called, because
+     * the rule object itself is the key the game reads values with, and nothing
+     * about it needs the registries to be open.
+     *
+     * @param name     the rule's name in this mod's namespace
+     * @param category which group it appears under in the world-creation screen
+     * @param fallback the value a world starts with
+     * @return the rule, to read values with
+     */
+    public GameRule<Boolean> gameRule(String name, GameRuleCategory category, boolean fallback) {
+        Objects.requireNonNull(category, "category");
+        return registerRule(name, category, GameRuleType.BOOL, BoolArgumentType.bool(),
+                Codec.BOOL, fallback, GameRuleTypeVisitor::visitBoolean, value -> value ? 1 : 0);
+    }
+
+    /**
+     * Registers a game rule holding a whole number between two bounds.
+     *
+     * <p>The bounds are the game's own validation: {@code /gamerule} refuses a
+     * value outside them, with the range in the message, rather than accepting
+     * it and behaving oddly later.
+     *
+     * @param name     the rule's name in this mod's namespace
+     * @param category which group it appears under
+     * @param fallback the value a world starts with
+     * @param minimum  the lowest the rule accepts
+     * @param maximum  the highest
+     * @return the rule, to read values with
+     * @throws IllegalArgumentException if the range cannot hold the fallback
+     */
+    public GameRule<Integer> gameRule(String name, GameRuleCategory category, int fallback,
+                                      int minimum, int maximum) {
+        Objects.requireNonNull(category, "category");
+        // Checked here because the game does not: a fallback outside the range
+        // is accepted at registration and only rejected the first time somebody
+        // tries to set it back to the default, which is a long way from here.
+        if (minimum > maximum) {
+            throw new IllegalArgumentException(
+                    "minimum " + minimum + " is above maximum " + maximum);
+        }
+        if (fallback < minimum || fallback > maximum) {
+            throw new IllegalArgumentException(
+                    "the default " + fallback + " is outside " + minimum + ".." + maximum
+                            + ", so the rule could never be reset to it");
+        }
+        return registerRule(name, category, GameRuleType.INT,
+                IntegerArgumentType.integer(minimum, maximum), Codec.intRange(minimum, maximum),
+                fallback, GameRuleTypeVisitor::visitInteger, value -> value);
+    }
+
+    /**
+     * The eight-argument construction both forms share, in one place.
+     *
+     * <p>Copied from the game's own private helpers rather than guessed: a rule
+     * built with the wrong visitor or codec registers, appears, and then fails
+     * to save or to show in the creation screen — none of which is a crash.
+     */
+    private <T> GameRule<T> registerRule(String name, GameRuleCategory category,
+                                         GameRuleType typeHint,
+                                         com.mojang.brigadier.arguments.ArgumentType<T> argument,
+                                         Codec<T> codec, T fallback,
+                                         GameRules.VisitorCaller<T> visitor,
+                                         java.util.function.ToIntFunction<T> commandResult) {
+        Identifier id = identifier(name);
+        return Registry.register(BuiltInRegistries.GAME_RULE, id,
+                new GameRule<>(category, typeHint, argument, visitor, codec, commandResult,
+                        fallback, FeatureFlagSet.of()));
+    }
+
+    /**
+     * Registers a block set type: the character a door, trapdoor, button and
+     * pressure plate share.
+     *
+     * <p>It decides two things that look unrelated and are not: the sounds the
+     * set makes, and whether a hand can open it. Vanilla ships one per wood and
+     * one per metal, and a mod adding a door has to pick one of those or make
+     * its own — picking one means a ruby door that sounds like oak, or like
+     * iron and refuses to open.
+     *
+     * <p>{@code BlockSetType.register} is private in the game, so this widens
+     * it through the {@code accessible} entry in this module's manifest.
+     * Registering matters: {@code BlockSetType.CODEC} resolves by name from a
+     * table only that method writes to, so an unregistered type is one that
+     * cannot be read back.
+     *
+     * <p>Call this before the door that uses it is built.
+     *
+     * <pre>{@code
+     * public static final BlockSetType RUBY = REGISTRAR.blockSetType(
+     *         "ruby", true, SoundType.METAL,
+     *         SoundEvents.IRON_DOOR_CLOSE, SoundEvents.IRON_DOOR_OPEN,
+     *         SoundEvents.IRON_TRAPDOOR_CLOSE, SoundEvents.IRON_TRAPDOOR_OPEN,
+     *         SoundEvents.STONE_PRESSURE_PLATE_CLICK_OFF,
+     *         SoundEvents.STONE_PRESSURE_PLATE_CLICK_ON,
+     *         SoundEvents.STONE_BUTTON_CLICK_OFF, SoundEvents.STONE_BUTTON_CLICK_ON);
+     * }</pre>
+     *
+     * @param name             the set's name, namespaced with the mod id
+     * @param openableByHand   whether a right click opens the door and trapdoor;
+     *                         false is iron's behaviour, redstone only
+     * @param sound            the sound type the blocks break and step with
+     * @param doorClose        closing a door
+     * @param doorOpen         opening a door
+     * @param trapdoorClose    closing a trapdoor
+     * @param trapdoorOpen     opening a trapdoor
+     * @param plateOff         a pressure plate releasing
+     * @param plateOn          a pressure plate being stepped on
+     * @param buttonOff        a button releasing
+     * @param buttonOn         a button being pressed
+     * @return the set type, ready to hand to a door, trapdoor, button or plate
+     */
+    public BlockSetType blockSetType(String name, boolean openableByHand, SoundType sound,
+                                     SoundEvent doorClose, SoundEvent doorOpen,
+                                     SoundEvent trapdoorClose, SoundEvent trapdoorOpen,
+                                     SoundEvent plateOff, SoundEvent plateOn,
+                                     SoundEvent buttonOff, SoundEvent buttonOn) {
+        BlockSetType type = new BlockSetType(identifier(name).toString(), openableByHand,
+                // A wind charge opening it follows the hand: the two are the
+                // same question asked by a player and by a projectile, and a
+                // set that answers them differently has no vanilla precedent.
+                openableByHand, true,
+                BlockSetType.PressurePlateSensitivity.EVERYTHING, sound,
+                doorClose, doorOpen, trapdoorClose, trapdoorOpen,
+                plateOff, plateOn, buttonOff, buttonOn);
+        BlockSetType.register(type);
+        return type;
+    }
+
+    /**
+     * Registers an attribute: a named number every entity carries, which
+     * equipment, effects and other mods can add to.
+     *
+     * <p>This is how a mod gives entities a stat vanilla has no word for —
+     * mana, weight, a resistance of its own — without keeping a map on the side.
+     * The value is stored on the entity, saved with it, and modifiers stack the
+     * way vanilla's own do.
+     *
+     * <p>An attribute is not on an entity until it is added to that entity's
+     * set: register it here, then name it in {@link #attributes} for the
+     * entities that should have one. Registering alone gives an attribute
+     * nothing has, which reads as the attribute not working.
+     *
+     * <pre>{@code
+     * public static final Holder<Attribute> MANA =
+     *         REGISTRAR.attribute("mana", 0.0, 0.0, 1024.0);
+     * }</pre>
+     *
+     * <p>Syncable, because a value the client cannot see is one no HUD can draw
+     * and no tooltip can mention — which is what an attribute is usually for.
+     *
+     * @param name    the attribute's name in this mod's namespace
+     * @param base    the value an entity has before any modifier
+     * @param minimum the lowest it can be driven to
+     * @param maximum the highest
+     * @return a holder, bound once the registrar is applied
+     * @throws IllegalArgumentException if the range cannot hold the base value
+     */
+    public Holder<Attribute> attribute(String name, double base, double minimum, double maximum) {
+        // Checked here rather than left to the game: vanilla clamps silently,
+        // so a base outside its own range becomes a different number than the
+        // one written, and nothing says which.
+        if (minimum > maximum) {
+            throw new IllegalArgumentException(
+                    "minimum " + minimum + " is above maximum " + maximum);
+        }
+        if (base < minimum || base > maximum) {
+            throw new IllegalArgumentException(
+                    "base " + base + " is outside " + minimum + ".." + maximum
+                            + "; the game would clamp it and say nothing");
+        }
+
+        Identifier id = identifier(name);
+        Holder<Attribute> holder = new Holder<>(id);
+
+        defer(() -> {
+            ResourceKey<Attribute> key = ResourceKey.create(Registries.ATTRIBUTE, id);
+            // The description key is what a tooltip shows, so it follows the
+            // same shape as every other translatable name a mod owns.
+            Attribute attribute = new RangedAttribute(
+                    "attribute." + id.getNamespace() + "." + id.getPath(), base, minimum, maximum)
+                    .setSyncable(true);
+            holder.bind(Registry.register(BuiltInRegistries.ATTRIBUTE, key, attribute));
+        });
+        return holder;
+    }
 
     /**
      * Declares a sound event.

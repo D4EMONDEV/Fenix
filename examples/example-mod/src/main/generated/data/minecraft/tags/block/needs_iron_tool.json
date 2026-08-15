@@ -3,6 +3,13 @@
     "example-mod:ruby_block",
     "example-mod:glowing_ruby_block",
     "example-mod:ruby_ore",
-    "example-mod:deepslate_ruby_ore"
+    "example-mod:deepslate_ruby_ore",
+    "example-mod:ruby_slab",
+    "example-mod:ruby_stairs",
+    "example-mod:ruby_fence",
+    "example-mod:ruby_gate",
+    "example-mod:ruby_wall",
+    "example-mod:ruby_trapdoor",
+    "example-mod:ruby_door"
   ]
 }

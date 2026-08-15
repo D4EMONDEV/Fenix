@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "B": "example-mod:ruby_block",
+    "#": "#minecraft:planks"
+  },
+  "pattern": [
+    "BB ",
+    "###",
+    "###"
+  ],
+  "result": {
+    "id": "example-mod:ruby_reforging"
+  }
+}

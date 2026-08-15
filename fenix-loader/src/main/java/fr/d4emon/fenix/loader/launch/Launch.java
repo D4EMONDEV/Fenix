@@ -133,7 +133,7 @@ public final class Launch {
             builtins.put("minecraft", located.version().get());
         }
 
-        log.info("Fenix Loader {} — {} side, game directory {}",
+        log.info("Fenix Loader {} - {} side, game directory {}",
                 loaderVersion, side.toString().toLowerCase(Locale.ROOT), options.gameDir());
         if (located != null) {
             log.info("game: {} ({})", located.jar().getFileName(),
@@ -158,7 +158,7 @@ public final class Launch {
         // 3. Can it all load together, and in what order?
         ResolutionResult resolved = ModResolver.resolve(discovered.mods(), side, Map.copyOf(builtins));
         for (ModCandidate skipped : resolved.skipped()) {
-            log.info("skipping {} — it only loads on the {}",
+            log.info("skipping {} - it only loads on the {}",
                     skipped, skipped.metadata().side().toString().toLowerCase(Locale.ROOT));
         }
         for (ModCandidate mod : resolved.loadOrder()) {
@@ -212,7 +212,7 @@ public final class Launch {
         }
 
         if (options.dryRun()) {
-            log.info("dry run — {} resolves through the Fenix classloader, {} mod(s) ready; "
+            log.info("dry run - {} resolves through the Fenix classloader, {} mod(s) ready; "
                     + "stopping before the game starts", mainClass, mods.size());
             return;
         }

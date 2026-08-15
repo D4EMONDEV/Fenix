@@ -9,6 +9,7 @@
   "mixins": [
     "ArgumentTypeInfosAccessor",
     "AxeItemMixin",
+    "BiomeGenerationSettingsMixin",
     "BlockEntityAttachmentMixin",
     "CreativeModeTabMixin",
     "CreativeTabValidationMixin",
@@ -17,13 +18,13 @@
     "FireBlockMixin",
     "FuelValuesMixin",
     "HoneycombItemMixin",
+    "MobSpawnSettingsMixin",
     "PoiTagBindingMixin",
     "PoiTypesInvoker",
     "PotionBrewingBuilderMixin",
+    "RegistryDataLoaderMixin",
     "SpawnPlacementsInvoker",
-    "WeatheringCopperMixin",
-    "BiomeGenerationSettingsMixin",
-    "RegistryDataLoaderMixin"
+    "WeatheringCopperMixin"
   ],
   "client": [
     "CreativeModeTabsMixin",

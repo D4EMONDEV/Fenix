@@ -2,6 +2,8 @@ package fr.d4emon.fenix.event.client;
 
 import fr.d4emon.fenix.event.Event;
 import net.minecraft.client.Minecraft;
+import org.jetbrains.annotations.Nullable;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 
 /**
@@ -54,7 +56,26 @@ public final class ClientEvents {
     }
 
     /** Fires when this client has joined a world. */
+    /**
+     * A screen is about to be shown, or closed.
+     *
+     * @param screen what is being opened, or {@code null} when the last one is
+     *               closing and the player returns to the world
+     */
+    public record ScreenChange(@Nullable Screen screen) {
+    }
+
     public static final Event<Connected> CONNECTED = Event.create();
+
+    /**
+     * Fires whenever the client changes screen, including to nothing.
+     *
+     * <p>Where a mod adds a button to somebody else's screen, or notices that an
+     * inventory has been closed. It fires before the screen is initialised, so
+     * its widgets are not there yet — which is the moment a mod wanting to add
+     * one has to act.
+     */
+    public static final Event<ScreenChange> SCREEN = Event.create();
 
     /** Fires when this client has left one. */
     public static final Event<Disconnected> DISCONNECTED = Event.create();

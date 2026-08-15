@@ -21,12 +21,12 @@ public final class DemoMod implements FenixMod {
 
     @Override
     public void onPreLaunch(Fenix fenix) {
-        fenix.logger().info("onPreLaunch — the game does not exist yet");
+        fenix.logger().info("onPreLaunch - the game does not exist yet");
     }
 
     @Override
     public void onRegister(Fenix fenix) {
-        fenix.logger().info("onRegister — the registries are open");
+        fenix.logger().info("onRegister - the registries are open");
     }
 
     @Override

@@ -30,9 +30,12 @@ public abstract class ServerPayloadMixin {
             return;
         }
         ServerPlayer player = ((ServerGamePacketListenerImpl) (Object) this).getPlayer();
-        // Already on the server thread: vanilla schedules packet handling there
-        // before this runs, so a handler can touch the world directly.
-        if (Channels.deliver(envelope, player, Envelope.TO_SERVER)) {
+        // Not on the server thread. This method is empty in vanilla — it never
+        // calls ensureRunningOnSameThread, because vanilla has nothing to do
+        // with a serverbound payload — so nothing has moved off Netty by the
+        // time this runs. The handler is scheduled onto the server instead.
+        if (Channels.deliver(envelope, player, Envelope.TO_SERVER,
+                player.level().getServer())) {
             info.cancel();
         }
     }

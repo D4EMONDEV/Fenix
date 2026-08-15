@@ -1,6 +1,8 @@
 package fr.d4emon.fenix.ember;
 
 import fr.d4emon.fenix.registry.Holder;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -81,6 +83,86 @@ public abstract class EmberRecipeProvider extends EmberProvider {
         return new Shapeless(this, result, count);
     }
 
+    /**
+     * Cutting one block into another on a stonecutter.
+     *
+     * <p>The natural recipe for a shape cut from a block — a slab, stairs, a
+     * wall — and the one vanilla uses for all of its own. Without it a mod's
+     * cut shapes exist, are modelled, drop correctly and cannot be made, which
+     * is a creative-mode-only block wearing a survival block's coat.
+     *
+     * @param result what it makes
+     * @param from   the block being cut
+     */
+    protected final void stonecutting(Holder<?> result, Holder<?> from) {
+        stonecutting(result, from, 1);
+    }
+
+    /**
+     * Cutting one block into another on a stonecutter.
+     *
+     * @param result what it makes
+     * @param from   the block being cut
+     * @param count  how many, which for a slab is two
+     */
+    protected final void stonecutting(Holder<?> result, Holder<?> from, int count) {
+        String source = EmberOutput.idOf(from.get()).toString();
+        // Named after both sides: one block cuts into nine shapes here, and
+        // nine files called after the source alone would be one file.
+        save(EmberOutput.idOf(result.get()).getPath() + "_from_"
+                        + source.substring(source.indexOf(':') + 1) + "_stonecutting",
+                """
+                {
+                  "type": "minecraft:stonecutting",
+                  "ingredient": %s,
+                  "result": %s
+                }
+                """.formatted(EmberOutput.quote(source), resultJson(result, count)));
+    }
+
+    /**
+     * Smelting in a furnace.
+     *
+     * @param result     what it makes
+     * @param ingredient what goes in
+     * @param experience how much experience the result is worth
+     * @param ticks      how long it takes; a furnace is 200 for most things
+     */
+    protected final void smelting(Holder<?> result, Holder<?> ingredient,
+                                  float experience, int ticks) {
+        cooking("smelting", result, ingredient, experience, ticks);
+    }
+
+    /**
+     * Blasting in a blast furnace, which is twice as fast and gives no more.
+     *
+     * @param result     what it makes
+     * @param ingredient what goes in
+     * @param experience how much experience the result is worth
+     * @param ticks      how long it takes; a blast furnace is 100 for most things
+     */
+    protected final void blasting(Holder<?> result, Holder<?> ingredient,
+                                  float experience, int ticks) {
+        cooking("blasting", result, ingredient, experience, ticks);
+    }
+
+    private void cooking(String type, Holder<?> result, Holder<?> ingredient,
+                         float experience, int ticks) {
+        String source = EmberOutput.idOf(ingredient.get()).toString();
+        save(EmberOutput.idOf(result.get()).getPath() + "_from_" + type + "_"
+                        + source.substring(source.indexOf(':') + 1),
+                """
+                {
+                  "type": "minecraft:%s",
+                  "cookingtime": %d,
+                  "experience": %s,
+                  "ingredient": %s,
+                  "result": %s
+                }
+                """.formatted(type, ticks, experience,
+                        EmberOutput.quote(source), resultJson(result, 1)));
+    }
+
     /** Writes a finished recipe, named after its result unless told otherwise. */
     private void save(String name, String json) {
         output().data("recipe/" + name + ".json", json);
@@ -137,10 +219,26 @@ public abstract class EmberRecipeProvider extends EmberProvider {
         }
 
         /**
-         * What a character stands for, by id, for vanilla content.
+         * What a character stands for, when anything in a tag will do.
+         *
+         * <p>Which is how most vanilla recipes are written — a stick is two of
+         * {@code #minecraft:planks}, not two of oak. A recipe naming one block
+         * where a tag was meant works for that block and silently refuses every
+         * other member of the family.
          *
          * @param key the character
-         * @param id  the full id, such as {@code minecraft:diamond}
+         * @param tag what may go there
+         * @return this builder
+         */
+        public Shaped define(char key, TagKey<Item> tag) {
+            return define(key, "#" + tag.location());
+        }
+
+        /**
+         * What a character stands for, by id, for vanilla content.
+         *
+         * @param key the character used in the pattern
+         * @param id  what may go there, or {@code #namespace:tag} for a tag
          * @return this builder
          */
         public Shaped define(char key, String id) {
@@ -204,6 +302,21 @@ public abstract class EmberRecipeProvider extends EmberProvider {
          */
         public Shapeless ingredient(Holder<?> ingredient) {
             return ingredient(EmberOutput.idOf(ingredient.get()).toString());
+        }
+
+        /**
+         * Adds an ingredient that may be anything in a tag.
+         *
+         * <p>Which is how most vanilla recipes are written — a stick is two of
+         * {@code #minecraft:planks}, not two of oak. A recipe naming one block
+         * where a tag was meant works for that block and silently refuses
+         * every other member of the family.
+         *
+         * @param tag what may go in
+         * @return this builder
+         */
+        public Shapeless ingredient(TagKey<Item> tag) {
+            return ingredient("#" + tag.location());
         }
 
         /**

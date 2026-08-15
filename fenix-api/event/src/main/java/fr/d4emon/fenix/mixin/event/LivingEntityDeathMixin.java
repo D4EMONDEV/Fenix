@@ -4,6 +4,8 @@ import fr.d4emon.fenix.event.EntityEvents;
 import fr.d4emon.fenix.event.PlayerEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,6 +21,19 @@ public abstract class LivingEntityDeathMixin {
 
     /** Never called — a mixin's constructors are discarded when it is merged. */
     LivingEntityDeathMixin() {
+    }
+
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true, remap = false)
+    private void fenix$onHurt(ServerLevel level, DamageSource source, float amount,
+                              CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (EntityEvents.HURT.fire(new EntityEvents.Hurt(self, level, source, amount))
+                .isCancelled()) {
+            // false is what vanilla returns when a hit does not land — immune,
+            // invulnerable, already dead. Anything else and the caller believes
+            // damage happened.
+            cir.setReturnValue(false);
+        }
     }
 
     @Inject(method = "die", at = @At("HEAD"))

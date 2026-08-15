@@ -7,6 +7,509 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-08-15
+
+The release the game reported. Most of what follows was found by opening
+Minecraft and looking: fences that would not join, a door that would not open,
+three separate causes behind one magenta checker. Each is now covered by a check
+that fails without it, because none of them said anything on their own.
+
+Module versions: loader 0.1.2, API 0.5.0 (event 0.4.0, registry 0.4.0,
+network 0.2.0, config 0.1.1), Ember 0.3.0, Gradle plugin 0.2.2.
+
+### Removed
+
+- **The website.** All of it: the pages, the generator, the editor, the deploy
+  workflow and `docs/website.md`. Only the mark was kept, as
+  `website/favicon.png` and `website/favicon.svg` — `logo.svg` was byte-identical
+  to the favicon, so nothing else was lost.
+
+  It is being rebuilt from nothing, last, once the API has stopped moving. The
+  whole of it is in git history at `v0.6.0` for whoever does that.
+
+  The deploy workflow went with it deliberately rather than being left in place:
+  it triggers on changes under `website/`, so deleting the site would have run
+  it, and it would have failed on every push after that.
+
+### Fixed
+
+- **A slab gave back one, and a door gave back two.** Both used `dropsSelf`,
+  which is right for a cube and wrong for these. A double slab is one block
+  holding two, so breaking it owed two and paid one. A door is two block states
+  and breaking either breaks both, so it rolled its table twice and paid double.
+
+  Neither says anything. The first reads as a miscount and the second is only
+  noticed once somebody has been doing it on purpose for a week. Ember has
+  `dropsSlab` and `dropsDoor` now, shaped exactly like vanilla's own tables,
+  and the conformance check compares them to `oak_slab` and `oak_door` with the
+  block names blanked so only the shape is compared.
+
+- **The nine cut shapes could not be made.** Registered, modelled, named,
+  dropping correctly, and obtainable only in creative — a decoration for
+  screenshots wearing a survival block's coat. They have stonecutter recipes
+  now, and both ores smelt and blast.
+
+- **Five Gradle warnings per module, from Fenix's own plugin.** Reported here
+  last time as something every Fenix mod developer sees. That was wrong: they
+  only appear in a build whose settings claim the repositories with
+  `PREFER_SETTINGS`, which is this repository and not an ordinary mod. The
+  plugin now honours `fenix.repositories=false`, which this build sets and a
+  mod leaves alone.
+
+- **The loot-table codec check could not read its own new files.** It swapped
+  modded ids out of `name` fields but not out of the `block` field of a
+  `block_state_property` condition, so the first table to use one failed on the
+  substitution rather than on the file. The stand-in is now chosen by the
+  property the condition asks about, since a block that lacks the property is
+  no better than a modded one the registry has never heard of.
+
+- **Payload handlers ran on a Netty thread.** Both receiving mixins inject at
+  HEAD, and HEAD is before the point where vanilla hands off to the game: the
+  client's `handleCustomPayload` calls `ensureRunningOnSameThread` a few
+  instructions in, and the server's is empty and never calls it at all. So
+  every handler any mod wrote ran on the thread that read the bytes.
+
+  It mostly works, which is the problem. The demo's handler asks
+  `Minecraft.getInstance().player` for a chat line — what any mod would write —
+  and the log shows it running on `Netty Local IO #1`. Under load it ends as a
+  disconnect reading `Rendersystem called from wrong thread`, which names no
+  mod, no channel and no handler.
+
+  `Channels.deliver` now takes the executor to run on, and the mixins pass the
+  client and the server. Only the handler is scheduled: whether a channel wants
+  the payload is still decided immediately, because the caller cancels vanilla's
+  own handling on that answer and cannot wait a tick to find out.
+
+  `NetworkProbe` checks it: the handler must be queued, not called.
+
+- **The first line Fenix prints was mangled.** The loader logs through
+  `System.out` before anything better exists, and on Windows that carries the
+  console's code page. An em dash is not in cp850, so `Fenix Loader 0.1.1 - client
+  side` arrived with a replacement character where the dash was.
+
+  Nine messages across six modules used one. They are ASCII now, and
+  `LogTextConformanceTest` keeps them that way — comments, docs and
+  translations are untouched, since those are read through tools that
+  handle UTF-8.
+
+- **The ruby door had see-through edges.** The first attempt at its textures
+  left the three leftmost columns clear, on the belief that a door's hinge
+  stile is empty in vanilla. It is not: `oak_door_bottom.png` is opaque in all
+  256 pixels, and `oak_door_top.png` is clear only at its two window panes.
+
+  Those three columns are exactly what `door_bottom_left.json` samples for the
+  door's narrow sides, at uv [0,0,3,16] — so the belief cost precisely the
+  faces it was wrong about, and the wide faces it did not touch looked correct
+  throughout.
+
+  `AssetConformanceTest` now reads the pixels: a model with a vanilla door
+  parent has to name a texture that is opaque in the strips the edges come
+  from. Verified by putting the transparent stile back.
+
+- **Ruby fences and walls would not connect to their own kind.** A fence asks
+  `BlockTags.FENCES` what counts as a fence, and a wall asks `BlockTags.WALLS`;
+  the demo's were in neither, so each stood alone in a row of itself. The gate
+  went on working the whole time and hid how broad the fault was — a gate is
+  matched by class, not by tag, so it was the one join that never depended on
+  the missing file.
+
+- **Ruby doors and trapdoors only moved for redstone.** They were built with
+  `BlockSetType.IRON`, and iron's answer to `canOpenByHand` is no. That is the
+  iron door's whole character, borrowed by accident: it was the first metal in
+  the list, not a decision. They use `COPPER` now, which is metal and opens by
+  hand.
+
+- **Seven cut shapes broke without dropping anything.** All seven declare
+  `requiresTool()` and none was in a `mineable` tag, and a block that requires
+  a tool no tag names cannot be broken for its drop by any tool at all. Found
+  while fixing the fences, not by anyone playing — it takes a while to notice
+  that a slab you mined gave nothing back.
+
+- **A door with no textures, a bucket that could not be drawn, and a spawn egg
+  with no name.** Three separate faults with one appearance, the magenta
+  checker, which says something is missing and never which of the three files
+  it is. The door's textures were described in a comment and never drawn; the
+  bucket had a model but no definition in `items/`, which in 26.2 is what
+  actually chooses a model; the egg had every asset and no translation.
+
+  `AssetConformanceTest` now checks each link separately — that a texture a
+  model names exists, that an item with a model has a definition, and that an
+  item that can be drawn can be named. All three were confirmed by reproducing
+  the original failures.
+
+- **Half the demo's content was in no creative tab.** The nine cut shapes, the
+  sprite's spawn egg and the brine bucket were registered, modelled, and
+  unreachable in game except through `/give` — and so were the logs and ores,
+  which had been missing since long before. Adding content and listing it are
+  two edits, and only the first one is load-bearing, so the second was
+  forgotten twice.
+
+  Nothing reported it, because there is nothing to report: no log line, no
+  exception, no failing check. It looks exactly like content that was never
+  added, which is why it survived several rounds of testing the very blocks it
+  hid.
+
+  `CreativeTabConformanceTest` now reads the demo's own declarations and fails
+  the build when one of them is in no tab.
+
+- **Two conformance checks could not see the files they check.** Both read Java
+  source as text — the demo's declarations, the model provider's shapes — which
+  no classpath mentions, so Gradle held the test task up to date across every
+  change to either. The first one written this way passed against a demo that
+  had already been broken. They are declared inputs now, and the check re-runs
+  when the thing it covers moves.
+
+### Changed
+
+- **example-mod is organised.** Twenty-seven classes sat in one package called
+  `content`, which said nothing about any of them. They are in fourteen
+  packages named after the API areas they exercise — `network/` for what talks
+  to the other side, `data/` for what writes files at build time, `command/`
+  for commands — so somebody looking for how Fenix does a thing opens the
+  package named after it.
+
+  Nothing changed but the arrangement, and that is checked rather than claimed:
+  Ember's output is byte-for-byte identical after the move.
+
+  It has a [README](examples/example-mod/README.md) now, with the layout and a
+  table of what covers which part of the API.
+
+### Added
+
+- **Tags can be named by constant.** `tag(BlockTags.MINEABLE_WITH_PICKAXE)`
+  beside the old `tag("minecraft:mineable/pickaxe")`. Both forms stay: the
+  string is still the right answer for a mod's own tag, or one belonging to a
+  mod that may not be installed.
+
+  The constant moves the name from the player's problem to javac's. A
+  misspelled string writes a perfectly valid file into a tag nothing reads —
+  no log line, no warning, and the game carries on — which is how the demo's
+  fences spent three releases standing alone in a row of fences. Both overloads
+  are typed, so a block tag cannot be described by the item provider:
+
+  ```
+  error: cannot find symbol            symbol: variable FENCEZ
+  error: no suitable method found for tag(TagKey<Item>)
+  ```
+
+  Verified by writing both mistakes and watching the build refuse them, and by
+  checking that the two forms write byte-identical files.
+
+- **Tags can hold tags**, through `addTag`, in both forms. Vanilla leans on
+  this — `#fences` is `#wooden_fences` plus one block, not a list of every
+  fence — and the demo now does the same: its nine cut shapes are one
+  `example-mod:ruby_shapes` tag that the mineable tag refers to once.
+
+- **Recipes can take a tag as an ingredient**, through `define(char, TagKey)`
+  and `ingredient(TagKey)`. Most vanilla recipes are written that way, and a
+  recipe naming one block where a family was meant works for that block and
+  silently refuses the other eleven — the player who tried birch concludes the
+  mod is broken.
+
+- **Recipes for the three block entities.** The tally, the safe and the
+  reforging station had none at all, so the parts of the demo that show the
+  most were reachable only in creative. Two of the three take planks by tag.
+
+
+- **Three API areas the demo had never used.** Block entity rendering shipped,
+  was documented, had its own task marked done, and went four releases without
+  the demo ever registering a renderer — so nothing would have noticed if it
+  had never worked. Level events and client block events were in the same
+  position.
+
+  The tally block now draws its count on its own top face, levels are logged as
+  they load and save, and swinging at a glowing ruby block is refused on the
+  client before the server is asked.
+
+- **`DemoCoverageConformanceTest`.** The demo is the only place the API is used
+  the way somebody would actually write a mod, so an entry point it never calls
+  is one nobody has ever called. This finds them: 36 static entry points, 27
+  used by the demo, 9 named in an allowlist with a reason each.
+
+  Its first version passed while the thing it checked was deleted, because the
+  unused import left behind still carried the name. It reads the sources with
+  the import lines stripped now.
+
+
+- **`Registrar.blockSetType`.** A door, trapdoor, button and pressure plate
+  share a block set type, and it decides two things that look unrelated: the
+  sounds they make, and whether a hand can open them. Vanilla ships one per
+  wood and one per metal, so a mod adding a door had to borrow somebody else's
+  character — which is how the ruby door spent two releases refusing to open,
+  and then a third sounding like copper.
+
+  `BlockSetType.register` is private, so this widens it through an `accessible`
+  entry. Registering rather than merely constructing is the point:
+  `BlockSetType.CODEC` resolves by name out of a table only that method writes
+  to, so an unregistered type cannot be read back. The probe checks all three —
+  that it is in `values()`, that it opens by hand, and that its own name parses
+  back to it.
+
+- **Ember writes stonecutting, smelting and blasting recipes**, and loot tables
+  for slabs and doors.
+
+- **Two checks that registrations do something, not merely exist.**
+  `BehaviourProbe` runs inside the real game and asks the two questions the rest
+  of this module cannot: that a removed spawn is actually gone from the biome's
+  table, and that a game rule the mod registered survives being written out and
+  read back through the same codec a world save uses.
+
+  Both are wiring that can be entirely in place and have no effect, and in both
+  cases the symptom is an absence. A removal that quietly did nothing looks like
+  a mob that is rare today; a rule that does not survive a save looks like a
+  player who forgot they changed it, and will insist they did not.
+
+- **`example-mod` has a living creature.** `RubySprite` is a `PathfinderMob`
+  with health, movement speed, follow range, four goals and the mod's own
+  attribute — plus a spawn egg, a name, and a place in the overworld's spawn
+  table. Everything in the API that deals with living things went
+  undemonstrated until now, because the only entity was a thrown projectile with
+  no brain and no attributes.
+
+  It closes the gap left two releases ago: `Registrar.attribute` had nothing
+  carrying it, which is exactly the mistake its own documentation warns about.
+
+  It also showed a wart in that method. `AttributeSupplier.Builder.add` wants
+  the game's own `Holder`, and `Registrar` hands back Fenix's, so the demo has
+  to call `BuiltInRegistries.ATTRIBUTE.wrapAsHolder(...)` — ceremony of exactly
+  the kind Fenix exists to absorb. It is written down where it happens, and the
+  method should return something usable directly.
+
+  It is drawn, too: a model with hand-written geometry, a layer registered
+  through `EntityModels`, a `MobRenderer`, and a placeholder texture the build
+  generated rather than leaving the magenta checker. Between them they exercise
+  the whole client path a mod's own creature takes — which nothing did before,
+  because the wisp reuses a vanilla renderer.
+- **`EntityAttributes.holder`** — bridges Fenix's holder to the game's, which is
+  what `AttributeSupplier.Builder.add` wants. Without it a mod wrote
+  `BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute.get())` in the middle of a
+  builder chain, which is the ceremony Fenix exists to absorb; the mob demo did
+  exactly that for one release and said so in a comment.
+
+  The two holders cannot simply be one type. Fenix hands its own back *before*
+  the attribute exists, so content can be declared in a field; the game's is a
+  reference its registry creates at registration, and there is nothing to hand
+  back until then.
+- **`PlayerEvents.PICKED_UP` and `CHANGED_DIMENSION`.** Picking an item up
+  reads the stack at HEAD, while it is still what was lying on the ground — by
+  the time the method returns it has been merged into whatever the player
+  already had and its count no longer says what was collected. It fires on the
+  server alone, because both sides call that method and firing on the client
+  would double every count a listener keeps.
+
+  The dimension change hooks the private method the game calls to award the
+  travel advancements, which is the one place that knows both ends of the trip.
+  Injecting on `teleport` would fire for every teleport inside a dimension too
+  and would have to guess whether the world actually changed — a guess that is
+  right until somebody teleports to the same coordinates in the same world.
+
+- **Two more events, one per side.** `EntityEvents.INTERACT` fires when a player
+  right-clicks an entity, cancellable, hooked on `Player` rather than on the
+  packet handler so the client's own prediction fires it too — a listener that
+  only ever saw the server would let the client open a screen the server then
+  refuses, which reads as the screen flickering shut. It fires on both sides, and
+  the documentation says so, because a listener that changes the world without
+  checking `isClientSide` does it twice in single-player.
+
+  `ClientEvents.SCREEN` fires whenever the client changes screen, including to
+  nothing — where a mod adds a button to somebody else's screen, or notices an
+  inventory closing. At HEAD, before the screen is initialised, which is the only
+  moment a widget can be added to the list it builds.
+
+  Both are new mixin files and both are in the ASM check, confirmed to fail with
+  one dropped from its config.
+- **Three events the everyday cases needed.** `EntityEvents.HURT` fires before
+  anything living takes damage and cancelling it stops the hit outright — no
+  knockback, no animation, no death. `PlayerEvents.USE_ITEM` is the right-click
+  that hits no block, which is what eating, drinking, throwing and drawing a bow
+  all begin as; `BlockEvents.USE` was only ever the other half.
+  `ServerEvents.STOPPING` is the last moment a mod can write anything while the
+  world can still be reached.
+
+  All three inject into classes Fenix already had a mixin on, so no new mixin
+  file and no config change.
+
+  The ASM check that proves injections still land kept **one** handler per
+  target class, which was fine until three events arrived on classes that
+  already had one — it would have checked the old name and shadowed the new. It
+  now takes a list per class. Confirmed to fail with the injection point
+  renamed.
+
+- **`Registrar.gameRule`** — a custom game rule, in both the shapes vanilla has:
+  a boolean and a bounded integer. It appears in `/gamerule`, in the
+  world-creation screen, and is saved with the world rather than with the
+  installation — which is what makes it the right home for "should this mod's
+  thing happen at all". A config file is per install; a game rule is per world
+  and can be changed by somebody who cannot edit files.
+
+  In 26.2 game rules moved to `net.minecraft.world.level.gamerules` and became a
+  real registry, with an eight-argument constructor taking a codec, an argument
+  type, a visitor and a feature-flag set. Those are wired the way the game wires
+  its own, read out of its source rather than guessed: a rule built with the
+  wrong visitor or codec registers, appears, and then fails to save or to show in
+  the creation screen, none of which is a crash.
+
+  An integer default outside its own range is rejected. The game accepts it at
+  registration and only complains the first time somebody resets the rule, which
+  is a long way from the line that caused it.
+
+  `example-mod` declares one of each. The headless game boots with them
+  registered, which proves the construction is valid; that a rule round-trips
+  through a saved world is not covered by a test.
+- **`Registrar.attribute`** — a named number every entity carries, which
+  equipment, effects and other mods can add to. This is how a mod gives entities
+  a stat vanilla has no word for — mana, weight, a resistance of its own —
+  without keeping a map on the side, and it is one of the everyday things Fabric
+  and NeoForge mods do that Fenix had no answer for.
+
+  A base value outside its own range is rejected rather than passed on. Vanilla
+  clamps silently, so the attribute would hold a different number than the one
+  written and nothing would say which.
+
+  Not demonstrated in `example-mod`: an attribute belongs to a `LivingEntity`
+  and the example mod's only entity is a plain `Entity`. Registering one that
+  nothing carries is exactly the mistake the method's own documentation warns
+  about, so the demo waits for a mob that can hold it.
+
+- **`door` in `EmberModelProvider`** — the thirteenth shape and the last one
+  missing: two blocks tall, hinged on either side, open or shut, thirty-two
+  states answered by eight models. Unlike the others it takes three textures of
+  its own rather than borrowing, because neither half of a door reads as a full
+  block and the item is a flat picture that reads as neither half.
+- **`BiomeModifications.removeSpawn`** — the counterpart, and what a mod that
+  reshapes the world rather than adding to it needs: taking a mob out of one
+  biome, or out of everywhere so the mod's own replaces it.
+
+  Removals are applied after every addition, so a removal wins against another
+  mod adding the same mob. The opposite order would let a mod quietly undo a
+  removal by registering later. Removing something that was never there is not
+  an error — a selector covering the overworld matches plenty of biomes that
+  never had the mob — so the log reports how many entries actually went, which
+  is the number worth reading. A removal that matched nothing rebuilds nothing,
+  because otherwise every non-match would allocate a map per biome per load.
+
+  `example-mod` now takes bats out of the overworld.
+- **`BiomeModifications.addSpawn`** — a mob appears naturally in every biome a
+  selector matches. `addFeature` already put an ore in the ground; this is its
+  missing counterpart, and without it registering an entity gave you one that
+  could only be summoned by hand with nothing anywhere saying why. That is the
+  commonest reason a new mob is never seen.
+
+  It takes the `Holder` the registrar returned, and reads it when biomes load.
+  The first version took the `EntityType`, which meant calling `.get()` — and a
+  holder is not bound until the registrar is applied, so the natural place to
+  say where a mob spawns, beside the line that registers it, was exactly where
+  it threw. The demo hit that on its first run. Taking the holder removes the
+  order from the problem entirely; the overload taking a type is still there for
+  a vanilla mob.
+
+  A weight of zero is rejected rather than passed on: the game accepts it, never
+  picks it, and leaves a correct-looking line to stare at. The log says what
+  happened once per mob, and its absence is the answer to "why is my mob never
+  anywhere".
+
+  It needed a mixin on `MobSpawnSettings`, whose table is built immutable when a
+  biome loads. The map is replaced rather than written through — the loaded
+  registries are shared, so editing the original would either throw or change
+  something another world is using — and it is an `EnumMap`, because the game
+  reads it for every spawn attempt in every loaded chunk.
+
+  `example-mod`'s ruby wisp now spawns in the overworld. The ASM check that
+  proves the feature path still lands now proves the spawn path too, all three
+  steps of it, and was confirmed to fail when the mixin is dropped from its
+  config — which is how a mixin stops applying in practice.
+- **Twelve more shapes in `EmberModelProvider`.** It knew three — a cube, a
+  pillar and a flat item — which covers a decorative block and nothing a block
+  usually grows into. It now writes slabs, stairs, fences, fence gates, walls,
+  trapdoors, buttons, pressure plates, plants, top-and-bottom cubes, blocks with
+  a face, and items held like a tool.
+
+  Each takes its textures from another block, the way vanilla's oak slab uses
+  the oak planks texture, so a whole family of blocks costs no new artwork.
+
+  The rotations are vanilla's own, read out of the game's blockstate files
+  rather than remembered — and two of them **were** remembered wrongly first: a
+  furnace and a button are drawn facing north, not south, and every one of their
+  variants would have faced ninety degrees off. That is not a crash. The block
+  renders, pointing somewhere else, and only somebody standing in the right
+  place ever notices.
+
+  `example-mod` gains a ruby slab, fence, wall and gate — between them the four
+  blockstate shapes the writer has to get right: simple variants, multipart with
+  boolean sides, multipart with three-valued ones, and sixteen rotated variants.
+  A check compares each against the vanilla block it is modelled on, with the
+  model names normalised away, and all four come out identical.
+
+### Fixed
+
+- **The model conformance check crashed on any multipart blockstate.** It read
+  `variants` and nothing else, so the first fence generated turned it into a
+  `NullPointerException` rather than a check. It now reads both shapes, and was
+  confirmed to still fail when a model a fence names is taken away.
+
+- **Videos in a page.** `:::video <url>` plays a file inline or embeds a YouTube
+  link on `youtube-nocookie.com`, with an optional caption. A recording says in
+  six seconds what a paragraph says badly, and Markdown has no syntax for one.
+- **An editor in the site.** `/admin` — reachable from **Contribute** in the
+  header — lists the pages, edits one with a live preview beside it, and commits
+  straight to the repository through GitHub's API. A fine-grained token scoped
+  to this repository is kept in the browser and sent nowhere else; there is no
+  backend for it to pass through, which is why this works on a static site. A
+  save quotes the hash it started from, so an edit made from another tab is
+  refused rather than overwritten. Every page also carries an "Edit this page on
+  GitHub" link.
+
+  Content stays in git — diffs, history, and a way back. A database would have
+  had none of that.
+- **Pages can be created, not only edited.** A section, a file name, a title, a
+  description and an order; the front matter is written for you, because a page
+  without it has no name in the sidebar and nothing says so. The create refuses
+  a path that already exists, the same way a save refuses a stale one.
+
+  The page list is read from the repository rather than from this site's own
+  bundle — the bundle is a snapshot of the last build, so a page added a minute
+  ago would not be in it, and looking for it there is the first thing anybody
+  does after making one.
+- **The site is responsive**, at three widths that each drop what stops
+  mattering rather than shrinking everything: the contents list goes first, then
+  the sidebar's stickiness and the second column of every pair, then the
+  header's navigation. Checked at 1280, 768 and 375 across the home,
+  documentation, generator and editor — no page scrolls sideways, and code
+  blocks scroll inside their own box.
+- **More on the home page**: the build file, the three commands that cover most
+  of a day, what is different, and the current release — in bands of alternating
+  surface, so a long page has a rhythm.
+- **[Writing these pages](website/content/0.1/reference/writing-docs.md)**,
+  documenting the front matter, the callouts, the video syntax, code titles and
+  where a file goes.
+
+### Fixed
+
+- **The `:::` syntaxes were rewritten inside fenced code blocks.** They run
+  before Markdown is parsed and so could not tell a `:::video` meant to be shown
+  from one meant to be acted on. The page documenting the syntax was the first
+  casualty: its examples were replaced by the HTML they produce, so the one page
+  explaining how to embed a video was the one page that could not show you.
+  Fences are now lifted out before the rewrite and put back after.
+- **The editor's preview showed the front matter as a heading.** It rendered the
+  whole file, while the real page renders the body — so the one screen whose job
+  is to show what a page will look like was the one showing something else. Both
+  now go through the same `stripFrontMatter`.
+
+### Changed
+
+- **The documentation reads like documentation.** Three columns with room in the
+  middle, collapsible sidebar groups, the game version beside the page title,
+  previous/next links at the foot, and line numbers and an optional file path on
+  every code block — `title="…"` was already written in these pages and was
+  being parsed off and thrown away. Line numbers are their own column rather
+  than woven into the markup, because the highlighter can leave a span open
+  across a newline and splitting its output would tear the tags apart.
+- **The home page is a landing page**: the mark, the name, one sentence, and the
+  two doors somebody actually arrives through.
+- The installer has been run against a real `.minecraft` and works;
+  `docs/roadmap.md` said it was untested.
+
 ## [0.6.0] — 2026-08-12
 
 A listener that throws no longer takes the game with it, a generated project can

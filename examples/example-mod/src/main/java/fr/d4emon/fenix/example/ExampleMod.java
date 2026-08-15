@@ -6,16 +6,16 @@ import fr.d4emon.fenix.api.Mod;
 import fr.d4emon.fenix.config.Config;
 import fr.d4emon.fenix.event.BlockEvents;
 import fr.d4emon.fenix.event.EntityEvents;
+import fr.d4emon.fenix.event.LevelEvents;
 import fr.d4emon.fenix.event.PlayerEvents;
-import fr.d4emon.fenix.example.content.ModCommands;
-import fr.d4emon.fenix.example.content.ModConfig;
-import fr.d4emon.fenix.example.content.ModContent;
+import fr.d4emon.fenix.example.command.ModCommands;
+import fr.d4emon.fenix.example.config.ModConfig;
+import fr.d4emon.fenix.example.registry.ModContent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Difficulty;
 import fr.d4emon.fenix.event.Flow;
 import fr.d4emon.fenix.event.ServerEvents;
-import fr.d4emon.fenix.example.content.ModBlocks;
-import fr.d4emon.fenix.example.content.ModContent;
+import fr.d4emon.fenix.example.registry.ModBlocks;
 
 /**
  * The smallest useful Fenix mod: one class, a couple of listeners.
@@ -32,6 +32,24 @@ public final class ExampleMod implements FenixMod {
 
     /** Instantiated by the loader from the compile-time index. */
     public ExampleMod() {
+    }
+
+    /**
+     * Watches each level rather than the server as a whole.
+     *
+     * <p>A server has one lifecycle and several levels, and a mod keeping
+     * per-world state cares about the second: the overworld, the nether and the
+     * end are loaded and saved separately, and something saved on server stop
+     * is saved once for all three.
+     */
+    private static void watchLevels(Fenix fenix) {
+        LevelEvents.LOADED.register(loaded ->
+                fenix.logger().info("level {} is loaded",
+                        loaded.level().dimension().identifier()));
+
+        LevelEvents.SAVING.register(saving ->
+                fenix.logger().debug("level {} is being saved",
+                        saving.level().dimension().identifier()));
     }
 
     @Override
@@ -51,11 +69,13 @@ public final class ExampleMod implements FenixMod {
 
         ModCommands.register();
 
-        fenix.logger().info("Example mod loaded — Fenix {}, {} side",
+        fenix.logger().info("Example mod loaded - Fenix {}, {} side",
                 fenix.loaderVersion(), fenix.side());
 
         ServerEvents.STARTED.register(started ->
                 fenix.logger().info("the world is up: {}", started.server().getWorldData().getLevelName()));
+
+        watchLevels(fenix);
 
         // This mod's own ruby blocks cannot be broken. On the server, so it
         // actually holds: a modified client cannot route around this.

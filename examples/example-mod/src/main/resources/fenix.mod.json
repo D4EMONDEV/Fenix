@@ -4,7 +4,9 @@
   "version": "${version}",
   "name": "Fenix Example Mod",
   "description": "The smallest thing a Fenix mod author has to write.",
-  "authors": ["D4EMON"],
+  "authors": [
+    "D4EMON"
+  ],
   "license": "Apache-2.0",
   "contact": {
     "homepage": "https://github.com/D4EMONDEV/Fenix",
@@ -15,5 +17,12 @@
     "fenix": ">=0.1.0",
     "minecraft": "~${minecraft_version}",
     "fenix-api": ">=0.1.1"
-  }
+  },
+  "accessible": [
+    "method net.minecraft.world.level.block.StairBlock <init>",
+    "method net.minecraft.world.level.block.TrapDoorBlock <init>",
+    "method net.minecraft.world.level.block.ButtonBlock <init>",
+    "method net.minecraft.world.level.block.PressurePlateBlock <init>",
+    "method net.minecraft.world.level.block.DoorBlock <init>"
+  ]
 }

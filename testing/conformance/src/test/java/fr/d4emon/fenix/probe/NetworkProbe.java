@@ -15,6 +15,7 @@ import net.minecraft.server.Bootstrap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -70,6 +71,27 @@ public final class NetworkProbe {
                 "a registered channel should take its own payload");
         require(sent.equals(received.get()),
                 "what the handler receives should equal what was sent, got " + received.get());
+
+        // A packet is read on a Netty thread, and a handler is ordinary mod
+        // code that will reach for the world or the screen. So the delivery
+        // that the receiving mixins use has to hand the handler to the game
+        // thread rather than run it where the bytes arrived.
+        //
+        // This is the check that says scheduled, not called. It failed to be
+        // true for the first two releases that had networking at all, and the
+        // way it showed was a disconnect reading "Rendersystem called from
+        // wrong thread" — which names no mod and no channel.
+        received.set(null);
+        List<Runnable> queued = new ArrayList<>();
+        require(Channels.deliver(back, null, Envelope.TO_CLIENT, queued::add),
+                "a known channel should still be taken when a thread is named for it");
+        require(received.get() == null,
+                "the handler ran on the calling thread; it should have been scheduled");
+        require(queued.size() == 1, "exactly one handler should have been queued, got "
+                + queued.size());
+        queued.forEach(Runnable::run);
+        require(sent.equals(received.get()),
+                "the scheduled handler should receive what was sent, got " + received.get());
 
         // A channel travelling the wrong way is a peer lying or badly out of
         // date; delivering it would hand a handler a payload decoded by the

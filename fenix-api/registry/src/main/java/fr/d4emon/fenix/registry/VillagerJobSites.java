@@ -74,7 +74,7 @@ public final class VillagerJobSites {
             if (jobSite == null || REPORTED.putIfAbsent(jobSite.identifier(), true) != null) {
                 continue;
             }
-            LOG.error("Fenix: no villager will ever take {} — its job site {} is not in {}. "
+            LOG.error("Fenix: no villager will ever take {} - its job site {} is not in {}. "
                             + "An unemployed villager only looks for job sites in that tag, so the "
                             + "profession is registered, correct, and unreachable. Add it with "
                             + "data/minecraft/tags/point_of_interest_type/acquirable_job_site.json "

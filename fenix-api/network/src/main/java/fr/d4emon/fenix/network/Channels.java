@@ -2,6 +2,7 @@ package fr.d4emon.fenix.network;
 
 import net.minecraft.resources.Identifier;
 
+import java.util.concurrent.Executor;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,6 +72,11 @@ public final class Channels {
      * channel in a log line is the whole reason Fenix wraps payloads at all —
      * vanilla would have discarded it without a word.
      *
+     * <p>Runs the handler immediately, on the calling thread. Packets arrive on
+     * a network thread, so the two mixins that receive them use
+     * {@link #deliver(Envelope, Object, net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type, Executor)}
+     * instead; this one is for callers that are already where they want to be.
+     *
      * @param envelope  what arrived
      * @param context   the sending player on the server, {@code null} on a client
      * @param direction which way it came, for the mismatch check
@@ -79,6 +85,33 @@ public final class Channels {
     public static boolean deliver(Envelope envelope, Object context,
                                   net.minecraft.network.protocol.common.custom.CustomPacketPayload
                                           .Type<Envelope> direction) {
+        return deliver(envelope, context, direction, Runnable::run);
+    }
+
+    /**
+     * Hands an arriving envelope to its channel, on the thread that owns the game.
+     *
+     * <p>A packet is read on a Netty thread, and vanilla's own listeners hand
+     * off to the client or server thread before touching anything. Fenix has to
+     * do the same: a handler is ordinary mod code that will reach for the world
+     * or the screen, and reaching for either from a network thread is a data
+     * race that mostly works. The way it stops working is a disconnect reading
+     * {@code Rendersystem called from wrong thread}, which names no mod.
+     *
+     * <p>Only the handler is scheduled. Whether a channel wants the payload,
+     * and whether it came the right way, are decided here and now, because the
+     * caller cancels vanilla's own handling based on the answer and cannot wait
+     * for a later tick to find out.
+     *
+     * @param envelope  what arrived
+     * @param context   the sending player on the server, {@code null} on a client
+     * @param direction which way it came, for the mismatch check
+     * @param onto      the game thread to run the handler on
+     * @return whether a channel took it
+     */
+    public static boolean deliver(Envelope envelope, Object context,
+                                  net.minecraft.network.protocol.common.custom.CustomPacketPayload
+                                          .Type<Envelope> direction, Executor onto) {
         Channel<?> channel = CHANNELS.get(envelope.channel());
         if (channel == null) {
             return false;
@@ -90,7 +123,8 @@ public final class Channels {
             // the wrong codec.
             throw new IllegalStateException(envelope.channel() + " arrived travelling the wrong way");
         }
-        channel.deliver(envelope.data(), context);
+        byte[] data = envelope.data();
+        onto.execute(() -> channel.deliver(data, context));
         return true;
     }
 }

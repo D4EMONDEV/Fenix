@@ -42,19 +42,28 @@ class ModelConformanceTest {
         List<String> problems = new ArrayList<>();
         try (Stream<Path> files = Files.list(blockstates)) {
             for (Path file : files.toList()) {
-                JsonObject variants = JsonParser
+                JsonObject root = JsonParser
                         .parseString(Files.readString(file, StandardCharsets.UTF_8))
-                        .getAsJsonObject().getAsJsonObject("variants");
+                        .getAsJsonObject();
+
+                // A blockstate is one of two shapes. `variants` picks one model
+                // per state; `multipart` adds models up, which is how a fence
+                // is a post plus an arm per neighbour. Reading only the first
+                // was not a lenient check, it was a crash the moment a fence
+                // was generated.
+                if (root.has("multipart")) {
+                    for (JsonElement part : root.getAsJsonArray("multipart")) {
+                        checkModel(assets, file, "multipart",
+                                part.getAsJsonObject().getAsJsonObject("apply"), problems);
+                    }
+                    continue;
+                }
+
+                JsonObject variants = root.getAsJsonObject("variants");
+                assertNotNull(variants, file.getFileName() + " has neither variants nor multipart");
 
                 for (String key : variants.keySet()) {
-                    JsonElement variant = variants.get(key);
-                    String model = variant.getAsJsonObject().get("model").getAsString();
-                    // "example-mod:block/ruby_log" -> assets/example-mod/models/block/ruby_log.json
-                    String path = model.substring(model.indexOf(':') + 1);
-                    if (!Files.isRegularFile(assets.resolve("models/" + path + ".json"))) {
-                        problems.add(file.getFileName() + " variant '" + key + "' names " + model
-                                + ", which was never written");
-                    }
+                    checkModel(assets, file, key, variants.getAsJsonObject(key), problems);
                 }
 
                 // A pillar turns rather than having a model per direction, so
@@ -69,6 +78,18 @@ class ModelConformanceTest {
         }
 
         assertTrue(problems.isEmpty(), "blockstates naming models that do not exist: " + problems);
+    }
+
+    /** Records a problem if {@code placement} names a model that was never written. */
+    private static void checkModel(Path assets, Path file, String where, JsonObject placement,
+                                   List<String> problems) {
+        String model = placement.get("model").getAsString();
+        // "example-mod:block/ruby_log" -> assets/example-mod/models/block/ruby_log.json
+        String path = model.substring(model.indexOf(':') + 1);
+        if (!Files.isRegularFile(assets.resolve("models/" + path + ".json"))) {
+            problems.add(file.getFileName() + " '" + where + "' names " + model
+                    + ", which was never written");
+        }
     }
 
     @Test

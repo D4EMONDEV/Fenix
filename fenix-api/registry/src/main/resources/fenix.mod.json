@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "fenix-api-registry",
   "version": "${version}",
-  "name": "Fenix API — Registry",
+  "name": "Fenix API \u2014 Registry",
   "description": "Content registration: blocks, items, and the vanilla bookkeeping around them.",
   "authors": [
     "D4EMON"
@@ -27,6 +27,7 @@
     "method net.minecraft.core.particles.SimpleParticleType <init>",
     "class net.minecraft.client.particle.ParticleResources$SpriteParticleRegistration",
     "method net.minecraft.client.particle.ParticleResources register",
-    "method net.minecraft.world.level.block.LiquidBlock <init>"
+    "method net.minecraft.world.level.block.LiquidBlock <init>",
+    "method net.minecraft.world.level.block.state.properties.BlockSetType register"
   ]
 }
