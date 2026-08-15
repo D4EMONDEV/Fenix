@@ -1,0 +1,132 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "ember",
+    "version": "0.3.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-registry",
+          "version": {
+            "requires": "0.4.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "ember-0.3.0+mc26.2.jar",
+          "url": "ember-0.3.0+mc26.2.jar",
+          "size": 41619,
+          "sha512": "d5a9cdf18e3c7c3754dc2b49f0809443fbace36daad77279a810c45edc9e7ebb6a07735d40c477d9387b85227b511a12c9ce24c6548f38d3e8ace3f3ef7c0502",
+          "sha256": "b0bcea87ac3404e28e18dc652714bf25c6787da81cb5c88ae1a9f86c349c6136",
+          "sha1": "ee43ad5b5299ace2c9941882f2adfaf615eb479e",
+          "md5": "c01f07002b6832917df53dcbfa573e7f"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-registry",
+          "version": {
+            "requires": "0.4.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "ember-0.3.0+mc26.2.jar",
+          "url": "ember-0.3.0+mc26.2.jar",
+          "size": 41619,
+          "sha512": "d5a9cdf18e3c7c3754dc2b49f0809443fbace36daad77279a810c45edc9e7ebb6a07735d40c477d9387b85227b511a12c9ce24c6548f38d3e8ace3f3ef7c0502",
+          "sha256": "b0bcea87ac3404e28e18dc652714bf25c6787da81cb5c88ae1a9f86c349c6136",
+          "sha1": "ee43ad5b5299ace2c9941882f2adfaf615eb479e",
+          "md5": "c01f07002b6832917df53dcbfa573e7f"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "ember-0.3.0+mc26.2-sources.jar",
+          "url": "ember-0.3.0+mc26.2-sources.jar",
+          "size": 26123,
+          "sha512": "fac242a6cdd66791bbd72ee634dc15a48fcd2c2e39ee6fe40f2c8b67ce2ba0ae3dc6bd01fe1ac8dcc90f81f648047b1aaaafd8d41bde615dd49cbd0f18cdca54",
+          "sha256": "bf7caf284aa22997c7903402263956125867d1ffee8c680cdf6d60ec5fda3400",
+          "sha1": "39d438d420f5317243cc7f396c4f8454f294f416",
+          "md5": "7bb8493b0ad916dc6318b745db890a63"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "ember-0.3.0+mc26.2-javadoc.jar",
+          "url": "ember-0.3.0+mc26.2-javadoc.jar",
+          "size": 4214461,
+          "sha512": "46f255c57257dea0309b8b14d873f87fbcb4b855cd8df99c853e21955a0a0e3667fca7dd9cf52a83f3f64551133c156076a46f1b9098ec7d2b1ed3d5e3de334a",
+          "sha256": "1201300bdf99baf6532df04b490a51ca6294425812427c14bee9e54e0db9af96",
+          "sha1": "79e696f41d1e0e2ad224a8628bc2399440bbe7dd",
+          "md5": "76247cdc3cf3ff2fc023e4b721fb974c"
+        }
+      ]
+    }
+  ]
+}

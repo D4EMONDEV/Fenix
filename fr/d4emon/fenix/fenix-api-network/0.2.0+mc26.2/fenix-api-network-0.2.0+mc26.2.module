@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-api-network",
+    "version": "0.2.0+mc26.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-network-0.2.0+mc26.2.jar",
+          "url": "fenix-api-network-0.2.0+mc26.2.jar",
+          "size": 24674,
+          "sha512": "22f0bc8cbf9fb56a22933ebe33adb0cbede97a6f015c26c64b520f7d126656fbb67c5ac9593eda1cca97cac70fc2603cea39b22cc011b42e2a9686d19a3c0e32",
+          "sha256": "69616550d9d80ff1223a6e04e4170cf3b263e5cd693d282f9d8eea47636c339e",
+          "sha1": "472d694499865613fbbbd4c21eb239b06420aa67",
+          "md5": "12cbbf2014a41a6d7ac4f95af9ef4f85"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-api-network-0.2.0+mc26.2.jar",
+          "url": "fenix-api-network-0.2.0+mc26.2.jar",
+          "size": 24674,
+          "sha512": "22f0bc8cbf9fb56a22933ebe33adb0cbede97a6f015c26c64b520f7d126656fbb67c5ac9593eda1cca97cac70fc2603cea39b22cc011b42e2a9686d19a3c0e32",
+          "sha256": "69616550d9d80ff1223a6e04e4170cf3b263e5cd693d282f9d8eea47636c339e",
+          "sha1": "472d694499865613fbbbd4c21eb239b06420aa67",
+          "md5": "12cbbf2014a41a6d7ac4f95af9ef4f85"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-network-0.2.0+mc26.2-sources.jar",
+          "url": "fenix-api-network-0.2.0+mc26.2-sources.jar",
+          "size": 15624,
+          "sha512": "8bae5dc4706c0b33243c2540b7c9e9a8e0d98c54fe8daaaa541fa3b7e6021ae40dcc300752e2c61fb8780f0ed7a93c4bbbfb82a853129a0e4a3378749fe696d1",
+          "sha256": "fe9677738886a8e30e6b2d57dcba96b0e1bb5ef479be3f9214b8c8087e2cc3fe",
+          "sha1": "d57e65bdad59a3fdd3fcb64c7d968d4a7e388308",
+          "md5": "9b1101f3b1ca68477dc299273f00a90c"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-api-network-0.2.0+mc26.2-javadoc.jar",
+          "url": "fenix-api-network-0.2.0+mc26.2-javadoc.jar",
+          "size": 4188100,
+          "sha512": "5e1fd820d014dad7121cc22c0cf1698482f9908f6ca25b4358d3ed5ce0bfd28fbf1fa0a3e43770c211efebe5ed12b1f753422841654601631fcf98c2a58927c6",
+          "sha256": "c6d5363b3e51585840eba1a9f066dc9bfc7e9ed5090c74579c2f61cdc78d525d",
+          "sha1": "9035453d24191146a25e277fd2f4b9e51d69e43c",
+          "md5": "4e5b3b8bc067f98b8855e3f14808958a"
+        }
+      ]
+    }
+  ]
+}
