@@ -1,6 +1,8 @@
 package fr.d4emon.fenix.ember;
 
 import fr.d4emon.fenix.registry.Holder;
+import java.util.List;
+import java.util.ArrayList;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
@@ -265,6 +267,265 @@ public abstract class EmberLootTableProvider extends EmberProvider {
                   "random_sequence": "%s:blocks/%s"
                 }
                 """.formatted(id, id, modId(), name));
+    }
+
+    /**
+     * Starts a table for what a mob drops when it dies.
+     *
+     * <p>Written to {@code loot_table/entities/}, which is where the game looks
+     * for it — an entity type with no table there drops nothing, and says
+     * nothing about it.
+     *
+     * <pre>{@code
+     * entityLoot(ModContent.RUBY_SPRITE)
+     *         .drop(ModItems.RUBY, 0, 2).looting(0, 1)
+     *         .save();
+     * }</pre>
+     *
+     * @param entity the entity type
+     * @return a builder; call {@code save()} when done
+     */
+    protected final EntityLoot entityLoot(Holder<?> entity) {
+        return new EntityLoot(this, EmberOutput.idOf(entity.get()).getPath());
+    }
+
+    /**
+     * Starts a table for what is found in a container.
+     *
+     * <p>Written to {@code loot_table/chests/}. Unlike a block or an entity
+     * table, nothing refers to this by itself: a structure or a block entity
+     * has to name it.
+     *
+     * @param name the path part of its id, under {@code chests/}
+     * @return a builder; call {@code save()} when done
+     */
+    protected final ChestLoot chestLoot(String name) {
+        return new ChestLoot(this, name);
+    }
+
+    /**
+     * Writes one pool holding every entry, which is what both builders want.
+     *
+     * <p>The callers pass the value of {@code rolls} and nothing else — the
+     * key, the comma and the indentation are decided here. They were the
+     * callers' business for one commit and the two of them disagreed about
+     * how far to indent, which is the kind of thing a committed generated file
+     * shows to every reviewer forever.
+     *
+     * @param rolls the JSON value for {@code rolls}, already indented if it
+     *              spans lines
+     */
+    private void writeTable(String directory, String name, String type,
+                            String rolls, List<String> entries) {
+        StringBuilder json = new StringBuilder()
+                .append("{\n")
+                .append("  \"type\": \"").append(type).append("\",\n")
+                .append("  \"pools\": [\n")
+                .append("    {\n")
+                .append("      \"rolls\": ").append(rolls).append(",\n")
+                .append("      \"entries\": [\n")
+                .append(String.join(",\n", entries)).append("\n")
+                .append("      ]\n")
+                .append("    }\n")
+                .append("  ],\n")
+                .append("  \"random_sequence\": \"").append(modId()).append(':')
+                .append(directory).append('/').append(name).append("\"\n")
+                .append("}\n");
+        output().data("loot_table/" + directory + "/" + name + ".json", json.toString());
+    }
+
+    /** Collects what a mob drops. */
+    public static final class EntityLoot {
+
+        private final EmberLootTableProvider provider;
+        private final String name;
+        private final List<String> entries = new ArrayList<>();
+
+        private EntityLoot(EmberLootTableProvider provider, String name) {
+            this.provider = provider;
+            this.name = name;
+        }
+
+        /**
+         * Drops exactly one of something, every time.
+         *
+         * @param item what drops
+         * @return this builder
+         */
+        public EntityLoot drop(Holder<?> item) {
+            entries.add(item(EmberOutput.idOf(item.get()).toString(), null, null, 0));
+            return this;
+        }
+
+        /**
+         * Drops between {@code min} and {@code max}, evenly.
+         *
+         * @param item what drops
+         * @param min  the fewest, which may be zero
+         * @param max  the most
+         * @return this builder
+         */
+        public EntityLoot drop(Holder<?> item, int min, int max) {
+            entries.add(item(EmberOutput.idOf(item.get()).toString(), min, max, 0));
+            return this;
+        }
+
+        /**
+         * Lets Looting add to the drop declared just before this.
+         *
+         * <p>The idiom every vanilla mob table uses. Without it a mod's mob
+         * ignores the enchantment, which players read as the mob being bugged
+         * rather than as a table that never mentioned it.
+         *
+         * @param max the most Looting can add, per level
+         * @return this builder
+         * @throws IllegalStateException if nothing has been dropped yet
+         */
+        public EntityLoot looting(int max) {
+            if (entries.isEmpty()) {
+                throw new IllegalStateException(
+                        "looting() applies to the drop before it, and there is none yet");
+            }
+            int last = entries.size() - 1;
+            String entry = entries.get(last);
+            String opener = "          \"functions\": [\n";
+            if (!entry.contains(opener)) {
+                // Looting scales a count, so there has to be one to scale.
+                throw new IllegalStateException(
+                        "looting() needs a drop with a count, such as drop(item, 0, 2)");
+            }
+            entries.set(last, entry.replace(opener, opener
+                    + function("minecraft:enchanted_count_increase", 0, max,
+                            "              \"enchantment\": \"minecraft:looting\",\n")
+                    + ",\n"));
+            return this;
+        }
+
+        /**
+         * One item entry, indented to sit inside a pool.
+         *
+         * @param id     what drops
+         * @param min    the fewest, or {@code null} for exactly one
+         * @param max    the most, ignored when {@code min} is null
+         * @param weight nonzero to give the entry a weight, as a chest does
+         * @return the entry, as JSON
+         */
+        static String item(String id, Integer min, Integer max, int weight) {
+            StringBuilder entry = new StringBuilder()
+                    .append("        {\n")
+                    .append("          \"type\": \"minecraft:item\",\n");
+            if (min != null) {
+                entry.append("          \"functions\": [\n")
+                        .append(function("minecraft:set_count", min, max, "")).append("\n")
+                        .append("          ],\n");
+            }
+            entry.append("          \"name\": ").append(EmberOutput.quote(id));
+            if (weight > 0) {
+                entry.append(",\n          \"weight\": ").append(weight);
+            }
+            return entry.append("\n        }").toString();
+        }
+
+        /**
+         * One function with a uniform count, indented to sit in a list.
+         *
+         * @param name  the function's id
+         * @param min   the fewest
+         * @param max   the most
+         * @param extra any further lines the function needs, already indented
+         * @return the function, as JSON
+         */
+        static String function(String name, int min, int max, String extra) {
+            return "            {\n"
+                    + "              \"function\": \"" + name + "\",\n"
+                    + extra
+                    + "              \"count\": {\n"
+                    + "                \"type\": \"minecraft:uniform\",\n"
+                    + "                \"min\": " + EmberOutput.decimal(min) + ",\n"
+                    + "                \"max\": " + EmberOutput.decimal(max) + "\n"
+                    + "              }\n"
+                    + "            }";
+        }
+
+        /** Writes the table. */
+        public void save() {
+            if (entries.isEmpty()) {
+                throw new IllegalStateException(name + " drops nothing, so it needs no table");
+            }
+            provider.writeTable("entities", name, "minecraft:entity", "1.0", entries);
+        }
+    }
+
+    /** Collects what a container holds. */
+    public static final class ChestLoot {
+
+        private final EmberLootTableProvider provider;
+        private final String name;
+        private final List<String> entries = new ArrayList<>();
+        private int minRolls = 1;
+        private int maxRolls = 1;
+
+        private ChestLoot(EmberLootTableProvider provider, String name) {
+            this.provider = provider;
+            this.name = name;
+        }
+
+        /**
+         * How many times the pool is drawn from.
+         *
+         * @param min the fewest draws
+         * @param max the most
+         * @return this builder
+         */
+        public ChestLoot rolls(int min, int max) {
+            this.minRolls = min;
+            this.maxRolls = max;
+            return this;
+        }
+
+        /**
+         * One possible find.
+         *
+         * @param item   what it is
+         * @param weight how likely against everything else in the pool
+         * @return this builder
+         */
+        public ChestLoot item(Holder<?> item, int weight) {
+            return item(item, weight, 1, 1);
+        }
+
+        /**
+         * One possible find, in a quantity.
+         *
+         * @param item   what it is
+         * @param weight how likely against everything else in the pool
+         * @param min    the fewest
+         * @param max    the most
+         * @return this builder
+         */
+        public ChestLoot item(Holder<?> item, int weight, int min, int max) {
+            String base = EntityLoot.item(EmberOutput.idOf(item.get()).toString(),
+                    min == 1 && max == 1 ? null : min,
+                    min == 1 && max == 1 ? null : max,
+                    weight);
+            entries.add(base);
+            return this;
+        }
+
+        /** Writes the table. */
+        public void save() {
+            if (entries.isEmpty()) {
+                throw new IllegalStateException(name + " holds nothing, so it needs no table");
+            }
+            String rolls = minRolls == maxRolls
+                    ? EmberOutput.decimal(minRolls)
+                    : "{\n"
+                            + "        \"type\": \"minecraft:uniform\",\n"
+                            + "        \"min\": " + EmberOutput.decimal(minRolls) + ",\n"
+                            + "        \"max\": " + EmberOutput.decimal(maxRolls) + "\n"
+                            + "      }";
+            provider.writeTable("chests", name, "minecraft:chest", rolls, entries);
+        }
     }
 
     private void write(Holder<Block> block, String dropId) {

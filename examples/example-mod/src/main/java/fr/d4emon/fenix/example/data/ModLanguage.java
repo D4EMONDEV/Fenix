@@ -64,6 +64,10 @@ public final class ModLanguage extends EmberLanguageProvider {
 
         // The tooltip line the client half adds under a ruby's name.
         add("tooltip.example-mod.ruby", "Warm to the touch.");
+        // A damage type with no death message kills players silently.
+        add("death.attack.ruby_burn", "%s Burnt by ruby glow");
+        add("block.example-mod.banner.ruby_facet", "Ruby Facet");
+        add("death.attack.ruby_shard", "%s Skewered by a ruby shard");
         add("message.example-mod.too_bright", "That block is too bright to break by hand.");
 
         // The potion's name follows vanilla's scheme for potion items, so the

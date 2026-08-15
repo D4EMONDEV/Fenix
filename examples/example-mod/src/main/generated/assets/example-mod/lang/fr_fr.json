@@ -10,6 +10,8 @@
   "block.example-mod.stripped_ruby_log": "Bûche de rubis écorcée",
   "container.example-mod.ruby_reforging": "Table de reforge",
   "container.example-mod.ruby_safe": "Coffre-fort de rubis",
+  "death.attack.ruby_burn": "%s Brûlé par l'éclat du rubis",
+  "death.attack.ruby_shard": "%s Transpercé par un éclat de rubis",
   "effect.example-mod.ruby_glimmer": "Lueur de rubis",
   "entity.example-mod.villager.jeweller": "Joaillier",
   "item.example-mod.ruby": "Rubis",

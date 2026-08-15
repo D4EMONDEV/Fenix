@@ -1,6 +1,7 @@
 package fr.d4emon.fenix.example.data;
 
 import fr.d4emon.fenix.example.registry.ModBlocks;
+import fr.d4emon.fenix.example.registry.ModContent;
 import fr.d4emon.fenix.example.registry.ModItems;
 
 import fr.d4emon.fenix.ember.EmberLootTableProvider;
@@ -20,6 +21,25 @@ public final class ModLootTables extends EmberLootTableProvider {
 
     @Override
     protected void lootTables() {
+        // What the mod's own creatures leave behind. An entity type with no
+        // table in loot_table/entities drops nothing, silently.
+        entityLoot(ModContent.RUBY_SPRITE)
+                .drop(ModItems.RUBY, 0, 2).looting(1)
+                .save();
+
+        entityLoot(ModContent.RUBY_WISP)
+                .drop(ModItems.RUBY)
+                .save();
+
+        // Nothing refers to a chest table by itself; a structure or a block
+        // entity has to name it. This one is here to be named later.
+        chestLoot("ruby_cache")
+                .rolls(2, 4)
+                .item(ModItems.RUBY, 20, 1, 3)
+                .item(ModBlocks.RUBY_BLOCK, 5)
+                .item(ModItems.RUBY_HAMMER, 2)
+                .save();
+
         dropsSelf(ModBlocks.RUBY_BLOCK);
         // A slab and a door each need a table of their own: a double slab
         // owes two, and a door must not pay out once per half.

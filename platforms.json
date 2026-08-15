@@ -8,8 +8,8 @@
       "status": "current",
       "java": 25,
       "loader": "0.1.2",
-      "api": "0.5.0",
-      "ember": "0.3.0",
+      "api": "0.6.0",
+      "ember": "0.4.0",
       "processor": "0.1.0"
     }
   ]

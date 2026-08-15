@@ -1,0 +1,31 @@
+{
+  "criteria": {
+    "ruby": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "title": {
+      "text": "Ruby Age"
+    },
+    "description": {
+      "text": "Find your first ruby."
+    },
+    "icon": {
+      "id": "example-mod:ruby"
+    },
+    "background": "minecraft:block/deepslate"
+  },
+  "requirements": [
+    [
+      "ruby"
+    ]
+  ]
+}

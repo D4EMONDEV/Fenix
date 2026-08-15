@@ -3,6 +3,11 @@ package fr.d4emon.fenix.ember;
 import fr.d4emon.fenix.registry.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
@@ -133,6 +138,187 @@ public abstract class EmberTagsProvider extends EmberProvider {
         public Tag add(String id) {
             values.add(id);
             return this;
+        }
+    }
+
+
+    /**
+     * Tags of entity types.
+     *
+     * <p>Written to {@code data/<namespace>/tags/entity_type/}, which is where
+     * the game looks for them.
+     */
+    public abstract static class EntityTagsProvider extends EmberTagsProvider {
+
+        /** For subclasses. */
+        protected EntityTagsProvider() {
+        }
+
+        /**
+         * Starts describing one of the game's own tags.
+         *
+         * <pre>{@code
+         * tag(EntityTypeTags.SKELETONS).add(ModContent.RUBY_SPRITE);
+         * }</pre>
+         *
+         * <p>Typed, so a tag belonging to another registry will not compile
+         * here — which is the whole reason these are separate classes rather
+         * than one provider taking a directory name.
+         *
+         * @param tag the tag
+         * @return a builder to add entries to
+         */
+        protected final Tag tag(TagKey<EntityType<?>> tag) {
+            return tagOf(tag);
+        }
+
+        @Override
+        String directory() {
+            return "entity_type";
+        }
+    }
+
+    /**
+     * Tags of fluids.
+     *
+     * <p>Written to {@code data/<namespace>/tags/fluid/}, which is where
+     * the game looks for them.
+     */
+    public abstract static class FluidTagsProvider extends EmberTagsProvider {
+
+        /** For subclasses. */
+        protected FluidTagsProvider() {
+        }
+
+        /**
+         * Starts describing one of the game's own tags.
+         *
+         * <pre>{@code
+         * tag(FluidTags.WATER).add(ModContent.RUBY_BRINE.still());
+         * }</pre>
+         *
+         * <p>Typed, so a tag belonging to another registry will not compile
+         * here — which is the whole reason these are separate classes rather
+         * than one provider taking a directory name.
+         *
+         * @param tag the tag
+         * @return a builder to add entries to
+         */
+        protected final Tag tag(TagKey<Fluid> tag) {
+            return tagOf(tag);
+        }
+
+        @Override
+        String directory() {
+            return "fluid";
+        }
+    }
+
+    /**
+     * Tags of damage types.
+     *
+     * <p>Written to {@code data/<namespace>/tags/damage_type/}, which is where
+     * the game looks for them.
+     */
+    public abstract static class DamageTypeTagsProvider extends EmberTagsProvider {
+
+        /** For subclasses. */
+        protected DamageTypeTagsProvider() {
+        }
+
+        /**
+         * Starts describing one of the game's own tags.
+         *
+         * <pre>{@code
+         * tag(DamageTypeTags.IS_FIRE).add(your own damage type, by name);
+         * }</pre>
+         *
+         * <p>Typed, so a tag belonging to another registry will not compile
+         * here — which is the whole reason these are separate classes rather
+         * than one provider taking a directory name.
+         *
+         * @param tag the tag
+         * @return a builder to add entries to
+         */
+        protected final Tag tag(TagKey<DamageType> tag) {
+            return tagOf(tag);
+        }
+
+        @Override
+        String directory() {
+            return "damage_type";
+        }
+    }
+
+    /**
+     * Tags of enchantments.
+     *
+     * <p>Written to {@code data/<namespace>/tags/enchantment/}, which is where
+     * the game looks for them.
+     */
+    public abstract static class EnchantmentTagsProvider extends EmberTagsProvider {
+
+        /** For subclasses. */
+        protected EnchantmentTagsProvider() {
+        }
+
+        /**
+         * Starts describing one of the game's own tags.
+         *
+         * <pre>{@code
+         * tag(EnchantmentTags.TOOL_EXCLUSIVE).add(an enchantment, by name);
+         * }</pre>
+         *
+         * <p>Typed, so a tag belonging to another registry will not compile
+         * here — which is the whole reason these are separate classes rather
+         * than one provider taking a directory name.
+         *
+         * @param tag the tag
+         * @return a builder to add entries to
+         */
+        protected final Tag tag(TagKey<Enchantment> tag) {
+            return tagOf(tag);
+        }
+
+        @Override
+        String directory() {
+            return "enchantment";
+        }
+    }
+
+    /**
+     * Tags of game events.
+     *
+     * <p>Written to {@code data/<namespace>/tags/game_event/}, which is where
+     * the game looks for them.
+     */
+    public abstract static class GameEventTagsProvider extends EmberTagsProvider {
+
+        /** For subclasses. */
+        protected GameEventTagsProvider() {
+        }
+
+        /**
+         * Starts describing one of the game's own tags.
+         *
+         * <pre>{@code
+         * tag(GameEventTags.VIBRATIONS).add(ModContent.RUBY_CHIME);
+         * }</pre>
+         *
+         * <p>Typed, so a tag belonging to another registry will not compile
+         * here — which is the whole reason these are separate classes rather
+         * than one provider taking a directory name.
+         *
+         * @param tag the tag
+         * @return a builder to add entries to
+         */
+        protected final Tag tag(TagKey<GameEvent> tag) {
+            return tagOf(tag);
+        }
+
+        @Override
+        String directory() {
+            return "game_event";
         }
     }
 

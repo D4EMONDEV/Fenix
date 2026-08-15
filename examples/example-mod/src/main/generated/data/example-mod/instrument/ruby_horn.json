@@ -1,0 +1,8 @@
+{
+  "description": {
+    "text": "Ruby Horn"
+  },
+  "range": 128.0,
+  "sound_event": "example-mod:ruby_chime",
+  "use_duration": 5.0
+}

@@ -46,9 +46,11 @@ class RegistryConformanceTest {
             "fr/d4emon/fenix/probe/ProbeCritter.class",
             "fr/d4emon/fenix/probe/ProbeEffect.class",
             "fr/d4emon/fenix/probe/ProbeMachineBlock.class",
+            "fr/d4emon/fenix/probe/ProbeLootCondition.class",
             "fr/d4emon/fenix/probe/ProbeMenu.class",
             "fr/d4emon/fenix/probe/ProbeMod.class",
             "fr/d4emon/fenix/probe/ProbeReforgingRecipe.class",
+            "fr/d4emon/fenix/probe/ProbeSensor.class",
             "fr/d4emon/fenix/probe/RegistryProbe.class");
 
     private static final String MOD_METADATA = """

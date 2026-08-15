@@ -28,6 +28,8 @@
     "class net.minecraft.client.particle.ParticleResources$SpriteParticleRegistration",
     "method net.minecraft.client.particle.ParticleResources register",
     "method net.minecraft.world.level.block.LiquidBlock <init>",
-    "method net.minecraft.world.level.block.state.properties.BlockSetType register"
+    "method net.minecraft.world.level.block.state.properties.BlockSetType register",
+    "method net.minecraft.world.entity.ai.sensing.SensorType <init>",
+    "method net.minecraft.world.entity.schedule.Activity <init>"
   ]
 }

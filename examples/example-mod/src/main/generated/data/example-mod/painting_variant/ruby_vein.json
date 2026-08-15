@@ -1,0 +1,13 @@
+{
+  "asset_id": "example-mod:ruby_vein",
+  "author": {
+    "color": "gray",
+    "text": "D4EMON"
+  },
+  "height": 1,
+  "title": {
+    "color": "yellow",
+    "text": "Ruby Vein"
+  },
+  "width": 2
+}

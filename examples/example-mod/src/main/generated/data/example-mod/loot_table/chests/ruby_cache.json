@@ -1,0 +1,40 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 2.0,
+        "max": 4.0
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 3.0
+              }
+            }
+          ],
+          "name": "example-mod:ruby",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:item",
+          "name": "example-mod:ruby_block",
+          "weight": 5
+        },
+        {
+          "type": "minecraft:item",
+          "name": "example-mod:ruby_hammer",
+          "weight": 2
+        }
+      ]
+    }
+  ],
+  "random_sequence": "example-mod:chests/ruby_cache"
+}

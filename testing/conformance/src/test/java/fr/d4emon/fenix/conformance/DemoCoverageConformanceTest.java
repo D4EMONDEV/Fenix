@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -90,6 +91,54 @@ class DemoCoverageConformanceTest {
                 "API a mod can call that the demo never calls, so nothing exercises it "
                         + "end to end:\n  " + String.join("\n  ", unused)
                         + "\nEither use it in example-mod, or say in INTERNAL why a mod would not.");
+    }
+
+    @Test
+    @DisplayName("every Ember provider is extended by the demo")
+    void emberProvidersAreUsed() throws IOException {
+        // The other check looks for classes a mod calls statically, and a
+        // provider is not called - it is extended. EmberSoundProvider shipped
+        // and sat unused because nothing looked for this shape.
+        String demo = read(Path.of("..", "..", "examples", "example-mod", "src"));
+
+        List<String> unused = new ArrayList<>();
+        for (Path file : sources(Path.of("..", "..", "ember"))) {
+            String name = file.getFileName().toString().replace(".java", "");
+            if (!name.startsWith("Ember") || !name.endsWith("Provider")
+                    || name.equals("EmberProvider")) {
+                continue;
+            }
+            String text = Files.readString(file, StandardCharsets.UTF_8);
+            if (!find(text, "^public abstract class " + name + "\\b")) {
+                continue;
+            }
+            if (!find(demo, "extends " + name + "\\b")) {
+                unused.add(name);
+            }
+
+            // The nested ones too: EmberTagsProvider holds seven, and a tag
+            // kind nobody generates is a kind nobody has ever run.
+            for (String nested : nestedProviders(text)) {
+                if (!find(demo, "extends " + name + "\\." + nested + "\\b")) {
+                    unused.add(name + "." + nested);
+                }
+            }
+        }
+
+        assertTrue(unused.isEmpty(),
+                "Ember providers the demo never extends, so nothing has ever run them:\n  "
+                        + String.join("\n  ", unused));
+    }
+
+    /** {@return the names of the public abstract providers nested in a source file} */
+    private static List<String> nestedProviders(String text) {
+        List<String> found = new ArrayList<>();
+        Matcher matcher = Pattern.compile(
+                "public abstract static class (\\w+Provider)\\b").matcher(text);
+        while (matcher.find()) {
+            found.add(matcher.group(1));
+        }
+        return found;
     }
 
     private static boolean find(String text, String regex) {

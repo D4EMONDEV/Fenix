@@ -1,0 +1,43 @@
+{
+  "parent": "example-mod:root",
+  "criteria": {
+    "sprite": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_sprite_spawn_egg"
+          }
+        ]
+      }
+    },
+    "wisp": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_wisp_spawn_egg"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "title": {
+      "text": "Not Alone"
+    },
+    "description": {
+      "text": "Meet something the mod brought with it."
+    },
+    "icon": {
+      "id": "example-mod:ruby_sprite_spawn_egg"
+    },
+    "frame": "goal"
+  },
+  "requirements": [
+    [
+      "sprite",
+      "wisp"
+    ]
+  ]
+}

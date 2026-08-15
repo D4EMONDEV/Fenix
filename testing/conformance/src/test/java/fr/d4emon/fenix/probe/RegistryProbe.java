@@ -1,6 +1,8 @@
 package fr.d4emon.fenix.probe;
 
 import com.google.gson.JsonElement;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
@@ -641,6 +643,48 @@ public final class RegistryProbe {
         // accessible widening reached the game as well as the compiler.
         require(BlockSetType.values().anyMatch(type -> type == ProbeContent.PROBE_SET),
                 "the mod's block set type was built but never registered");
+
+        // The five newer registries. Each is checked the same way: the handle
+        // resolves, and the game's registry returns the same object for its
+        // id — a registration that bound the handle without reaching the
+        // registry would pass the first and fail the second.
+        require(BuiltInRegistries.MEMORY_MODULE_TYPE.getValue(ProbeContent.PROBE_MEMORY.id())
+                        == ProbeContent.PROBE_MEMORY.get(),
+                "the memory module is not in the game's registry");
+        require(BuiltInRegistries.SENSOR_TYPE.getValue(ProbeContent.PROBE_SENSOR.id())
+                        == ProbeContent.PROBE_SENSOR.get(),
+                "the sensor type is not in the game's registry - the widened "
+                        + "constructor did not reach the running game");
+        require(BuiltInRegistries.ACTIVITY.getValue(ProbeContent.PROBE_ACTIVITY.id())
+                        == ProbeContent.PROBE_ACTIVITY.get(),
+                "the activity is not in the game's registry - the widened "
+                        + "constructor did not reach the running game");
+        require(BuiltInRegistries.GAME_EVENT.getValue(ProbeContent.PROBE_EVENT.id())
+                        == ProbeContent.PROBE_EVENT.get(),
+                "the game event is not in the game's registry");
+        require(ProbeContent.PROBE_EVENT.get().notificationRadius() == 16,
+                "the game event should keep the radius it was given");
+        require(BuiltInRegistries.DECORATED_POT_PATTERN.getValue(ProbeContent.PROBE_SHERD.id())
+                        == ProbeContent.PROBE_SHERD.get(),
+                "the decorated pot pattern is not in the game's registry");
+
+        // A loot condition is not proved by being in the registry: the point
+        // is that a name in a loot table reaches the class. So this goes the
+        // way the game goes — JSON in, condition out.
+        require(BuiltInRegistries.LOOT_CONDITION_TYPE.getValue(ProbeContent.PROBE_CONDITION.id())
+                        == ProbeContent.PROBE_CONDITION.get(),
+                "the loot condition's codec is not in the game's registry");
+
+        JsonElement asJson = JsonParser.parseString(
+                "{\"condition\": \"probemod:probe_condition\", \"threshold\": 7}");
+        LootItemCondition read = LootItemCondition.DIRECT_CODEC
+                .parse(JsonOps.INSTANCE, asJson)
+                .getOrThrow(message -> new AssertionError(
+                        "registry conformance failed: the mod's loot condition did not "
+                                + "parse from JSON: " + message));
+        require(read instanceof ProbeLootCondition condition && condition.threshold() == 7,
+                "the loot condition came back as " + read.getClass().getSimpleName()
+                        + " rather than the mod's own, with its field intact");
         require(ProbeContent.PROBE_SET.canOpenByHand(),
                 "the set was asked to open by hand and does not");
         require(BlockSetType.CODEC

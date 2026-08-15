@@ -1,0 +1,11 @@
+{
+  "gives": {
+    "id": "example-mod:ruby"
+  },
+  "max_uses": 12.0,
+  "wants": {
+    "count": 1.0,
+    "id": "minecraft:emerald"
+  },
+  "xp": 2.0
+}

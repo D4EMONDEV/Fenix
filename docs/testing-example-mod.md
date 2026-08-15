@@ -132,6 +132,63 @@ type — press tab and it should suggest the ore names rather than nothing. That
 suggestion is what proves a custom argument type was registered rather than
 falling back to a plain string.
 
+### Data the mod ships
+
+None of this is visible by walking around; it is checked with commands.
+
+```
+/advancement grant @s only example-mod:root
+/advancement grant @s everything
+```
+
+The tab appears in the advancement screen with **Ruby Age** at its root. Four
+of them: the root, the hammer, the nine shapes as a challenge, and either
+spawn egg as a goal.
+
+```
+/enchant @s example-mod:ruby_edge 3
+```
+
+on a held sword. It is in the damage exclusive set, so it refuses to sit beside
+Sharpness — that refusal is the test, not a bug.
+
+```
+/damage @s 4 example-mod:ruby_shard
+/damage @s 4 example-mod:ruby_burn
+```
+
+Both should produce a death message naming the mod's own wording rather than a
+blank line, and `ruby_burn` should be reduced by Fire Protection because it is
+in `#minecraft:is_fire`.
+
+Kill a ruby sprite: it drops zero to two rubies, more with Looting. A wisp
+drops one. Neither had a table before.
+
+Trade with the jeweller: one emerald buys a ruby, one ruby buys an emerald.
+
+The painting and the banner pattern are drawn and should show:
+
+```
+/give @s minecraft:painting[minecraft:entity_data={id:"minecraft:painting",variant:"example-mod:ruby_vein"}]
+```
+
+Two blocks across, one high, a ruby seam through dark stone. The banner pattern
+is applied at a loom with a banner and any dye — the shape is a cut gem, and it
+takes the dye's colour because the texture is a mask rather than a picture.
+
+### What is written but not finished
+
+Two of the four cosmetic kinds need an **item** before they can be reached, and
+items are content rather than data:
+
+| | What is missing |
+|---|---|
+| `example-mod:ruby_waltz` | a disc item carrying `jukebox_playable`, and an ogg file |
+| `example-mod:ruby_horn` | a goat horn item naming the instrument |
+
+Both are declared correctly and parse against the game's codecs. They are here
+to show what the generator writes.
+
 ## What this does not cover
 
 Nothing here checks the **server** side on a real server. `./gradlew

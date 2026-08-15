@@ -5,6 +5,11 @@ import fr.d4emon.fenix.example.registry.ModItems;
 
 import fr.d4emon.fenix.ember.EmberTagsProvider;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.GameEventTags;
+import net.minecraft.tags.EnchantmentTags;
+import fr.d4emon.fenix.example.registry.ModContent;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.EntityTypeTags;
 import fr.d4emon.fenix.ember.Generator;
 
 /**
@@ -112,6 +117,92 @@ public final class ModTags {
             tag(BlockTags.TRAPDOORS).add(ModBlocks.RUBY_TRAPDOOR);
             tag(BlockTags.BUTTONS).add(ModBlocks.RUBY_BUTTON);
             tag(BlockTags.PRESSURE_PLATES).add(ModBlocks.RUBY_PLATE);
+        }
+    }
+
+    /** Which entities belong to which groups. */
+    @Generator
+    public static final class Entities extends EmberTagsProvider.EntityTagsProvider {
+
+        /** Instantiated by Ember from the compile-time index. */
+        public Entities() {
+        }
+
+        @Override
+        protected void tags() {
+            // Without this the sprite is not counted as a mob by anything that
+            // reasons about mobs — spawners, the beacon, other mods' rules.
+            tag(EntityTypeTags.SENSITIVE_TO_SMITE).add(ModContent.RUBY_SPRITE);
+        }
+    }
+
+    /** Which damage types belong to which groups. */
+    @Generator
+    public static final class DamageTypes extends EmberTagsProvider.DamageTypeTagsProvider {
+
+        /** Instantiated by Ember from the compile-time index. */
+        public DamageTypes() {
+        }
+
+        @Override
+        protected void tags() {
+            // A damage type in no tag is one that armour, enchantments and the
+            // game rules have never heard of. Fire damage that is not in
+            // is_fire ignores Fire Protection, and nothing says why.
+            tag(DamageTypeTags.IS_FIRE).add("example-mod:ruby_burn");
+            tag(DamageTypeTags.IS_PROJECTILE).add("example-mod:ruby_shard");
+        }
+    }
+
+    /** Which enchantments belong to which groups. */
+    @Generator
+    public static final class Enchantments extends EmberTagsProvider.EnchantmentTagsProvider {
+
+        /** Instantiated by Ember from the compile-time index. */
+        public Enchantments() {
+        }
+
+        @Override
+        protected void tags() {
+            // Without this the enchantment exists, can be given by command,
+            // and is never once offered by an enchanting table. Nothing says
+            // so; it reads as the table being unlucky.
+            tag(EnchantmentTags.IN_ENCHANTING_TABLE).add("example-mod:ruby_edge");
+            tag(EnchantmentTags.NON_TREASURE).add("example-mod:ruby_edge");
+        }
+    }
+
+    /** Which fluids belong to which groups. */
+    @Generator
+    public static final class Fluids extends EmberTagsProvider.FluidTagsProvider {
+
+        /** Instantiated by Ember from the compile-time index. */
+        public Fluids() {
+        }
+
+        @Override
+        protected void tags() {
+            // A group of the mod's own: nothing in vanilla means "brine", and
+            // claiming the water tag would make every water check treat this
+            // as water.
+            tag("example-mod:brines").add("example-mod:ruby_brine");
+            tag("example-mod:brines").add("example-mod:flowing_ruby_brine");
+        }
+    }
+
+    /** Which game events belong to which groups. */
+    @Generator
+    public static final class GameEvents extends EmberTagsProvider.GameEventTagsProvider {
+
+        /** Instantiated by Ember from the compile-time index. */
+        public GameEvents() {
+        }
+
+        @Override
+        protected void tags() {
+            // A game event outside this tag is one sculk cannot hear, which is
+            // most of the reason to have declared it.
+            tag(GameEventTags.VIBRATIONS).add("example-mod:ruby_chime_event");
         }
     }
 

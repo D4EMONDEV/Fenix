@@ -1,0 +1,139 @@
+{
+  "parent": "example-mod:root",
+  "criteria": {
+    "slab": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_slab"
+          }
+        ]
+      }
+    },
+    "stairs": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_stairs"
+          }
+        ]
+      }
+    },
+    "fence": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_fence"
+          }
+        ]
+      }
+    },
+    "gate": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_gate"
+          }
+        ]
+      }
+    },
+    "wall": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_wall"
+          }
+        ]
+      }
+    },
+    "trapdoor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_trapdoor"
+          }
+        ]
+      }
+    },
+    "button": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_button"
+          }
+        ]
+      }
+    },
+    "plate": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_plate"
+          }
+        ]
+      }
+    },
+    "door": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_door"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "title": {
+      "text": "Cut to Fit"
+    },
+    "description": {
+      "text": "Collect all nine shapes cut from a ruby block."
+    },
+    "icon": {
+      "id": "example-mod:ruby_stairs"
+    },
+    "frame": "challenge"
+  },
+  "requirements": [
+    [
+      "slab"
+    ],
+    [
+      "stairs"
+    ],
+    [
+      "fence"
+    ],
+    [
+      "gate"
+    ],
+    [
+      "wall"
+    ],
+    [
+      "trapdoor"
+    ],
+    [
+      "button"
+    ],
+    [
+      "plate"
+    ],
+    [
+      "door"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}

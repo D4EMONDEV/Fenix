@@ -48,6 +48,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.resources.ResourceKey;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.world.inventory.MenuType;
@@ -86,6 +88,26 @@ public final class ModContent {
      */
     public static final Holder<BlockEntityType<RubyTallyBlockEntity>> RUBY_TALLY =
             REGISTRAR.blockEntity("ruby_tally", RubyTallyBlockEntity::new, ModBlocks.RUBY_TALLY);
+
+    /**
+     * A sound of the mod's own.
+     *
+     * <p>Half of a sound: this is the event, and {@code sounds.json} — written
+     * by ModSounds — is what names the ogg files it plays. An event with no
+     * entry there is silence, reported nowhere.
+     */
+    public static final Holder<SoundEvent> RUBY_CHIME = REGISTRAR.sound("ruby_chime");
+
+    /**
+     * Something happening, in the vocabulary sculk already understands.
+     *
+     * <p>A block emitting this is heard by a sculk sensor and by the warden,
+     * without either knowing anything about this mod. Outside
+     * {@code #minecraft:vibrations} it is heard by nothing, which is most of
+     * the reason to have declared it.
+     */
+    public static final Holder<GameEvent> RUBY_CHIME_EVENT =
+            REGISTRAR.gameEvent("ruby_chime_event", 16);
 
     /** A drifting mote, to show an entity registered and drawn. */
     public static final Holder<EntityType<RubyWisp>> RUBY_WISP = REGISTRAR.entity(

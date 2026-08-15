@@ -19,6 +19,11 @@ import net.minecraft.world.item.crafting.RecipeType;
 
 import java.util.Map;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.level.block.entity.DecoratedPotPattern;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.block.SoundType;
@@ -26,6 +31,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import com.mojang.serialization.Codec;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.world.entity.SpawnPlacementTypes;
@@ -82,6 +89,37 @@ public final class ProbeContent {
             SoundEvents.STONE_PRESSURE_PLATE_CLICK_OFF,
             SoundEvents.STONE_PRESSURE_PLATE_CLICK_ON,
             SoundEvents.STONE_BUTTON_CLICK_OFF, SoundEvents.STONE_BUTTON_CLICK_ON);
+
+    /**
+     * The three registrations a brain-driven mob needs, and two smaller ones.
+     *
+     * <p>Two of the five are built from constructors the game keeps private,
+     * so registering them at all is the check: it proves the manifest's
+     * {@code accessible} entries reached the running game and not only the
+     * compiler.
+     */
+    public static final Holder<MemoryModuleType<Integer>> PROBE_MEMORY =
+            REGISTRAR.memoryModule("probe_memory", Codec.INT);
+
+    public static final Holder<SensorType<ProbeSensor>> PROBE_SENSOR =
+            REGISTRAR.sensor("probe_sensor", ProbeSensor::new);
+
+    public static final Holder<Activity> PROBE_ACTIVITY = REGISTRAR.activity("probe_activity");
+
+    public static final Holder<GameEvent> PROBE_EVENT = REGISTRAR.gameEvent("probe_event", 16);
+
+    public static final Holder<DecoratedPotPattern> PROBE_SHERD =
+            REGISTRAR.decoratedPotPattern("probe_sherd");
+
+    /**
+     * A loot condition of the mod's own.
+     *
+     * <p>The registry holds the codec, and the condition class points back at
+     * the same one — which is the whole mechanism by which a name in a loot
+     * table finds its way to a class.
+     */
+    public static final Holder<MapCodec<? extends LootItemCondition>> PROBE_CONDITION =
+            REGISTRAR.lootCondition("probe_condition", ProbeLootCondition.CODEC);
 
     /** A block that carries a block entity. */
     public static final Holder<Block> MACHINE =

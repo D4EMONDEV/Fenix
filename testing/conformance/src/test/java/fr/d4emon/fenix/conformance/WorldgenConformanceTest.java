@@ -55,12 +55,36 @@ class WorldgenConformanceTest {
     }
 
     @Test
-    @DisplayName("the loot tables Ember wrote parse with Minecraft's own codec")
+    @DisplayName("every data file Ember wrote parses with Minecraft's own codec")
     void generatedLootTablesParse() throws Exception {
         Path clientJar = requiredFile("fenix.test.clientJar");
         Path tables = Path.of(requiredProperty("fenix.test.exampleGenerated"))
-                .resolve("data/example-mod/loot_table/blocks");
+                .resolve("data/example-mod/loot_table");
         assertTrue(Files.isDirectory(tables), tables + " — run :example-mod:ember");
+
+        // Advancements go to the same probe: both are datapack JSON whose
+        // mistakes are dropped entries rather than failures, and booting the
+        // game twice to check two directories would cost a minute for nothing.
+        Path advancements = Path.of(requiredProperty("fenix.test.exampleGenerated"))
+                .resolve("data/example-mod/advancement");
+        assertTrue(Files.isDirectory(advancements),
+                advancements + " — run :example-mod:ember");
+
+        Path damageTypes = Path.of(requiredProperty("fenix.test.exampleGenerated"))
+                .resolve("data/example-mod/damage_type");
+        assertTrue(Files.isDirectory(damageTypes),
+                damageTypes + " — run :example-mod:ember");
+
+        Path enchantments = Path.of(requiredProperty("fenix.test.exampleGenerated"))
+                .resolve("data/example-mod/enchantment");
+        assertTrue(Files.isDirectory(enchantments),
+                enchantments + " — run :example-mod:ember");
+
+        Path generated = Path.of(requiredProperty("fenix.test.exampleGenerated"));
+        Path trades = generated.resolve("data/example-mod/villager_trade");
+        Path tradeSets = generated.resolve("data/example-mod/trade_set");
+        assertTrue(Files.isDirectory(trades), trades + " — run :example-mod:ember");
+        assertTrue(Files.isDirectory(tradeSets), tradeSets + " — run :example-mod:ember");
 
         Files.createDirectories(gameDir.resolve("mods"));
 
@@ -72,6 +96,12 @@ class WorldgenConformanceTest {
                 "--fenix.gameMain", "fr.d4emon.fenix.probe.LootTableFilesProbe",
                 "--fenix.gameDir", gameDir.toAbsolutePath().toString(),
                 tables.toAbsolutePath().toString(),
+                advancements.toAbsolutePath().toString(),
+                damageTypes.toAbsolutePath().toString(),
+                enchantments.toAbsolutePath().toString(),
+                trades.toAbsolutePath().toString(),
+                tradeSets.toAbsolutePath().toString(),
+                generated.resolve("data/example-mod").toAbsolutePath().toString(),
         }), "the probe reports a failed check by throwing");
     }
 

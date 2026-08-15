@@ -9,6 +9,14 @@ import net.minecraft.SharedConstants;
 import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.item.Instrument;
+import net.minecraft.world.entity.decoration.painting.PaintingVariant;
+import net.minecraft.world.item.JukeboxSong;
+import net.minecraft.world.item.trading.VillagerTrade;
 import net.minecraft.world.level.storage.loot.LootTable;
 
 import java.nio.charset.StandardCharsets;
@@ -44,7 +52,10 @@ public final class LootTableFilesProbe {
 
         Path directory = Path.of(args[0]);
         List<Path> files;
-        try (Stream<Path> found = Files.list(directory)) {
+        // Walk, not list: blocks, entities and chests are separate directories
+        // under loot_table, and checking only the first meant an entity table
+        // with a comma for a decimal point reached a committed file.
+        try (Stream<Path> found = Files.walk(directory)) {
             files = found.filter(path -> path.toString().endsWith(".json")).sorted().toList();
         }
         require(!files.isEmpty(), "there should be loot tables to check in " + directory);
@@ -79,6 +90,246 @@ public final class LootTableFilesProbe {
         }
 
         System.out.println("loot table files: " + files.size() + " parsed");
+
+        if (args.length > 1) {
+            parseAdvancements(Path.of(args[1]), ops);
+        }
+        if (args.length > 2) {
+            parseDamageTypes(Path.of(args[2]), ops);
+        }
+        if (args.length > 3) {
+            parseEnchantments(Path.of(args[3]), ops);
+        }
+        if (args.length > 5) {
+            parseTrades(Path.of(args[4]), Path.of(args[5]), ops);
+        }
+        if (args.length > 6) {
+            parseCosmetics(Path.of(args[6]), ops);
+        }
+    }
+
+    /**
+     * Parses every advancement Ember wrote, with the game's own codec.
+     *
+     * <p>An advancement is the most forgiving file in a datapack and the least
+     * forgiving to get wrong: a trigger that does not exist, or a requirement
+     * naming a criterion that is not there, loads without complaint and can
+     * never be earned. The codec is the only thing that says so.
+     *
+     * @param directory where Ember wrote them
+     * @param ops       the ops the loot tables were parsed with
+     */
+    private static void parseAdvancements(Path directory, DynamicOps<JsonElement> ops)
+            throws Exception {
+        if (!Files.isDirectory(directory)) {
+            System.out.println("advancement files: none written");
+            return;
+        }
+
+        List<Path> files;
+        try (Stream<Path> found = Files.walk(directory)) {
+            files = found.filter(file -> file.toString().endsWith(".json")).toList();
+        }
+
+        for (Path file : files) {
+            JsonElement json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8));
+
+            // The same substitution the loot tables need: this process has
+            // vanilla and nothing else, so a mod's own item in a criterion is
+            // a registry key it has never heard of. The trigger names, the
+            // condition shapes and the requirement lists — everything that can
+            // actually be wrong here — are parsed as written.
+            substituteModNames(json);
+
+            Advancement.CODEC.parse(ops, json)
+                    .getOrThrow(message -> new AssertionError(
+                            "advancement conformance failed: " + file.getFileName()
+                                    + " did not parse: " + message));
+        }
+
+        require(!files.isEmpty(), "the demo should have advancements to check");
+        System.out.println("advancement files: " + files.size() + " parsed");
+    }
+
+    /**
+     * Parses every damage type Ember wrote.
+     *
+     * <p>Short files, and wrong in ways that are invisible: a scaling or an
+     * effects value the game does not know is a damage type that fails to
+     * load, and a mod whose damage silently stops working.
+     *
+     * @param directory where Ember wrote them
+     * @param ops       the ops the loot tables were parsed with
+     */
+    private static void parseDamageTypes(Path directory, DynamicOps<JsonElement> ops)
+            throws Exception {
+        if (!Files.isDirectory(directory)) {
+            System.out.println("damage type files: none written");
+            return;
+        }
+
+        List<Path> files;
+        try (Stream<Path> found = Files.walk(directory)) {
+            files = found.filter(file -> file.toString().endsWith(".json")).toList();
+        }
+
+        for (Path file : files) {
+            JsonElement json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8));
+            // DIRECT_CODEC: the other one resolves a reference against a
+            // registry of damage types, and the file holds the definition.
+            DamageType.DIRECT_CODEC.parse(ops, json)
+                    .getOrThrow(message -> new AssertionError(
+                            "damage type conformance failed: " + file.getFileName()
+                                    + " did not parse: " + message));
+        }
+
+        require(!files.isEmpty(), "the demo should have damage types to check");
+        System.out.println("damage type files: " + files.size() + " parsed");
+    }
+
+    /**
+     * Parses every enchantment Ember wrote.
+     *
+     * <p>An enchantment is the widest data file a mod ships: its effects are a
+     * language of their own, and a shape that is one level off loads as an
+     * enchantment that exists, can be applied, and does nothing.
+     *
+     * @param directory where Ember wrote them
+     * @param ops       the ops the loot tables were parsed with
+     */
+    private static void parseEnchantments(Path directory, DynamicOps<JsonElement> ops)
+            throws Exception {
+        if (!Files.isDirectory(directory)) {
+            System.out.println("enchantment files: none written");
+            return;
+        }
+
+        List<Path> files;
+        try (Stream<Path> found = Files.walk(directory)) {
+            files = found.filter(file -> file.toString().endsWith(".json")).toList();
+        }
+
+        for (Path file : files) {
+            JsonElement json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8));
+            Enchantment.DIRECT_CODEC.parse(ops, json)
+                    .getOrThrow(message -> new AssertionError(
+                            "enchantment conformance failed: " + file.getFileName()
+                                    + " did not parse: " + message));
+        }
+
+        require(!files.isEmpty(), "the demo should have enchantments to check");
+        System.out.println("enchantment files: " + files.size() + " parsed");
+    }
+
+    /**
+     * Parses the villager trades and the sets that draw from them.
+     *
+     * <p>Two halves that fail differently and both quietly: a trade nothing
+     * names is a file the game loads and never offers, and a set naming a
+     * trade that is not there is a villager with fewer offers than intended.
+     *
+     * @param tradeDir where the trades were written
+     * @param setDir   where the sets were written
+     * @param ops      the ops the loot tables were parsed with
+     */
+    private static void parseTrades(Path tradeDir, Path setDir, DynamicOps<JsonElement> ops)
+            throws Exception {
+        int parsed = 0;
+
+        for (Path file : jsonIn(tradeDir)) {
+            JsonElement json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8));
+            substituteModNames(json);
+            VillagerTrade.CODEC.parse(ops, json)
+                    .getOrThrow(message -> new AssertionError(
+                            "trade conformance failed: " + file.getFileName()
+                                    + " did not parse: " + message));
+            parsed++;
+        }
+
+        // Not with TradeSet.CODEC. It resolves each name against a registry
+        // of trades, and this process has vanilla and nothing else, so every
+        // name in the mod's own namespace fails — including the correct ones.
+        //
+        // The check that matters is the one the codec cannot do here anyway: a
+        // set naming a trade that was never written is a villager quietly
+        // offering fewer things, and that is a file on disk either being there
+        // or not.
+        for (Path file : jsonIn(setDir)) {
+            JsonObject set = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
+
+            require(set.has("amount"), file.getFileName() + " has no amount");
+            JsonElement trades = set.get("trades");
+            require(trades != null && trades.isJsonArray(),
+                    file.getFileName() + " names no trades");
+
+            for (JsonElement named : trades.getAsJsonArray()) {
+                String id = named.getAsString();
+                String path = id.substring(id.indexOf(':') + 1);
+                require(Files.isRegularFile(tradeDir.resolve(path + ".json")),
+                        file.getFileName() + " names " + id + ", and no such trade was written");
+            }
+            parsed++;
+        }
+
+        require(parsed > 0, "the demo should have trades to check");
+        System.out.println("trade files: " + parsed + " parsed");
+    }
+
+    /**
+     * Parses the four presentation-only data kinds, each with its own codec.
+     *
+     * <p>Small files, and wrong in ways nothing reports: a song whose length
+     * disagrees with its sound leaves the jukebox silent at the end, a
+     * painting whose size disagrees with its texture draws stretched.
+     *
+     * @param root the mod's data directory
+     * @param ops  the ops the loot tables were parsed with
+     */
+    private static void parseCosmetics(Path root, DynamicOps<JsonElement> ops) throws Exception {
+        int parsed = 0;
+        parsed += parseEach(root.resolve("jukebox_song"), ops,
+                JukeboxSong.DIRECT_CODEC, "jukebox song");
+        parsed += parseEach(root.resolve("painting_variant"), ops,
+                PaintingVariant.DIRECT_CODEC, "painting");
+        parsed += parseEach(root.resolve("instrument"), ops,
+                Instrument.DIRECT_CODEC, "instrument");
+        parsed += parseEach(root.resolve("banner_pattern"), ops,
+                BannerPattern.DIRECT_CODEC, "banner pattern");
+
+        require(parsed > 0, "the demo should have cosmetic data to check");
+        System.out.println("cosmetic files: " + parsed + " parsed");
+    }
+
+    /** Parses every file in one directory with one codec. */
+    private static <T> int parseEach(Path directory, DynamicOps<JsonElement> ops,
+                                     com.mojang.serialization.Codec<T> codec, String kind)
+            throws Exception {
+        int parsed = 0;
+        for (Path file : jsonIn(directory)) {
+            JsonElement json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8));
+            substituteModNames(json);
+            codec.parse(ops, json).getOrThrow(message -> new AssertionError(
+                    kind + " conformance failed: " + file.getFileName()
+                            + " did not parse: " + message));
+            parsed++;
+        }
+        return parsed;
+    }
+
+    /** {@return every JSON file under a directory, or nothing if it is absent} */
+    private static List<Path> jsonIn(Path directory) throws Exception {
+        if (!Files.isDirectory(directory)) {
+            return List.of();
+        }
+        try (Stream<Path> found = Files.walk(directory)) {
+            return found.filter(file -> file.toString().endsWith(".json")).toList();
+        }
     }
 
     /**
@@ -97,6 +348,27 @@ public final class LootTableFilesProbe {
                         && value.getAsString().contains(":")
                         && !value.getAsString().startsWith("minecraft:")) {
                     object.addProperty("name", "minecraft:stone");
+                    swapped++;
+                } else if (key.equals("sound_event") && value.isJsonPrimitive()
+                        && value.getAsString().contains(":")
+                        && !value.getAsString().startsWith("minecraft:")) {
+                    // A jukebox song and an instrument each name a sound the
+                    // mod registered, and this process has vanilla only.
+                    object.addProperty("sound_event", "minecraft:block.note_block.chime");
+                    swapped++;
+                } else if (key.equals("id") && value.isJsonPrimitive()
+                        && value.getAsString().contains(":")
+                        && !value.getAsString().startsWith("minecraft:")) {
+                    // An advancement's icon, and a recipe's result, name an
+                    // item under "id" rather than "name".
+                    object.addProperty("id", "minecraft:stone");
+                    swapped++;
+                } else if (key.equals("items") && value.isJsonPrimitive()
+                        && value.getAsString().contains(":")
+                        && !value.getAsString().startsWith("minecraft:")
+                        && !value.getAsString().startsWith("#minecraft:")) {
+                    // An advancement criterion names items directly.
+                    object.addProperty("items", "minecraft:stone");
                     swapped++;
                 } else if (key.equals("block") && value.isJsonPrimitive()
                         && value.getAsString().contains(":")

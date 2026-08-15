@@ -11,6 +11,16 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.world.level.block.entity.DecoratedPotPattern;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.ai.sensing.Sensor;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -779,6 +789,218 @@ public final class Registrar {
             holder.bind(Registry.register(BuiltInRegistries.SOUND_EVENT, key,
                     SoundEvent.createVariableRangeEvent(id)));
         });
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Loot
+    // ------------------------------------------------------------------
+
+    /**
+     * Registers a loot condition: a question a loot table can ask.
+     *
+     * <p>Vanilla ships about twenty — the tool used, the block state, a random
+     * chance. A mod wanting to ask something else has to add one, and until it
+     * does its loot tables can only combine questions somebody else thought of.
+     *
+     * <p>In 26.2 the registry holds the codec itself rather than a wrapper
+     * type, so registering one is registering its codec. The condition class
+     * returns the same codec from {@code codec()}, which is how the game finds
+     * its way back from JSON to the class.
+     *
+     * <pre>{@code
+     * public static final MapCodec<NearRuby> NEAR_RUBY_CODEC =
+     *         RecordCodecBuilder.mapCodec(instance -> instance.group(
+     *                 Codec.INT.fieldOf("radius").forGetter(NearRuby::radius)
+     *         ).apply(instance, NearRuby::new));
+     *
+     * REGISTRAR.lootCondition("near_ruby", NEAR_RUBY_CODEC);
+     * }</pre>
+     *
+     * @param name  the path part of its id, which is what appears in JSON
+     * @param codec how the condition is read and written
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<MapCodec<? extends LootItemCondition>> lootCondition(
+            String name, MapCodec<? extends LootItemCondition> codec) {
+        Objects.requireNonNull(codec, "codec");
+        Identifier id = identifier(name);
+        Holder<MapCodec<? extends LootItemCondition>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(
+                Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE, id, codec)));
+        return holder;
+    }
+
+    /**
+     * Registers a loot function: something a loot table does to a stack before
+     * handing it over.
+     *
+     * <p>Setting a count, adding an enchantment, naming the item. A mod adding
+     * one can do to its drops whatever vanilla does to its own.
+     *
+     * @param name  the path part of its id, which is what appears in JSON
+     * @param codec how the function is read and written
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<MapCodec<? extends LootItemFunction>> lootFunction(
+            String name, MapCodec<? extends LootItemFunction> codec) {
+        Objects.requireNonNull(codec, "codec");
+        Identifier id = identifier(name);
+        Holder<MapCodec<? extends LootItemFunction>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(
+                Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, id, codec)));
+        return holder;
+    }
+
+    /**
+     * Registers a number provider: a way of choosing a number inside a loot
+     * table.
+     *
+     * <p>Vanilla has constant, uniform and binomial. One of a mod's own is how
+     * a count depends on something the game has no word for.
+     *
+     * @param name  the path part of its id, which is what appears in JSON
+     * @param codec how the provider is read and written
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<MapCodec<? extends NumberProvider>> lootNumberProvider(
+            String name, MapCodec<? extends NumberProvider> codec) {
+        Objects.requireNonNull(codec, "codec");
+        Identifier id = identifier(name);
+        Holder<MapCodec<? extends NumberProvider>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(
+                Registry.register(BuiltInRegistries.LOOT_NUMBER_PROVIDER_TYPE, id, codec)));
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Brains
+    // ------------------------------------------------------------------
+
+    /**
+     * Registers a memory: one named thing a mob can know.
+     *
+     * <p>A {@code Brain} is a bag of memories, the sensors that fill them and
+     * the behaviours that read them. Vanilla's villagers, piglins and axolotls
+     * are all built this way, and a mod could not join in at all before this —
+     * every memory a mob wanted had to be a vanilla one meaning something else.
+     *
+     * <p>This overload takes no codec, so the memory is forgotten when the
+     * chunk unloads. That is right for anything a sensor refills — what the mob
+     * can see, who it is angry at this second.
+     *
+     * @param <T>  what the memory holds
+     * @param name the path part of its id
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public <T> Holder<MemoryModuleType<T>> memoryModule(String name) {
+        return memoryModule(name, null);
+    }
+
+    /**
+     * Registers a memory that is saved with the entity.
+     *
+     * @param <T>   what the memory holds
+     * @param name  the path part of its id
+     * @param codec how it is written and read back, or {@code null} to forget
+     *              it on unload
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public <T> Holder<MemoryModuleType<T>> memoryModule(String name, Codec<T> codec) {
+        Identifier id = identifier(name);
+        Holder<MemoryModuleType<T>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(BuiltInRegistries.MEMORY_MODULE_TYPE, id,
+                new MemoryModuleType<>(Optional.ofNullable(codec)))));
+        return holder;
+    }
+
+    /**
+     * Registers a sensor: what refills a memory, on a schedule the brain keeps.
+     *
+     * <p>{@code SensorType}'s constructor is private in the game, so this needs
+     * the {@code accessible} entry in this module's manifest.
+     *
+     * @param <T>     the sensor class
+     * @param name    the path part of its id
+     * @param factory builds one; the brain makes its own per mob
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public <T extends Sensor<?>> Holder<SensorType<T>> sensor(String name,
+                                                              Supplier<T> factory) {
+        Objects.requireNonNull(factory, "factory");
+        Identifier id = identifier(name);
+        Holder<SensorType<T>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(BuiltInRegistries.SENSOR_TYPE, id,
+                new SensorType<>(factory))));
+        return holder;
+    }
+
+    /**
+     * Registers an activity: a named thing a mob is currently doing.
+     *
+     * <p>A brain runs the behaviours belonging to whichever activity is
+     * active — idle, work, rest, and now yours. Its constructor is private in
+     * the game, so this needs the {@code accessible} entry in this module's
+     * manifest.
+     *
+     * @param name the path part of its id
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<Activity> activity(String name) {
+        Identifier id = identifier(name);
+        Holder<Activity> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(BuiltInRegistries.ACTIVITY, id,
+                new Activity(id.toString()))));
+        return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Smaller registries
+    // ------------------------------------------------------------------
+
+    /**
+     * Registers a game event: something that happened, which sculk and
+     * vibration-sensing mobs listen for.
+     *
+     * <p>Emitting one is how a mod's own block tells the world it did
+     * something, in the vocabulary the warden already understands.
+     *
+     * @param name                the path part of its id
+     * @param notificationRadius  how many blocks away it can be heard; vanilla
+     *                            uses 16 for almost everything
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<GameEvent> gameEvent(String name, int notificationRadius) {
+        Identifier id = identifier(name);
+        Holder<GameEvent> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(BuiltInRegistries.GAME_EVENT, id,
+                new GameEvent(notificationRadius))));
+        return holder;
+    }
+
+    /**
+     * Registers a decorated pot pattern: a sherd, and the face it paints.
+     *
+     * <p>The item that carries it is a separate registration of your own; this
+     * is the pattern the pot draws when that item is used on it.
+     *
+     * @param name the path part of its id, and the texture it looks for under
+     *             {@code textures/entity/decorated_pot/}
+     * @return a handle, bound once {@link #apply()} runs
+     */
+    public Holder<DecoratedPotPattern> decoratedPotPattern(String name) {
+        Identifier id = identifier(name);
+        Holder<DecoratedPotPattern> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(BuiltInRegistries.DECORATED_POT_PATTERN, id,
+                new DecoratedPotPattern(id))));
         return holder;
     }
 

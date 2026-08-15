@@ -1,0 +1,36 @@
+{
+  "parent": "example-mod:root",
+  "criteria": {
+    "hammer": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "example-mod:ruby_hammer"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "title": {
+      "text": "Something to Hit With"
+    },
+    "description": {
+      "text": "Craft a ruby hammer."
+    },
+    "icon": {
+      "id": "example-mod:ruby_hammer"
+    }
+  },
+  "requirements": [
+    [
+      "hammer"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "example-mod:ruby_hammer"
+    ]
+  }
+}

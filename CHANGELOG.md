@@ -7,6 +7,73 @@ and Fenix uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-08-15
+
+The release that came from reading the game rather than remembering it. The
+registries and datapack directories Minecraft actually ships were listed out of
+the jar, compared against what Fenix covered, and the gaps filled from the top.
+The Registrar went from 19 registries to 27; Ember from nine kinds of file to
+fourteen.
+
+Module versions: API 0.6.0 (registry 0.5.0), Ember 0.4.0. Everything else is
+unchanged from 0.7.0.
+
+### Added
+
+- **Brains.** `memoryModule`, `sensor` and `activity` — the three pieces a
+  vanilla `Brain` is made of, and which a mod could not touch at all. Villagers,
+  piglins and axolotls are all built this way. Two of the three have private
+  constructors in the game and are reached through `accessible` entries.
+
+- **Loot extension points.** `lootCondition`, `lootFunction` and
+  `lootNumberProvider`. In 26.2 these registries hold the codec itself rather
+  than a wrapper type, so registering one is registering its codec — which is
+  the kind of detail that costs an hour to discover.
+
+- **`gameEvent` and `decoratedPotPattern`.** A game event is how a mod's block
+  says it did something, in the vocabulary the warden already understands.
+
+- **Five Ember providers**: advancements, damage types, enchantments, villager
+  trades, and the four presentation-only kinds (jukebox songs, paintings,
+  instruments, banner patterns).
+
+- **Loot tables for mobs and chests**, with `looting(max)` — the idiom every
+  vanilla mob table uses, and without which a mod's mob ignores the enchantment
+  in a way players read as a bug in the mob.
+
+- **Tags for five more registries**: entity types, fluids, damage types,
+  enchantments and game events, each typed so a tag from the wrong registry does
+  not compile.
+
+### Fixed
+
+- **Generated numbers depended on the machine's language.** `"%.1f".formatted(2.0)`
+  is `"2,0"` on a French machine, and that is not JSON. Then the fix rounded:
+  a reputation discount of 0.05 was written as 0.1, a value the game accepts and
+  nobody wrote. Then widening a float to a double wrote 0.05000000074505806.
+
+  Three bugs in one helper, all invisible in the source and all obvious in the
+  file. `EmberOutput.decimal` is the single place numbers go through now, with
+  an overload for floats.
+
+- **The loot codec check only read one directory.** It parsed
+  `loot_table/blocks` and nothing else, which is exactly why the comma-decimal
+  above reached a committed file. It walks the whole tree now, and the same
+  probe parses advancements, damage types, enchantments, trades and the four
+  cosmetic kinds — every data file Ember writes, against the game's own codecs,
+  on every build.
+
+- **`EmberOutput.idOf` knew three kinds of thing.** Blocks, items and effects.
+  Entity types, sound events and fluids each made Ember hang rather than fail,
+  three times, because the error surfaced in a file nobody was reading.
+
+- **The demo-coverage check ignored Ember.** It looked for classes a mod calls
+  statically, and a provider is extended rather than called — so
+  `EmberSoundProvider` shipped and sat unused, unnoticed. The check now covers
+  providers, including the nested tag ones, which immediately turned up three
+  more nobody had ever run.
+
+
 ## [0.7.0] — 2026-08-15
 
 The release the game reported. Most of what follows was found by opening

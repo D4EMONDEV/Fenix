@@ -54,6 +54,9 @@ public final class ModLanguageFr extends EmberLanguageProvider {
         add(ModContent.RUBY_GLIMMER, "Lueur de rubis");
         add("message.example-mod.glimmer", "Le marteau luit au coup %s — %s coups en tout.");
         add("tooltip.example-mod.ruby", "Tiède au toucher.");
+        // A damage type with no death message kills players silently.
+        add("death.attack.ruby_burn", "%s Brûlé par l'éclat du rubis");
+        add("death.attack.ruby_shard", "%s Transpercé par un éclat de rubis");
         add("message.example-mod.too_bright", "Ce bloc est trop lumineux pour être cassé à la main.");
 
         add("item.minecraft.potion.effect.glimmering", "Potion de lueur");
