@@ -102,6 +102,10 @@ class WorldgenConformanceTest {
                 trades.toAbsolutePath().toString(),
                 tradeSets.toAbsolutePath().toString(),
                 generated.resolve("data/example-mod").toAbsolutePath().toString(),
+                // The hand-written half: structure templates are .nbt files a
+                // structure block made, and no generator writes them.
+                Path.of(requiredProperty("fenix.test.exampleResources"))
+                        .resolve("data/example-mod").toAbsolutePath().toString(),
         }), "the probe reports a failed check by throwing");
     }
 

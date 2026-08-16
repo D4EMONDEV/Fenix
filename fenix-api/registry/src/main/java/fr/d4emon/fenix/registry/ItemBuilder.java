@@ -1,5 +1,7 @@
 package fr.d4emon.fenix.registry;
 
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 
@@ -78,6 +80,38 @@ public final class ItemBuilder {
      * @param step what to do to the properties
      * @return this builder
      */
+    /**
+     * Makes this item a music disc, playing one of the mod's own songs.
+     *
+     * <p>The song is data — {@code EmberCosmeticsProvider} writes it — and this
+     * names it by key rather than by value, because the datapack registry it
+     * lives in is not loaded when items are registered. A disc whose song was
+     * never written is a disc that goes into a jukebox and plays silence.
+     *
+     * @param name the song's path, in this mod's namespace
+     * @return this builder
+     */
+    public ItemBuilder jukeboxSong(String name) {
+        return properties(properties -> properties.jukeboxPlayable(
+                ResourceKey.create(Registries.JUKEBOX_SONG, registrar.identifier(name))));
+    }
+
+    /**
+     * Makes this item a piece of armour.
+     *
+     * <p>Sets the protection, the durability and the slot in one go, from the
+     * material. What it does not do is make it visible: that is the equipment
+     * asset the material names, which Ember writes.
+     *
+     * @param material what the set is made of
+     * @param type     which piece this is
+     * @return this builder
+     */
+    public ItemBuilder armor(net.minecraft.world.item.equipment.ArmorMaterial material,
+                             net.minecraft.world.item.equipment.ArmorType type) {
+        return properties(properties -> properties.humanoidArmor(material, type));
+    }
+
     public ItemBuilder properties(UnaryOperator<Item.Properties> step) {
         Objects.requireNonNull(step, "step");
         UnaryOperator<Item.Properties> previous = properties;

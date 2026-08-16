@@ -121,6 +121,15 @@ public final class ProbeContent {
     public static final Holder<MapCodec<? extends LootItemCondition>> PROBE_CONDITION =
             REGISTRAR.lootCondition("probe_condition", ProbeLootCondition.CODEC);
 
+    /**
+     * An advancement trigger of the mod's own.
+     *
+     * <p>Registered eagerly: triggers are consulted while advancements load,
+     * which happens before deferred content is bound.
+     */
+    public static final ProbeTrigger PROBE_TRIGGER =
+            REGISTRAR.trigger("probe_trigger", new ProbeTrigger());
+
     /** A block that carries a block entity. */
     public static final Holder<Block> MACHINE =
             REGISTRAR.block("machine", ProbeMachineBlock::new);

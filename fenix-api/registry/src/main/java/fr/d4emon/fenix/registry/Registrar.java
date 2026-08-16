@@ -10,6 +10,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.advancements.triggers.CriterionTrigger;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
@@ -790,6 +791,79 @@ public final class Registrar {
                     SoundEvent.createVariableRangeEvent(id)));
         });
         return holder;
+    }
+
+    // ------------------------------------------------------------------
+    // Advancements
+    // ------------------------------------------------------------------
+
+    /**
+     * Registers an advancement trigger: something a mod can say has happened.
+     *
+     * <p>Vanilla ships around eighty, and they cover what vanilla does. An
+     * advancement for something a mod invented — a block of its own placed, a
+     * machine of its own finishing — has nothing to hang on until the mod adds
+     * a trigger of its own.
+     *
+     * <p>The trigger is the registered half. The other half is the mod calling
+     * it: a registered trigger nothing fires is an advancement nobody can earn,
+     * which looks exactly like an advancement whose conditions are too hard.
+     *
+     * <pre>{@code
+     * public static final RubyMinedTrigger RUBY_MINED =
+     *         REGISTRAR.trigger("ruby_mined", new RubyMinedTrigger());
+     *
+     * // later, when it happens:
+     * RUBY_MINED.fire(player, count);
+     * }</pre>
+     *
+     * @param <T>     the trigger's own class
+     * @param name    the path part of its id, which is what appears in the
+     *                advancement's {@code trigger} field
+     * @param trigger the trigger itself
+     * @return the same trigger, registered
+     */
+    public <T extends CriterionTrigger<?>> T trigger(String name, T trigger) {
+        Objects.requireNonNull(trigger, "trigger");
+        Identifier id = identifier(name);
+
+        // Eagerly, not deferred: triggers are consulted while advancements
+        // load, which is earlier than the deferred content is bound, and a
+        // trigger that arrives late is one every advancement referring to it
+        // has already failed to find.
+        return Registry.register(BuiltInRegistries.TRIGGER_TYPES, id, trigger);
+    }
+
+    // ------------------------------------------------------------------
+    // Equipment
+    // ------------------------------------------------------------------
+
+    /**
+     * Describes a set of armour: how tough it is, what it sounds like, and
+     * which textures are drawn on the wearer.
+     *
+     * <p>Not a registration — an {@code ArmorMaterial} is a value, not a
+     * registry entry. What it names <em>is</em> registered, though, and by
+     * somebody else: the asset id points at
+     * {@code assets/<namespace>/equipment/<name>.json}, which
+     * {@code EmberEquipmentProvider} writes. Without that file the armour
+     * equips, protects, and is invisible on the body.
+     *
+     * <pre>{@code
+     * public static final ArmorMaterial RUBY = REGISTRAR.armorMaterial("ruby")
+     *         .durability(20)
+     *         .protection(ArmorType.HELMET, 3)
+     *         .protection(ArmorType.CHESTPLATE, 7)
+     *         .toughness(1.5f)
+     *         .repairedWith(ModTags.RUBIES)
+     *         .build();
+     * }</pre>
+     *
+     * @param name the asset's name, in this mod's namespace
+     * @return a builder; call {@code build()} when done
+     */
+    public ArmorMaterialBuilder armorMaterial(String name) {
+        return new ArmorMaterialBuilder(this, name);
     }
 
     // ------------------------------------------------------------------

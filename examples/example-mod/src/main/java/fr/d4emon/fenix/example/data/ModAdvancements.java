@@ -55,6 +55,19 @@ public final class ModAdvancements extends EmberAdvancementProvider {
                 .hasItem("door", ModBlocks.RUBY_DOOR)
                 .save();
 
+        // The one advancement here no vanilla trigger could express: the count
+        // lives on the player as an attachment, and only the mod that keeps it
+        // can say when it is high enough.
+        advancement("well_swung")
+                .parent("example-mod:hammer")
+                .title("Well Swung")
+                .description("Swing the ruby hammer twenty-five times.")
+                .icon(ModItems.RUBY_HAMMER)
+                .goal()
+                .experience(50)
+                .criterion("swung", "example-mod:swings", "{\"at_least\": 25}")
+                .save();
+
         // Either egg will do, so the criteria are combined with OR instead.
         advancement("a_friend")
                 .parent("example-mod:root")

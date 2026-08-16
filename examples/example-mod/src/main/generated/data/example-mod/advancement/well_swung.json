@@ -1,0 +1,29 @@
+{
+  "parent": "example-mod:hammer",
+  "criteria": {
+    "swung": {
+      "trigger": "example-mod:swings",
+      "conditions": {"at_least": 25}
+    }
+  },
+  "display": {
+    "title": {
+      "text": "Well Swung"
+    },
+    "description": {
+      "text": "Swing the ruby hammer twenty-five times."
+    },
+    "icon": {
+      "id": "example-mod:ruby_hammer"
+    },
+    "frame": "goal"
+  },
+  "requirements": [
+    [
+      "swung"
+    ]
+  ],
+  "rewards": {
+    "experience": 50
+  }
+}

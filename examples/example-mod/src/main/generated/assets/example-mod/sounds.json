@@ -3,5 +3,10 @@
     "sounds": [
       "example-mod:ruby_chime"
     ]
+  },
+  "ruby_waltz": {
+    "sounds": [
+      "example-mod:ruby_waltz"
+    ]
   }
 }

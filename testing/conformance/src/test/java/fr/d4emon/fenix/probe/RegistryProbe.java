@@ -685,6 +685,25 @@ public final class RegistryProbe {
         require(read instanceof ProbeLootCondition condition && condition.threshold() == 7,
                 "the loot condition came back as " + read.getClass().getSimpleName()
                         + " rather than the mod's own, with its field intact");
+
+        // The same round trip for the advancement trigger: the registry knows
+        // it, and a criterion written the way an advancement writes one finds
+        // its way back to the class.
+        require(BuiltInRegistries.TRIGGER_TYPES.getValue(
+                        net.minecraft.resources.Identifier.parse("probemod:probe_trigger"))
+                        == ProbeContent.PROBE_TRIGGER,
+                "the trigger is not in the game's registry under its own name");
+
+        JsonElement criterion = JsonParser.parseString(
+                "{\"trigger\": \"probemod:probe_trigger\", "
+                        + "\"conditions\": {\"at_least\": 5}}");
+        var parsed = net.minecraft.advancements.triggers.Criterion.CODEC
+                .parse(JsonOps.INSTANCE, criterion)
+                .getOrThrow(message -> new AssertionError(
+                        "registry conformance failed: a criterion naming the mod's trigger "
+                                + "did not parse: " + message));
+        require(parsed.trigger() == ProbeContent.PROBE_TRIGGER,
+                "the criterion resolved to a different trigger than the mod registered");
         require(ProbeContent.PROBE_SET.canOpenByHand(),
                 "the set was asked to open by hand and does not");
         require(BlockSetType.CODEC

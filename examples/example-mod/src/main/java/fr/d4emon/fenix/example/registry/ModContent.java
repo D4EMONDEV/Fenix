@@ -3,6 +3,7 @@ package fr.d4emon.fenix.example.registry;
 import fr.d4emon.fenix.example.block.entity.RubyReforgingBlockEntity;
 import fr.d4emon.fenix.example.block.entity.RubySafeBlockEntity;
 import fr.d4emon.fenix.example.block.entity.RubyTallyBlockEntity;
+import fr.d4emon.fenix.example.advancement.SwingsTrigger;
 import fr.d4emon.fenix.example.command.ModCommands;
 import fr.d4emon.fenix.example.command.OreArgument;
 import fr.d4emon.fenix.example.effect.RubyGlimmerEffect;
@@ -97,6 +98,14 @@ public final class ModContent {
      * entry there is silence, reported nowhere.
      */
     public static final Holder<SoundEvent> RUBY_CHIME = REGISTRAR.sound("ruby_chime");
+
+    /**
+     * The disc's track. Its own event rather than the chime's: a jukebox song
+     * declares how long it lasts, and the game trusts that number for the
+     * comparator and for when to stop. Sharing an event with a 1.4-second
+     * chime would mean declaring four seconds of something that ends in one.
+     */
+    public static final Holder<SoundEvent> RUBY_WALTZ = REGISTRAR.sound("ruby_waltz");
 
     /**
      * Something happening, in the vocabulary sculk already understands.
@@ -298,6 +307,17 @@ public final class ModContent {
     public static final Holder<Item> RUBY_SPRITE_SPAWN_EGG =
             REGISTRAR.spawnEgg("ruby_sprite_spawn_egg", RUBY_SPRITE);
 
+    /**
+     * An advancement trigger of the mod's own, so an advancement can be about
+     * a number no vanilla trigger can see.
+     *
+     * <p>Registered eagerly rather than deferred: advancements are read while
+     * a datapack loads, which is earlier than deferred content is bound, and a
+     * trigger the reader cannot find makes the advancement fail to load.
+     */
+    public static final SwingsTrigger SWINGS_TRIGGER =
+            REGISTRAR.trigger("swings", new SwingsTrigger());
+
     private ModContent() {
     }
 
@@ -386,8 +406,11 @@ public final class ModContent {
                 REGISTRAR.placedFeature("ruby_ore"));
 
         CreativeTabs.addTo(CreativeTabs.INGREDIENTS, ModItems.RUBY);
+        CreativeTabs.addTo(CreativeTabs.COMBAT,
+                ModItems.RUBY_HELMET, ModItems.RUBY_CHESTPLATE,
+                ModItems.RUBY_LEGGINGS, ModItems.RUBY_BOOTS);
         CreativeTabs.addTo(CreativeTabs.TOOLS_AND_UTILITIES,
-                ModItems.RUBY_HAMMER, RUBY_BRINE.bucket().orElseThrow());
+                ModItems.RUBY_HAMMER, ModItems.RUBY_DISC, RUBY_BRINE.bucket().orElseThrow());
         CreativeTabs.addTo(CreativeTabs.SPAWN_EGGS,
                 RUBY_WISP_SPAWN_EGG, RUBY_SPRITE_SPAWN_EGG);
 
@@ -408,7 +431,9 @@ public final class ModContent {
                 ModBlocks.RUBY_SLAB, ModBlocks.RUBY_STAIRS, ModBlocks.RUBY_FENCE,
                 ModBlocks.RUBY_GATE, ModBlocks.RUBY_WALL, ModBlocks.RUBY_TRAPDOOR,
                 ModBlocks.RUBY_BUTTON, ModBlocks.RUBY_PLATE, ModBlocks.RUBY_DOOR,
-                ModItems.RUBY, ModItems.RUBY_HAMMER,
+                ModItems.RUBY, ModItems.RUBY_HAMMER, ModItems.RUBY_DISC,
+                ModItems.RUBY_HELMET, ModItems.RUBY_CHESTPLATE,
+                ModItems.RUBY_LEGGINGS, ModItems.RUBY_BOOTS,
                 RUBY_BRINE.bucket().orElseThrow(),
                 RUBY_WISP_SPAWN_EGG, RUBY_SPRITE_SPAWN_EGG);
     }

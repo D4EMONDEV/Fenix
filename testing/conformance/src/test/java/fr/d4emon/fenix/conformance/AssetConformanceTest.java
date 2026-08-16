@@ -228,10 +228,133 @@ class AssetConformanceTest {
         return problems;
     }
 
+    @Test
+    @DisplayName("every texture an equipment asset names is a file that exists")
+    void equipmentTexturesExist() throws IOException {
+        List<Path> trees = trees();
+        List<String> problems = new ArrayList<>();
+        int checked = 0;
+
+        for (Path tree : trees) {
+            Path assets = tree.resolve("assets/example-mod/equipment");
+            if (!Files.isDirectory(assets)) {
+                continue;
+            }
+            try (Stream<Path> files = Files.list(assets)) {
+                for (Path file : files.filter(p -> p.toString().endsWith(".json")).toList()) {
+                    JsonObject layers = JsonParser
+                            .parseString(Files.readString(file, StandardCharsets.UTF_8))
+                            .getAsJsonObject().getAsJsonObject("layers");
+                    if (layers == null) {
+                        problems.add(file.getFileName() + " has no layers, so nothing wearing "
+                                + "it is drawn");
+                        continue;
+                    }
+
+                    for (Map.Entry<String, JsonElement> layer : layers.entrySet()) {
+                        for (JsonElement entry : layer.getValue().getAsJsonArray()) {
+                            String texture = entry.getAsJsonObject().get("texture").getAsString();
+                            if (!texture.startsWith("example-mod:")) {
+                                continue;
+                            }
+                            checked++;
+                            // The layer's name is the directory's name, one for
+                            // one — humanoid_leggings is a separate file from
+                            // humanoid because it is a separate model layer.
+                            String path = "assets/example-mod/textures/entity/equipment/"
+                                    + layer.getKey() + "/"
+                                    + texture.substring("example-mod:".length()) + ".png";
+                            if (!exists(trees, path)) {
+                                problems.add(file.getFileName() + ": the " + layer.getKey()
+                                        + " layer names " + texture + ", and "
+                                        + path + " does not exist");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        assertTrue(checked > 0,
+                "no equipment layers found; either the demo stopped shipping armour or this "
+                        + "check has stopped reading it");
+        assertTrue(problems.isEmpty(),
+                "armour that equips, protects, wears down and cannot be seen:\n  "
+                        + String.join("\n  ", problems));
+    }
+
+    @Test
+    @DisplayName("every sound sounds.json names is an ogg that exists")
+    void soundFilesExist() throws IOException {
+        List<Path> trees = trees();
+        List<String> problems = new ArrayList<>();
+        int checked = 0;
+
+        for (Path tree : trees) {
+            Path definitions = tree.resolve("assets/example-mod/sounds.json");
+            if (!Files.isRegularFile(definitions)) {
+                continue;
+            }
+            JsonObject events = JsonParser
+                    .parseString(Files.readString(definitions, StandardCharsets.UTF_8))
+                    .getAsJsonObject();
+
+            for (Map.Entry<String, JsonElement> event : events.entrySet()) {
+                JsonElement sounds = event.getValue().getAsJsonObject().get("sounds");
+                if (sounds == null) {
+                    problems.add(event.getKey() + " names no sounds, so it plays nothing");
+                    continue;
+                }
+                for (JsonElement entry : sounds.getAsJsonArray()) {
+                    // An entry is either a name or an object carrying one.
+                    String name = entry.isJsonPrimitive()
+                            ? entry.getAsString()
+                            : entry.getAsJsonObject().get("name").getAsString();
+                    if (!name.startsWith("example-mod:")) {
+                        continue;
+                    }
+                    checked++;
+                    String path = "assets/example-mod/sounds/"
+                            + name.substring("example-mod:".length()) + ".ogg";
+                    Path file = fileIn(trees, path);
+                    if (file == null) {
+                        problems.add(event.getKey() + " plays " + name + ", and "
+                                + path + " does not exist");
+                        continue;
+                    }
+                    // Ogg and nothing else. The game reads Ogg Vorbis, and a
+                    // wav or mp3 renamed to .ogg is a file that is there,
+                    // resolves, and plays silence — which is the same symptom
+                    // as no file at all, from one directory further away.
+                    byte[] head = Files.readAllBytes(file);
+                    if (head.length < 4 || head[0] != 'O' || head[1] != 'g'
+                            || head[2] != 'g' || head[3] != 'S') {
+                        problems.add(path + " is not an Ogg stream; it starts with "
+                                + new String(head, 0, Math.min(4, head.length),
+                                        StandardCharsets.ISO_8859_1));
+                    }
+                }
+            }
+        }
+
+        assertTrue(checked > 0,
+                "no sounds found; either the demo stopped shipping any or this check has "
+                        + "stopped reading them");
+        assertTrue(problems.isEmpty(),
+                "sounds that register, resolve and play nothing — the log says nothing "
+                        + "either:\n  " + String.join("\n  ", problems));
+    }
+
     /** The generated tree and the hand-written one, in that order. */
     private static List<Path> trees() {
         return List.of(requiredDir("fenix.test.exampleGenerated"),
                 requiredDir("fenix.test.exampleResources"));
+    }
+
+    /** {@return the first tree holding this file, or null} */
+    private static Path fileIn(List<Path> trees, String relative) {
+        return trees.stream().map(tree -> tree.resolve(relative))
+                .filter(Files::isRegularFile).findFirst().orElse(null);
     }
 
     private static boolean exists(List<Path> trees, String relative) {

@@ -1,5 +1,7 @@
 package fr.d4emon.fenix.probe;
 
+import com.google.gson.JsonArray;
+import java.util.ArrayList;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -11,12 +13,15 @@ import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.item.Instrument;
 import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.item.trading.VillagerTrade;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraft.world.level.storage.loot.LootTable;
 
 import java.nio.charset.StandardCharsets;
@@ -105,6 +110,9 @@ public final class LootTableFilesProbe {
         }
         if (args.length > 6) {
             parseCosmetics(Path.of(args[6]), ops);
+            parseBiomes(Path.of(args[6]).resolve("worldgen/biome"), ops);
+            parseDimensions(Path.of(args[6]), ops);
+            parseStructures(Path.of(args[6]), ops, args.length > 7 ? Path.of(args[7]) : null);
         }
     }
 
@@ -131,6 +139,8 @@ public final class LootTableFilesProbe {
             files = found.filter(file -> file.toString().endsWith(".json")).toList();
         }
 
+        int modTriggers = 0;
+        int parsed = 0;
         for (Path file : files) {
             JsonElement json = JsonParser.parseString(
                     Files.readString(file, StandardCharsets.UTF_8));
@@ -142,14 +152,37 @@ public final class LootTableFilesProbe {
             // actually be wrong here — are parsed as written.
             substituteModNames(json);
 
+            // Except a trigger the mod registered itself, which has no vanilla
+            // stand-in at all. Swapping one in would not check it: it would
+            // check some other trigger's conditions against this trigger's
+            // JSON, and pass whatever was written. So those are counted and
+            // left out here. They are not unchecked — Ember reads every
+            // advancement back with this same codec as it writes it, inside a
+            // game that does have the mod, which is stricter than this can be.
+            int skipped = removeModTriggers(json);
+            modTriggers += skipped;
+            if (skipped > 0 && json.getAsJsonObject().getAsJsonObject("criteria").isEmpty()) {
+                // Nothing vanilla left to parse. Counted above, so the file is
+                // not silently forgotten.
+                continue;
+            }
+
             Advancement.CODEC.parse(ops, json)
                     .getOrThrow(message -> new AssertionError(
                             "advancement conformance failed: " + file.getFileName()
                                     + " did not parse: " + message));
+            parsed++;
         }
 
         require(!files.isEmpty(), "the demo should have advancements to check");
-        System.out.println("advancement files: " + files.size() + " parsed");
+        // The demo is expected to have one, and this is the check that says so:
+        // without it, a mod trigger that stopped being used would look like a
+        // clean run rather than like coverage that quietly went away.
+        require(modTriggers > 0,
+                "the demo should use at least one trigger of its own, and none was found");
+        System.out.println("advancement files: " + parsed + " of " + files.size()
+                + " parsed here, " + modTriggers
+                + " criteria on the mod's own triggers left to Ember");
     }
 
     /**
@@ -305,6 +338,279 @@ public final class LootTableFilesProbe {
         System.out.println("cosmetic files: " + parsed + " parsed");
     }
 
+    /**
+     * Parses every biome Ember wrote.
+     *
+     * <p>A biome is the longest file a mod ships and the most positional: the
+     * features are an array of arrays whose index is the generation step.
+     *
+     * <p>The codec does <em>not</em> mind a short one — ten steps parse as
+     * happily as eleven, and everything after the missing one has quietly
+     * moved. That was checked by writing ten and watching this pass. So the
+     * length is asserted here, by hand, because the codec will not do it.
+     *
+     * @param directory where Ember wrote them
+     * @param ops       the ops the loot tables were parsed with
+     */
+    private static void parseBiomes(Path directory, DynamicOps<JsonElement> ops)
+            throws Exception {
+        List<Path> files = jsonIn(directory);
+        if (files.isEmpty()) {
+            System.out.println("biome files: none written");
+            return;
+        }
+
+        for (Path file : files) {
+            JsonElement json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8));
+
+            // Features, carvers and spawn types are the mod's own, and this
+            // process has vanilla only. Unlike everywhere else these are bare
+            // strings in arrays rather than values under a key, so they need
+            // their own pass.
+            substituteInArray(json, "features", "minecraft:ore_coal_upper");
+            substituteInArray(json, "carvers", "minecraft:cave");
+            substituteModNames(json);
+
+            Biome.DIRECT_CODEC.parse(ops, json)
+                    .getOrThrow(message -> new AssertionError(
+                            "biome conformance failed: " + file.getFileName()
+                                    + " did not parse: " + message));
+
+            JsonElement steps = json.getAsJsonObject().get("features");
+            require(steps != null && steps.isJsonArray()
+                            && steps.getAsJsonArray().size() == 11,
+                    file.getFileName() + " has "
+                            + (steps == null || !steps.isJsonArray()
+                                    ? "no features array"
+                                    : steps.getAsJsonArray().size() + " generation steps")
+                            + " rather than 11; the array is positional, so a short one "
+                            + "moves every step after the gap and the codec does not mind");
+        }
+
+        System.out.println("biome files: " + files.size() + " parsed");
+    }
+
+    /**
+     * Replaces modded ids inside a named array, however deeply it is nested.
+     *
+     * @param element   the parsed file, edited in place
+     * @param key       the array's name
+     * @param standIn   a vanilla id of the same kind
+     */
+    private static void substituteInArray(JsonElement element, String key, String standIn) {
+        if (element.isJsonArray()) {
+            element.getAsJsonArray().forEach(child -> substituteInArray(child, key, standIn));
+            return;
+        }
+        if (!element.isJsonObject()) {
+            return;
+        }
+        JsonObject object = element.getAsJsonObject();
+        JsonElement found = object.get(key);
+        if (found != null && found.isJsonArray()) {
+            replaceModded(found.getAsJsonArray(), standIn);
+        }
+        object.entrySet().forEach(entry -> substituteInArray(entry.getValue(), key, standIn));
+    }
+
+    /** Swaps modded strings for a vanilla one, walking nested arrays. */
+    private static void replaceModded(com.google.gson.JsonArray array, String standIn) {
+        for (int i = 0; i < array.size(); i++) {
+            JsonElement value = array.get(i);
+            if (value.isJsonArray()) {
+                replaceModded(value.getAsJsonArray(), standIn);
+            } else if (value.isJsonPrimitive() && value.getAsString().contains(":")
+                    && !value.getAsString().startsWith("minecraft:")) {
+                array.set(i, new com.google.gson.JsonPrimitive(standIn));
+            }
+        }
+    }
+
+    /**
+     * Parses the dimension types and the dimensions built from them.
+     *
+     * <p>The type is checked with its own codec, which does mind a height that
+     * is not a multiple of sixteen. The dimension itself is checked only for
+     * shape: {@code LevelStem.CODEC} resolves the type and the biome against
+     * registries this process does not have the mod's half of, and swapping
+     * them for vanilla ids would leave a check that proves the stand-ins parse.
+     *
+     * @param root the mod's data directory
+     * @param ops  the ops the loot tables were parsed with
+     */
+    private static void parseDimensions(Path root, DynamicOps<JsonElement> ops)
+            throws Exception {
+        int parsed = 0;
+
+        for (Path file : jsonIn(root.resolve("dimension_type"))) {
+            JsonElement json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8));
+            DimensionType.DIRECT_CODEC.parse(ops, json)
+                    .getOrThrow(message -> new AssertionError(
+                            "dimension type conformance failed: " + file.getFileName()
+                                    + " did not parse: " + message));
+            parsed++;
+        }
+
+        for (Path file : jsonIn(root.resolve("dimension"))) {
+            JsonObject json = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
+
+            // What can actually be wrong here, and what nothing else would say:
+            // a dimension naming a type that was never written, or a generator
+            // with no biome source, is a dimension the game refuses to make
+            // and a /execute in that answers "unknown dimension".
+            require(json.has("type"), file.getFileName() + " names no dimension type");
+            String type = json.get("type").getAsString();
+            String local = type.substring(type.indexOf(':') + 1);
+            require(Files.isRegularFile(root.resolve("dimension_type").resolve(local + ".json")),
+                    file.getFileName() + " names the type " + type
+                            + ", and no such dimension type was written");
+
+            JsonElement generator = json.get("generator");
+            require(generator != null && generator.isJsonObject()
+                            && generator.getAsJsonObject().has("biome_source"),
+                    file.getFileName() + " has no biome source, so it generates nothing");
+            parsed++;
+        }
+
+        if (parsed > 0) {
+            System.out.println("dimension files: " + parsed + " parsed");
+        }
+    }
+
+    /**
+     * Checks the four files a structure is made of.
+     *
+     * <p>Only the set has a codec that can be used here: the structure resolves
+     * its start pool and its biomes against registries this process does not
+     * have, and the pool resolves the templates it names. So the links are
+     * checked by hand, which is the part that actually goes wrong:
+     *
+     * <ul>
+     *   <li>a structure with no set is never placed by the world, and
+     *       {@code /place} still works, so it looks finished
+     *   <li>a set naming a structure that is not there places nothing, silently
+     *   <li>a pool naming a template with no {@code .nbt} generates empty air
+     * </ul>
+     *
+     * @param root      the mod's generated data directory
+     * @param ops       the ops the loot tables were parsed with
+     * @param resources the mod's hand-written data directory, where templates
+     *                  live, or {@code null} if it was not given
+     */
+    private static void parseStructures(Path root, DynamicOps<JsonElement> ops, Path resources)
+            throws Exception {
+        Path structures = root.resolve("worldgen/structure");
+        Path sets = root.resolve("worldgen/structure_set");
+        Path pools = root.resolve("worldgen/template_pool");
+        Path lists = root.resolve("worldgen/processor_list");
+
+        List<Path> found = jsonIn(structures);
+        if (found.isEmpty()) {
+            System.out.println("structure files: none written");
+            return;
+        }
+
+        // Which structures a set places, so an unplaced one can be named.
+        java.util.Set<String> placed = new java.util.HashSet<>();
+        for (Path file : jsonIn(sets)) {
+            JsonObject set = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
+
+            JsonElement placement = set.get("placement");
+            require(placement != null && placement.isJsonObject(),
+                    file.getFileName() + " has no placement, so it places nothing");
+
+            JsonElement list = set.get("structures");
+            require(list != null && list.isJsonArray() && !list.getAsJsonArray().isEmpty(),
+                    file.getFileName() + " names no structures");
+
+            for (JsonElement entry : list.getAsJsonArray()) {
+                String id = entry.getAsJsonObject().get("structure").getAsString();
+                placed.add(id);
+                String local = id.substring(id.indexOf(':') + 1);
+                require(Files.isRegularFile(structures.resolve(local + ".json")),
+                        file.getFileName() + " places " + id
+                                + ", and no such structure was written");
+            }
+        }
+
+        for (Path file : found) {
+            JsonObject structure = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
+            String local = file.getFileName().toString().replace(".json", "");
+
+            require(structure.has("start_pool"),
+                    file.getFileName() + " has no start pool, so it has no first piece");
+            String pool = structure.get("start_pool").getAsString();
+            String poolLocal = pool.substring(pool.indexOf(':') + 1);
+            require(Files.isRegularFile(pools.resolve(poolLocal + ".json")),
+                    file.getFileName() + " starts from " + pool
+                            + ", and no such template pool was written");
+
+            require(placed.stream().anyMatch(id -> id.endsWith(":" + local)),
+                    local + " is a structure no structure set places, so the world will "
+                            + "never generate it - /place would still work, which is why "
+                            + "this is easy to miss");
+        }
+
+        // Every piece a pool names has to have its .nbt, or the structure
+        // generates as nothing and reports nothing.
+        for (Path file : jsonIn(pools)) {
+            JsonObject pool = JsonParser.parseString(
+                    Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
+            JsonElement elements = pool.get("elements");
+            require(elements != null && elements.isJsonArray()
+                            && !elements.getAsJsonArray().isEmpty(),
+                    file.getFileName() + " has no pieces, so it generates empty air");
+
+            if (resources == null) {
+                continue;
+            }
+            for (JsonElement entry : elements.getAsJsonArray()) {
+                JsonElement element = entry.getAsJsonObject().get("element");
+                JsonElement location = element.getAsJsonObject().get("location");
+                if (location == null) {
+                    continue;
+                }
+                String id = location.getAsString();
+                String template = id.substring(id.indexOf(':') + 1);
+                require(Files.isRegularFile(resources.resolve("structure")
+                                .resolve(template + ".nbt")),
+                        file.getFileName() + " names the template " + id
+                                + ", and no such .nbt was shipped");
+
+                // And the processor list it is placed through. Naming one that
+                // was never written is not an error the game reports: the
+                // structure generates, unprocessed, looking exactly like a
+                // processor list that was written and does nothing.
+                JsonElement processors = element.getAsJsonObject().get("processors");
+                if (processors != null && processors.isJsonPrimitive()) {
+                    String list = processors.getAsString();
+                    if (!list.equals("minecraft:empty")) {
+                        String listLocal = list.substring(list.indexOf(':') + 1);
+                        require(Files.isRegularFile(
+                                        lists.resolve(listLocal + ".json")),
+                                file.getFileName() + " places " + id + " through " + list
+                                        + ", and no such processor list was written");
+                    }
+                }
+            }
+        }
+
+        // Parsed with the game's own codec, which is the only thing that reads
+        // a processor's fields. A misspelled processor_type, an integrity that
+        // is a string, a rule missing its predicate — none of that stops a
+        // world loading. The structure is placed unprocessed.
+        int processorLists = parseEach(lists, ops,
+                StructureProcessorType.DIRECT_CODEC, "processor list");
+
+        System.out.println("structure files: " + found.size() + " structure(s) checked, "
+                + processorLists + " processor list(s) parsed");
+    }
+
     /** Parses every file in one directory with one codec. */
     private static <T> int parseEach(Path directory, DynamicOps<JsonElement> ops,
                                      com.mojang.serialization.Codec<T> codec, String kind)
@@ -333,6 +639,54 @@ public final class LootTableFilesProbe {
     }
 
     /**
+     * Drops every criterion naming a trigger this process does not have, and
+     * every requirement that named one.
+     *
+     * <p>A criterion left in a requirement list after its criterion is gone is
+     * exactly the error this probe exists to find, so removing one without the
+     * other would make the probe fail on its own edit rather than on the file.
+     *
+     * @param element the advancement, changed in place
+     * @return how many criteria were dropped
+     */
+    private static int removeModTriggers(JsonElement element) {
+        JsonObject criteria = element.getAsJsonObject().getAsJsonObject("criteria");
+        if (criteria == null) {
+            return 0;
+        }
+
+        List<String> dropped = new ArrayList<>();
+        for (String key : List.copyOf(criteria.keySet())) {
+            String trigger = criteria.getAsJsonObject(key).get("trigger").getAsString();
+            if (!trigger.startsWith("minecraft:")) {
+                criteria.remove(key);
+                dropped.add(key);
+            }
+        }
+        if (dropped.isEmpty()) {
+            return 0;
+        }
+
+        JsonArray requirements = element.getAsJsonObject().getAsJsonArray("requirements");
+        if (requirements != null) {
+            JsonArray kept = new JsonArray();
+            for (JsonElement group : requirements) {
+                JsonArray names = new JsonArray();
+                for (JsonElement name : group.getAsJsonArray()) {
+                    if (!dropped.contains(name.getAsString())) {
+                        names.add(name);
+                    }
+                }
+                if (!names.isEmpty()) {
+                    kept.add(names);
+                }
+            }
+            element.getAsJsonObject().add("requirements", kept);
+        }
+        return dropped.size();
+    }
+
+    /**
      * Replaces every {@code "name"} outside Minecraft's namespace with a vanilla
      * item, and {@return how many were replaced}.
      *
@@ -348,6 +702,12 @@ public final class LootTableFilesProbe {
                         && value.getAsString().contains(":")
                         && !value.getAsString().startsWith("minecraft:")) {
                     object.addProperty("name", "minecraft:stone");
+                    swapped++;
+                } else if (key.equals("type") && value.isJsonPrimitive()
+                        && value.getAsString().contains(":")
+                        && !value.getAsString().startsWith("minecraft:")) {
+                    // A biome's spawner entries name an entity type here.
+                    object.addProperty("type", "minecraft:pig");
                     swapped++;
                 } else if (key.equals("sound_event") && value.isJsonPrimitive()
                         && value.getAsString().contains(":")

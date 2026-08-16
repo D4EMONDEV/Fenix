@@ -52,6 +52,11 @@ public final class ModModels extends EmberModelProvider {
         flatItem(ModContent.RUBY_BRINE.bucket().orElseThrow());
 
         flatItem(ModItems.RUBY);
+        flatItem(ModItems.RUBY_DISC);
+        flatItem(ModItems.RUBY_HELMET);
+        flatItem(ModItems.RUBY_CHESTPLATE);
+        flatItem(ModItems.RUBY_LEGGINGS);
+        flatItem(ModItems.RUBY_BOOTS);
         flatItem(ModItems.RUBY_HAMMER);
     }
 }

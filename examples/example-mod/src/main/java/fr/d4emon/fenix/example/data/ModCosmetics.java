@@ -17,7 +17,7 @@ public final class ModCosmetics extends EmberCosmeticsProvider {
         // The song half of a music disc. The disc item itself carries a
         // jukebox_playable component naming this; without the item, the song
         // exists and nothing can play it.
-        jukeboxSong("ruby_waltz", ModContent.RUBY_CHIME)
+        jukeboxSong("ruby_waltz", ModContent.RUBY_WALTZ)
                 .description("Ruby Waltz")
                 .seconds(4)
                 .comparatorOutput(11)

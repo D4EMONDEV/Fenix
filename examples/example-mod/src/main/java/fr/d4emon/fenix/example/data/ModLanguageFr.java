@@ -44,6 +44,11 @@ public final class ModLanguageFr extends EmberLanguageProvider {
 
         add(ModItems.RUBY, "Rubis");
         add(ModItems.RUBY_HAMMER, "Marteau de rubis");
+        add(ModItems.RUBY_DISC, "Disque");
+        add(ModItems.RUBY_HELMET, "Casque de rubis");
+        add(ModItems.RUBY_CHESTPLATE, "Plastron de rubis");
+        add(ModItems.RUBY_LEGGINGS, "Jambières de rubis");
+        add(ModItems.RUBY_BOOTS, "Bottes de rubis");
         add(ModContent.RUBY_WISP_SPAWN_EGG, "Œuf d'apparition de feu follet de rubis");
         add(ModContent.RUBY_SPRITE_SPAWN_EGG, "Œuf d'apparition d'esprit de rubis");
         add(ModContent.RUBY_BRINE.bucket().orElseThrow(), "Seau de saumure de rubis");

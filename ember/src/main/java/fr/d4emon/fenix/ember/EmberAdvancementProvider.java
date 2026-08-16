@@ -1,5 +1,13 @@
 package fr.d4emon.fenix.ember;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import net.minecraft.resources.RegistryOps;
+import net.minecraft.data.registries.VanillaRegistries;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.advancements.Advancement;
+
 import fr.d4emon.fenix.registry.Holder;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -76,8 +84,44 @@ public abstract class EmberAdvancementProvider extends EmberProvider {
     }
 
     private void save(String name, String json) {
+        // Read back with the game's own codec before it is written. Ember runs
+        // inside a real Minecraft with the mod already registered, so every id
+        // the file names — including triggers the mod added itself — is
+        // resolvable here and nowhere else. A conformance run has vanilla only
+        // and has to substitute; this does not.
+        //
+        // Worth doing because of what an advancement does when it is wrong: a
+        // trigger that does not exist, a criterion no requirement names, an
+        // icon that is not an item. The game logs one line at pack load and
+        // then behaves as though the advancement were merely unearned, which
+        // is indistinguishable from conditions that are hard.
+        Advancement.CODEC.parse(registryOps(), JsonParser.parseString(json))
+                .getOrThrow(message -> new IllegalStateException(
+                        "advancement " + name + " would not load: " + message));
+
         output().data("advancement/" + name + ".json", json);
     }
+
+    /**
+     * The ops the check above reads with, built once.
+     *
+     * <p>Not {@code JsonOps.INSTANCE}: a criterion names items as a holder set,
+     * and a holder set is resolved through the ops rather than parsed out of
+     * the JSON. Plain ops have no registry to resolve against, so every item in
+     * every criterion fails — and the message it fails with is "Not a json
+     * array", which describes the last branch tried rather than the cause.
+     *
+     * <p>Building the lookup runs the datapack registries, which is slow enough
+     * to be worth doing once for a whole generation rather than once per file.
+     */
+    private static DynamicOps<JsonElement> registryOps() {
+        if (ops == null) {
+            ops = RegistryOps.create(JsonOps.INSTANCE, VanillaRegistries.createLookup());
+        }
+        return ops;
+    }
+
+    private static DynamicOps<JsonElement> ops;
 
     /** Collects one advancement. */
     public static final class Builder {

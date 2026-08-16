@@ -176,18 +176,122 @@ Two blocks across, one high, a ruby seam through dark stone. The banner pattern
 is applied at a loom with a banner and any dye — the shape is a cut gem, and it
 takes the dye's colour because the texture is a mask rather than a picture.
 
-### What is written but not finished
+### The biome, and the dimension that holds it
 
-Two of the four cosmetic kinds need an **item** before they can be reached, and
-items are content rather than data:
+```
+/execute in example-mod:ruby_realm run tp @s ~ 128 ~
+```
 
-| | What is missing |
-|---|---|
-| `example-mod:ruby_waltz` | a disc item carrying `jukebox_playable`, and an ogg file |
-| `example-mod:ruby_horn` | a goat horn item naming the instrument |
+A roofed, unlit cavern world made entirely of `example-mod:ruby_caverns`. Dark
+red fog, no sky, ambient light at 0.1. Dig around: ruby ore generates here,
+because the biome names it in the underground-ores step.
 
-Both are declared correctly and parse against the game's codecs. They are here
-to show what the generator writes.
+```
+/locate biome example-mod:ruby_caverns
+```
+
+Run **inside** the dimension it will find one immediately. Run in the overworld
+it will not, and that is correct: Minecraft has no datapack way to add a biome
+to the overworld's noise settings, so a dimension of its own is the only door.
+That is why the demo has one.
+
+If `/execute in` answers *unknown dimension*, the pair of files did not load —
+a dimension and its type are two files and both are needed.
+
+### The shrine
+
+```
+/place structure example-mod:ruby_shrine
+```
+
+A five-by-five ruby floor with four pillars and a glowing block on each. It
+should appear where you are standing.
+
+It also generates on its own, rarely — every 24 chunks on average:
+
+```
+/locate structure example-mod:ruby_shrine
+```
+
+That one needs a world generated **after** the mod was installed, like the ore.
+
+The template is a `.nbt` written byte by byte rather than made in game, which is
+possible and is not what Ember is for. If `/place` works and `/locate` finds
+nothing, the structure set did not load; if `/place` produces empty air, the
+template did not.
+
+It should **not** come out pristine. A processor list weathers it on the way in:
+roughly one block in ten missing, some moss, and about three stone bricks in ten
+cracked. Place it a few times — the gaps fall in different places each time,
+which is the processor running rather than the template having holes in it. A
+shrine that is identical every time and complete every time means the pool piece
+is not going through the list.
+
+### The armour
+
+Four pieces in the **Combat** tab: helmet, chestplate, leggings, boots. Put the
+set on.
+
+The armour bar should show 18 points, and the tooltip should mention toughness
+1.5. That half is the material. The other half is whether you can **see** it on
+the body — a mod's armour protects perfectly and renders invisible when its
+equipment asset is missing, with nothing in the log either way.
+
+Look at yourself in third person, or have a friend look. Then check the baby
+variant, which is a separate texture and a separate way to be invisible:
+
+```
+/summon minecraft:zombie ~ ~ ~ {IsBaby:1b,ArmorItems:[{},{},{},{id:"example-mod:ruby_helmet",count:1}]}
+```
+
+### The advancement that counts your swings
+
+Most advancements are earned by something vanilla can see. This one is not: the
+count lives on the player as an attachment, and only the mod that keeps it can
+say when it is high enough.
+
+Take a ruby hammer and right-click blocks with it. Every fifth swing sends a
+chat line with the running total. At **twenty-five**, the *Well Swung* toast
+should appear, under *Something to Hit With* in the mod's advancement tab.
+
+The number survives logging out, because the attachment is persistent — so
+swinging fifteen times, quitting to the title screen, rejoining and swinging ten
+more should still earn it.
+
+Two ways for this to go wrong, and they look the same from inside the game.
+If the trigger is registered and never fired, the advancement simply never
+arrives and reads as a threshold that is too high. If it is fired and never
+registered, the advancement file fails to load and the whole tab is short one
+entry — check the tree rather than the toast.
+
+### The music disc
+
+`ruby_disc` is in the tab. Put it in a jukebox: the tooltip names **Ruby Waltz**
+and a comparator beside the jukebox reads 11.
+
+You should hear it — a three-note figure on a bell, four seconds long, then
+silence and the jukebox stops. The disc item, the song file, the sound event and
+the `.ogg` are four separate things, and only the last one makes noise. If the
+tooltip is right and the comparator reads 11 and nothing plays, the first three
+are fine and the audio is the one that is missing.
+
+The four seconds matter: the song declares that length and the game trusts it
+for the comparator and for when to stop. A track shorter than its declaration
+leaves the jukebox holding a silence.
+
+### The goat horn
+
+There is no horn item, on purpose. Unlike a disc's song, an instrument is a
+component on the **stack** rather than on the item type, so a horn is reached
+by putting the component on one:
+
+```
+/give @s minecraft:goat_horn[minecraft:instrument="example-mod:ruby_horn"]
+```
+
+Blowing it plays the mod's chime and carries 128 blocks rather than vanilla's
+256. Walk away from a friend blowing it: it should cut out at about half the
+distance a vanilla horn does.
 
 ## What this does not cover
 

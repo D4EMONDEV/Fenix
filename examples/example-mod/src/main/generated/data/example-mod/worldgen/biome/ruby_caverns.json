@@ -1,0 +1,53 @@
+{
+  "attributes": {
+    "minecraft:visual/sky_color": "#3a2129"
+  },
+  "carvers": [
+    "minecraft:cave",
+    "minecraft:canyon"
+  ],
+  "downfall": 0.3,
+  "effects": {
+    "fog_color": "#2b171d",
+    "water_color": "#8a2846",
+    "water_fog_color": "#5c1a2e",
+    "grass_color": "#6b4a52",
+    "foliage_color": "#7a5560"
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+      "example-mod:ruby_ore"
+    ],
+    [],
+    [],
+    [],
+    []
+  ],
+  "has_precipitation": false,
+  "spawn_costs": {},
+  "spawners": {
+    "creature": [
+      {
+        "type": "example-mod:ruby_sprite",
+        "weight": 20,
+        "minCount": 2,
+        "maxCount": 4
+      }
+    ],
+    "monster": [
+      {
+        "type": "minecraft:zombie",
+        "weight": 40,
+        "minCount": 2,
+        "maxCount": 4
+      }
+    ]
+  },
+  "temperature": 0.7
+}

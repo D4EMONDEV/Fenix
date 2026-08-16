@@ -6,6 +6,7 @@ import fr.d4emon.fenix.registry.attachment.Attachments;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -50,6 +51,13 @@ public final class RubyHammer extends Item {
         // back next session.
         int total = Attachments.get(player, ModContent.TOTAL_SWINGS) + 1;
         Attachments.set(player, ModContent.TOTAL_SWINGS, total);
+
+        // And say so, every time. The advancement holding the number decides
+        // whether this one counts; guessing the threshold here would put the
+        // same number in two places and let them drift apart.
+        if (player instanceof ServerPlayer server) {
+            ModContent.SWINGS_TRIGGER.fire(server, total);
+        }
 
         // sendParticles rather than addParticle: the server has no particles of
         // its own, it tells the clients that can see the spot.

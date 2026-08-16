@@ -49,6 +49,11 @@ public final class ModLanguage extends EmberLanguageProvider {
 
         add(ModItems.RUBY, "Ruby");
         add(ModItems.RUBY_HAMMER, "Ruby Hammer");
+        add(ModItems.RUBY_DISC, "Music Disc");
+        add(ModItems.RUBY_HELMET, "Ruby Helmet");
+        add(ModItems.RUBY_CHESTPLATE, "Ruby Chestplate");
+        add(ModItems.RUBY_LEGGINGS, "Ruby Leggings");
+        add(ModItems.RUBY_BOOTS, "Ruby Boots");
         add(ModContent.RUBY_WISP_SPAWN_EGG, "Ruby Wisp Spawn Egg");
         add(ModContent.RUBY_SPRITE_SPAWN_EGG, "Ruby Sprite Spawn Egg");
         add(ModContent.RUBY_BRINE.bucket().orElseThrow(), "Ruby Brine Bucket");

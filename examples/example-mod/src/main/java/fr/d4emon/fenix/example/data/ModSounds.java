@@ -20,9 +20,10 @@ public final class ModSounds extends EmberSoundProvider {
 
     @Override
     protected void sounds() {
-        // The ogg itself is not shipped: this demo has no audio, and the point
-        // being shown is the wiring. In a real mod the file would sit at
-        // assets/example-mod/sounds/ruby_chime.ogg.
+        // The name here is the ogg's, under assets/example-mod/sounds/. Both
+        // files are shipped: a sound event that resolves to a file that is not
+        // there plays nothing, and the log says nothing either.
         add(ModContent.RUBY_CHIME, "ruby_chime");
+        add(ModContent.RUBY_WALTZ, "ruby_waltz");
     }
 }
