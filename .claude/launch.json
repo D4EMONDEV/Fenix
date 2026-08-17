@@ -2,10 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "site",
+      "name": "fenix-site",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "website", "--", "--port", "5177"],
-      "port": 5177
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Users/laspl/IdeaProjects/fenix-site",
+        "run",
+        "dev"
+      ],
+      "port": 5173
     }
   ]
 }

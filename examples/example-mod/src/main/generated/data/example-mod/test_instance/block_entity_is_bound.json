@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:function",
+  "function": "example-mod:block_entity_is_bound",
+  "structure": "example-mod:test_platform",
+  "environment": "minecraft:default",
+  "max_ticks": 100,
+  "setup_ticks": 0,
+  "required": true,
+  "manual_only": false,
+  "max_attempts": 1,
+  "required_successes": 1,
+  "rotation": "none",
+  "sky_access": false
+}

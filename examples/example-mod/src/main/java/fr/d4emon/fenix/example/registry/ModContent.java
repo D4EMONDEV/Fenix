@@ -13,6 +13,7 @@ import fr.d4emon.fenix.example.menu.RubyReforgingMenu;
 import fr.d4emon.fenix.example.menu.RubySafeMenu;
 import fr.d4emon.fenix.example.network.ModPayloads;
 import fr.d4emon.fenix.example.recipe.RubyReforgingRecipe;
+import fr.d4emon.fenix.example.test.ModTestFunctions;
 
 import fr.d4emon.fenix.event.LootEvents;
 import fr.d4emon.fenix.registry.BlockInteractions;
@@ -330,6 +331,7 @@ public final class ModContent {
     public static void register() {
         ModBlocks.load();
         ModItems.load();
+        ModTestFunctions.load();
         // Registering the wisp is what lets it exist; this is what makes the
         // world put one there. A mod that does the first and not the second has
         // a mob that can only be summoned by hand, and nothing says why.

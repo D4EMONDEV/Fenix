@@ -345,6 +345,95 @@ class AssetConformanceTest {
                         + "either:\n  " + String.join("\n  ", problems));
     }
 
+    @Test
+    @DisplayName("every trim and animal variant names a texture that exists")
+    void trimAndVariantTexturesExist() throws IOException {
+        List<Path> trees = trees();
+        List<String> problems = new ArrayList<>();
+        int checked = 0;
+
+        for (Path tree : trees) {
+            Path data = tree.resolve("data/example-mod");
+            if (!Files.isDirectory(data)) {
+                continue;
+            }
+
+            // A trim pattern's asset is drawn on two layers, and each layer is
+            // a directory. A pattern with only the first is armour that is
+            // trimmed on the body and plain on the legs.
+            Path patterns = data.resolve("trim_pattern");
+            if (Files.isDirectory(patterns)) {
+                try (Stream<Path> files = Files.list(patterns)) {
+                    for (Path file : files.filter(f -> f.toString().endsWith(".json")).toList()) {
+                        String asset = JsonParser
+                                .parseString(Files.readString(file, StandardCharsets.UTF_8))
+                                .getAsJsonObject().get("asset_id").getAsString();
+                        if (!asset.startsWith("example-mod:")) {
+                            continue;
+                        }
+                        String local = asset.substring("example-mod:".length());
+                        for (String layer : List.of("humanoid", "humanoid_leggings")) {
+                            checked++;
+                            String path = "assets/example-mod/textures/trims/entity/"
+                                    + layer + "/" + local + ".png";
+                            if (!exists(trees, path)) {
+                                problems.add(file.getFileName() + " names " + asset
+                                        + ", and " + path + " does not exist — a trim whose "
+                                        + "texture is missing is not drawn at all, so the "
+                                        + "armour looks untrimmed rather than broken");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // An animal variant names its texture and its baby's, and the two
+            // are separate files.
+            try (Stream<Path> dirs = Files.list(data)) {
+                for (Path dir : dirs.filter(Files::isDirectory)
+                        .filter(d -> d.getFileName().toString().endsWith("_variant")).toList()) {
+                    try (Stream<Path> files = Files.list(dir)) {
+                        for (Path file : files.filter(f -> f.toString().endsWith(".json"))
+                                .toList()) {
+                            JsonObject variant = JsonParser
+                                    .parseString(Files.readString(file, StandardCharsets.UTF_8))
+                                    .getAsJsonObject();
+                            for (String key : List.of("asset_id", "baby_asset_id")) {
+                                JsonElement value = variant.get(key);
+                                if (value == null || !value.getAsString()
+                                        .startsWith("example-mod:")) {
+                                    continue;
+                                }
+                                checked++;
+                                // A painting's asset lives under textures/painting/
+                                // rather than at the root, so the directory it
+                                // came from decides where to look. Both are
+                                // "*_variant" directories and neither reports a
+                                // missing texture, so both are checked here.
+                                String prefix = dir.getFileName().toString()
+                                        .equals("painting_variant") ? "painting/" : "";
+                                String path = "assets/example-mod/textures/" + prefix
+                                        + value.getAsString().substring("example-mod:".length())
+                                        + ".png";
+                                if (!exists(trees, path)) {
+                                    problems.add(file.getFileName() + " (" + key + ") names "
+                                            + value.getAsString() + ", and " + path
+                                            + " does not exist");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        assertTrue(checked > 0,
+                "no trims or variants found; either the demo stopped shipping them or this "
+                        + "check has stopped reading them");
+        assertTrue(problems.isEmpty(),
+                "cosmetics that load and cannot be seen:\n  " + String.join("\n  ", problems));
+    }
+
     /** The generated tree and the hand-written one, in that order. */
     private static List<Path> trees() {
         return List.of(requiredDir("fenix.test.exampleGenerated"),

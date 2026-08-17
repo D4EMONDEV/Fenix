@@ -37,5 +37,20 @@ public final class ModCosmetics extends EmberCosmeticsProvider {
                 .save();
 
         bannerPattern("ruby_facet");
+
+        // An armour trim: the pattern is the shape, the material is the
+        // colour, and a smithing table combines them. Both halves here so the
+        // demo can wear its own trim in its own colour.
+        trimPattern("facet");
+        trimMaterial("ruby", "ruby");
+
+        // A cow that only appears where the mod's own biome is. Variants
+        // became data, so this adds one without touching the entity — and
+        // without spawn conditions it would exist and never be seen.
+        variant("cow", "ruby_cow")
+                .model("normal")
+                .texture("example-mod:entity/cow/ruby")
+                .inBiome("example-mod:ruby_caverns", 1)
+                .save();
     }
 }

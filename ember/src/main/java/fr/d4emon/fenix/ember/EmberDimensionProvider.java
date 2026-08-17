@@ -1,5 +1,6 @@
 package fr.d4emon.fenix.ember;
 
+import java.util.List;
 /**
  * Writes dimensions, and the dimension types they are made of.
  *
@@ -68,6 +69,226 @@ public abstract class EmberDimensionProvider extends EmberProvider {
 
     private void save(String directory, String name, String json) {
         output().data(directory + "/" + name + ".json", json);
+    }
+
+    /**
+     * Starts a set of noise settings: what the ground of a dimension is made
+     * of, and where it stops.
+     *
+     * <p>A dimension can borrow vanilla's — {@code minecraft:caves} is what the
+     * demo used first — and that is the right answer until the mod wants its
+     * own rock. This is for when it does.
+     *
+     * @param name the path part of its id
+     * @return a builder; call {@code save()} when done
+     */
+    protected final Noise noiseSettings(String name) {
+        return new Noise(this, name);
+    }
+
+    /**
+     * Collects one set of noise settings.
+     *
+     * <p>The part worth knowing: a noise router is fifteen density functions,
+     * and every one of them is required. Most describe the overworld's climate
+     * and mean nothing to a dimension with one biome, so they are written as
+     * constant zero and only {@link #ground} is shaped. That is a real world —
+     * not a rich one, and the escape hatch is there for a rich one.
+     */
+    public static final class Noise {
+
+        /** The fourteen a simple dimension has no use for. */
+        private static final List<String> FLAT = List.of(
+                "barrier", "fluid_level_floodedness", "fluid_level_spread", "lava",
+                "temperature", "vegetation", "continents", "erosion", "depth", "ridges",
+                "preliminary_surface_level", "vein_toggle", "vein_ridged", "vein_gap");
+
+        private final EmberDimensionProvider provider;
+        private final String name;
+
+        private String defaultBlock = "minecraft:stone";
+        private String defaultFluid = "minecraft:water";
+        private int seaLevel = 63;
+        private int minY;
+        private int height = 256;
+        private int solidTo = 40;
+        private boolean aquifers = true;
+        private boolean oreVeins = true;
+        private boolean mobs = true;
+        private String router;
+        private String surfaceRule;
+
+        private Noise(EmberDimensionProvider provider, String name) {
+            this.provider = provider;
+            this.name = name;
+        }
+
+        /**
+         * @param id the block everything below the surface is made of
+         * @return this builder
+         */
+        public Noise defaultBlock(String id) {
+            this.defaultBlock = id;
+            return this;
+        }
+
+        /**
+         * @param id the fluid that fills below the sea level
+         * @return this builder
+         */
+        public Noise defaultFluid(String id) {
+            this.defaultFluid = id;
+            return this;
+        }
+
+        /**
+         * @param y where that fluid stops
+         * @return this builder
+         */
+        public Noise seaLevel(int y) {
+            this.seaLevel = y;
+            return this;
+        }
+
+        /**
+         * The vertical extent generation works in.
+         *
+         * <p>Must agree with the dimension type using these settings. Where
+         * they disagree the world generates to one and is bounded by the other,
+         * which shows up as a floor you can fall through or a ceiling of void.
+         *
+         * @param minY   the lowest block
+         * @param height how many blocks upward from there; a multiple of 16
+         * @return this builder
+         */
+        public Noise shape(int minY, int height) {
+            this.minY = minY;
+            this.height = height;
+            return this;
+        }
+
+        /**
+         * Where solid ground gives way to air.
+         *
+         * @param y everything below is rock, everything above is open
+         * @return this builder
+         */
+        public Noise ground(int y) {
+            this.solidTo = y;
+            return this;
+        }
+
+        /**
+         * @param on whether water pockets form underground
+         * @return this builder
+         */
+        public Noise aquifers(boolean on) {
+            this.aquifers = on;
+            return this;
+        }
+
+        /**
+         * @param on whether copper and iron veins run through the rock
+         * @return this builder
+         */
+        public Noise oreVeins(boolean on) {
+            this.oreVeins = on;
+            return this;
+        }
+
+        /**
+         * @param on whether the generator spawns mobs as it builds chunks
+         * @return this builder
+         */
+        public Noise mobGeneration(boolean on) {
+            this.mobs = on;
+            return this;
+        }
+
+        /**
+         * A noise router written out, for a dimension that wants real terrain.
+         *
+         * @param json the whole {@code noise_router} object
+         * @return this builder
+         */
+        public Noise router(String json) {
+            this.router = json.strip();
+            return this;
+        }
+
+        /**
+         * A surface rule written out.
+         *
+         * @param json the whole {@code surface_rule} object
+         * @return this builder
+         */
+        public Noise surfaceRule(String json) {
+            this.surfaceRule = json.strip();
+            return this;
+        }
+
+        /** Writes the settings. */
+        public void save() {
+            if (height % 16 != 0) {
+                // The generator works in sections of sixteen. A height that is
+                // not a multiple of one is rejected while a world is being
+                // created, which is a long way from here.
+                throw new IllegalStateException(
+                        name + ": height must be a multiple of 16, got " + height);
+            }
+
+            StringBuilder functions = new StringBuilder();
+            for (String field : FLAT) {
+                functions.append("      \"").append(field).append("\": 0.0,\n");
+            }
+            // Positive is rock, negative is air, and the gradient between them
+            // is the surface. One function is the whole of this terrain.
+            functions.append("""
+                          "final_density": {
+                            "type": "minecraft:y_clamped_gradient",
+                            "from_y": %d,
+                            "to_y": %d,
+                            "from_value": 1.0,
+                            "to_value": -1.0
+                          }""".formatted(solidTo - 8, solidTo + 8));
+
+            String routerJson = router != null ? router
+                    : "{\n" + functions + "\n    }";
+            String surface = surfaceRule != null ? surfaceRule : """
+                    {
+                          "type": "minecraft:block",
+                          "result_state": {
+                            "Name": %s
+                          }
+                        }""".formatted(EmberOutput.quote(defaultBlock));
+
+            provider.save("worldgen/noise_settings", name, """
+                    {
+                      "sea_level": %d,
+                      "disable_mob_generation": %b,
+                      "aquifers_enabled": %b,
+                      "ore_veins_enabled": %b,
+                      "legacy_random_source": false,
+                      "default_block": {
+                        "Name": %s
+                      },
+                      "default_fluid": {
+                        "Name": %s
+                      },
+                      "noise": {
+                        "min_y": %d,
+                        "height": %d,
+                        "size_horizontal": 1,
+                        "size_vertical": 2
+                      },
+                      "noise_router": %s,
+                      "surface_rule": %s,
+                      "spawn_target": []
+                    }
+                    """.formatted(seaLevel, !mobs, aquifers, oreVeins,
+                    EmberOutput.quote(defaultBlock), EmberOutput.quote(defaultFluid),
+                    minY, height, routerJson, surface));
+        }
     }
 
     /** Collects one dimension type. */

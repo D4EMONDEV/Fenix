@@ -1,5 +1,7 @@
 package fr.d4emon.fenix.registry;
 
+import net.minecraft.gametest.framework.GameTestHelper;
+import java.util.function.Consumer;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -153,6 +155,7 @@ public final class Registrar {
     private final String modId;
     private final List<Runnable> pending = new ArrayList<>();
     private final List<Runnable> pendingLate = new ArrayList<>();
+
     private boolean applied;
 
     private Registrar(String modId) {
@@ -796,6 +799,57 @@ public final class Registrar {
     // ------------------------------------------------------------------
     // Advancements
     // ------------------------------------------------------------------
+
+    /**
+     * Registers a game test: code that runs in a real world and asserts.
+     *
+     * <p>This is the half written in Java. The other half is a
+     * {@code test_instance} file naming it, which says which structure to place
+     * the test in and how long to allow — Ember writes those. A function
+     * nothing names never runs, and reports as nothing rather than as a
+     * failure.
+     *
+     * <p>The body is handed a {@link GameTestHelper} positioned at the test's
+     * structure. Its assertions throw, and a throw is what the runner counts as
+     * a failure; returning normally is a pass. A test that means to finish
+     * later calls {@code succeedWhen} or builds a sequence rather than blocking.
+     *
+     * <pre>{@code
+     * public static final Identifier ORE_DROPS = REGISTRAR.testFunction("ore_drops",
+     *         helper -> {
+     *             BlockPos pos = new BlockPos(1, 2, 1);
+     *             helper.setBlock(pos, ModBlocks.RUBY_ORE.get());
+     *             helper.breakBlock(pos);
+     *             helper.succeedWhenEntityPresent(EntityType.ITEM, pos);
+     *         });
+     * }</pre>
+     *
+     * <p>Registered eagerly, not deferred. The game builds its test function
+     * registry from {@code TestFunctionLoader} during bootstrap, which is over
+     * before any mod is asked to register anything — so a mod cannot contribute
+     * through a loader and writes into the registry directly instead, while it
+     * is still open.
+     *
+     * @param name the path part of its id, which is what a test instance's
+     *             {@code function} field names
+     * @param test what to do; assertions throw
+     * @return the id it was registered under
+     */
+    public Identifier testFunction(String name, Consumer<GameTestHelper> test) {
+        Objects.requireNonNull(test, "test");
+        Identifier id = identifier(name);
+        ResourceKey<Consumer<GameTestHelper>> key =
+                ResourceKey.create(Registries.TEST_FUNCTION, id);
+
+        if (BuiltInRegistries.TEST_FUNCTION.containsKey(id)) {
+            // Two tests under one name is one silently replacing the other,
+            // and the report still shows the number of tests you expected.
+            throw new IllegalStateException(
+                    "a game test named " + id + " is already registered");
+        }
+        Registry.register(BuiltInRegistries.TEST_FUNCTION, key, test);
+        return id;
+    }
 
     /**
      * Registers an advancement trigger: something a mod can say has happened.

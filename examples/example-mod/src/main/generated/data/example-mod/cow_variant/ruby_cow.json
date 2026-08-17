@@ -1,0 +1,14 @@
+{
+  "model": "normal",
+  "asset_id": "example-mod:entity/cow/ruby",
+  "baby_asset_id": "example-mod:entity/cow/ruby",
+  "spawn_conditions": [
+    {
+      "priority": 1,
+      "condition": {
+        "type": "minecraft:biome",
+        "biomes": ["example-mod:ruby_caverns"]
+      }
+    }
+  ]
+}

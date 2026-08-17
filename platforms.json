@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "plugin": "0.2.2",
+  "plugin": "0.3.0",
   "platforms": [
     {
       "minecraft": "26.2",
@@ -8,8 +8,8 @@
       "status": "current",
       "java": 25,
       "loader": "0.1.2",
-      "api": "0.7.0",
-      "ember": "0.5.0",
+      "api": "0.8.0",
+      "ember": "0.6.0",
       "processor": "0.1.0"
     }
   ]

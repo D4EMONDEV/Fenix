@@ -34,9 +34,22 @@ public final class ModDimensions extends EmberDimensionProvider {
         // A fixed biome source: the whole dimension is ruby caverns. Anything
         // richer needs a noise parameter list, which is a large file and a
         // research project of its own.
+        // Its own rock rather than vanilla's. Borrowing minecraft:caves was
+        // right until the realm wanted to be made of something — a dimension
+        // whose ground is the mod's own block is the first thing anyone
+        // notices, and the last thing a borrowed setting can give.
+        noiseSettings("ruby_realm")
+                .defaultBlock("example-mod:ruby_block")
+                .defaultFluid("minecraft:water")
+                .shape(0, 256)
+                .ground(96)
+                .seaLevel(48)
+                .oreVeins(false)
+                .save();
+
         dimension("ruby_realm", "example-mod:ruby_realm")
                 .fixedBiome("example-mod:ruby_caverns")
-                .noiseSettings("minecraft:caves")
+                .noiseSettings("example-mod:ruby_realm")
                 .save();
     }
 }

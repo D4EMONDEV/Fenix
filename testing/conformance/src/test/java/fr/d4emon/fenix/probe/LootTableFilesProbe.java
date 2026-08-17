@@ -22,6 +22,10 @@ import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.item.trading.VillagerTrade;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
+import net.minecraft.world.item.equipment.trim.TrimPattern;
+import net.minecraft.world.item.equipment.trim.TrimMaterial;
+import net.minecraft.world.entity.animal.cow.CowVariant;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.storage.loot.LootTable;
 
 import java.nio.charset.StandardCharsets;
@@ -336,6 +340,41 @@ public final class LootTableFilesProbe {
 
         require(parsed > 0, "the demo should have cosmetic data to check");
         System.out.println("cosmetic files: " + parsed + " parsed");
+
+        // The trims. A pattern names a texture and a material names a palette,
+        // and neither is checked by anything else: a misspelled asset draws as
+        // no trim at all rather than as a missing texture, because a trim that
+        // resolves to nothing is simply not drawn.
+        int trims = parseEach(root.resolve("trim_pattern"), ops,
+                TrimPattern.DIRECT_CODEC, "trim pattern");
+        trims += parseEach(root.resolve("trim_material"), ops,
+                TrimMaterial.DIRECT_CODEC, "trim material");
+
+        // The animal variants. The codec checks the shape — an unknown model
+        // type, a condition of the wrong form — and that is worth having: a
+        // variant that fails to parse never appears at all.
+        //
+        // What it does not check is which biome a condition names. Tags are
+        // resolved long after this, so a spawn condition naming a tag that
+        // does not exist parses cleanly here and produces a variant nothing
+        // ever spawns. Tried, and it passed; saying so is better than leaving
+        // the impression that it is covered.
+        int variants = parseEach(root.resolve("cow_variant"), ops,
+                CowVariant.DIRECT_CODEC, "cow variant");
+
+        // And the noise settings, which decide what a dimension is made of.
+        // Fifteen density functions are required and every one of them is a
+        // tree the codec walks; a router missing a field produces a dimension
+        // that fails to load with a message naming the field, but only when
+        // someone travels there.
+        int noise = parseEach(root.resolve("worldgen/noise_settings"), ops,
+                NoiseGeneratorSettings.DIRECT_CODEC, "noise settings");
+        require(noise > 0, "the demo should ship noise settings of its own");
+
+        require(trims > 0, "the demo should ship an armour trim");
+        require(variants > 0, "the demo should ship an animal variant");
+        System.out.println("cosmetics: " + trims + " trim file(s), "
+                + variants + " variant(s) parsed");
     }
 
     /**
@@ -729,6 +768,28 @@ public final class LootTableFilesProbe {
                         && !value.getAsString().startsWith("#minecraft:")) {
                     // An advancement criterion names items directly.
                     object.addProperty("items", "minecraft:stone");
+                    swapped++;
+                } else if (key.equals("Name") && value.isJsonPrimitive()
+                        && value.getAsString().contains(":")
+                        && !value.getAsString().startsWith("minecraft:")) {
+                    // A block state, which is how noise settings name their
+                    // default block and how a processor rule names its output.
+                    // Capitalised, unlike every other name in a datapack.
+                    object.addProperty("Name", "minecraft:stone");
+                    swapped++;
+                } else if (key.equals("biomes") && value.isJsonArray()) {
+                    // A variant's spawn condition names biomes as a holder set.
+                    // The mod's own biome is not in this process, so a vanilla
+                    // one stands in — what is being checked here is the shape
+                    // of the condition, not which biome it names.
+                    JsonArray stood = new JsonArray();
+                    for (JsonElement biome : value.getAsJsonArray()) {
+                        stood.add(biome.isJsonPrimitive()
+                                && !biome.getAsString().startsWith("minecraft:")
+                                ? new com.google.gson.JsonPrimitive("minecraft:plains")
+                                : biome);
+                    }
+                    object.add("biomes", stood);
                     swapped++;
                 } else if (key.equals("block") && value.isJsonPrimitive()
                         && value.getAsString().contains(":")

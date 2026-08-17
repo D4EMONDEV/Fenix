@@ -198,6 +198,12 @@ That is why the demo has one.
 If `/execute in` answers *unknown dimension*, the pair of files did not load —
 a dimension and its type are two files and both are needed.
 
+
+The realm's ground is the mod's own ruby block, not stone — it has its own
+noise settings now rather than borrowing vanilla's caves. Sea level is 48 and
+rock gives way to air at 96, so arriving puts you underground: dig up. A realm
+made of stone means the dimension is still pointing at `minecraft:caves`.
+
 ### The shrine
 
 ```

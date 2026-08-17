@@ -75,12 +75,6 @@ public final class ItemBuilder {
     }
 
     /**
-     * Applies anything else vanilla's builder offers.
-     *
-     * @param step what to do to the properties
-     * @return this builder
-     */
-    /**
      * Makes this item a music disc, playing one of the mod's own songs.
      *
      * <p>The song is data — {@code EmberCosmeticsProvider} writes it — and this
@@ -112,6 +106,12 @@ public final class ItemBuilder {
         return properties(properties -> properties.humanoidArmor(material, type));
     }
 
+    /**
+     * Applies anything else vanilla's builder offers.
+     *
+     * @param step what to do to the properties
+     * @return this builder
+     */
     public ItemBuilder properties(UnaryOperator<Item.Properties> step) {
         Objects.requireNonNull(step, "step");
         UnaryOperator<Item.Properties> previous = properties;

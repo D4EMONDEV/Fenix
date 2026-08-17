@@ -213,6 +213,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         registerRunClient(project, game, clientClasspath, fenixMod);
         registerEmber(project, game, clientClasspath, fenixMod, ember, generated);
         registerRunServer(project, minecraft, cacheRoot, serverClasspath, fenixMod);
+        registerGameTest(project, minecraft, cacheRoot, serverClasspath, fenixMod);
         registerGenSources(project, game, vineflower);
         writeRunConfigs(project);
     }
@@ -408,8 +409,12 @@ public final class FenixDevPlugin implements Plugin<Project> {
         Directory runDir = project.getLayout().getProjectDirectory().dir("run-server");
         var jar = project.getTasks().named("jar");
 
-        var syncServerMods = project.getTasks().register("syncServerMods", Copy.class, task -> {
-            task.setDescription("Copies this mod and its Fenix mod dependencies into run-server/mods");
+        // Sync and not Copy: a copy leaves what a previous run put there, so the
+        // first launch after a version bump finds two of every Fenix jar and
+        // refuses to start with "duplicate mod". The directory is the plugin's
+        // to manage, which is what Sync means.
+        var syncServerMods = project.getTasks().register("syncServerMods", Sync.class, task -> {
+            task.setDescription("Makes run-server/mods exactly this mod and its Fenix dependencies");
             task.from(jar);
             task.from(fenixMod);
             Set<String> carried = carriedInside(fenixMod);
@@ -446,6 +451,76 @@ public final class FenixDevPlugin implements Plugin<Project> {
         });
     }
 
+    /**
+     * Registers {@code runGameTest}: the mod's own game tests, run in a real
+     * headless world, reported as JUnit XML.
+     *
+     * <p>The same launcher as {@code runServer}, pointed at the game's own
+     * test entry point instead of the dedicated server's. Everything the tests
+     * need — the mod, its test instance files, its structures — arrives the
+     * way it arrives in a real installation, through the mods directory.
+     *
+     * <p>Its world lives under {@code build}, not beside the project, and is
+     * deleted before each run. A game test that inherits the previous run's
+     * world is a test that can pass because of what the last one left behind.
+     */
+    private void registerGameTest(Project project, String minecraft, Path cacheRoot,
+                                  Configuration serverClasspath, Configuration fenixMod) {
+        Directory runDir = project.getLayout().getBuildDirectory().dir("gametest-run").get();
+        var jar = project.getTasks().named("jar");
+
+        var syncTestMods = project.getTasks().register("syncTestMods", Sync.class, task -> {
+            task.setDescription("Makes the test world's mods exactly this mod and its Fenix dependencies");
+            task.from(jar);
+            task.from(fenixMod);
+            Set<String> carried = carriedInside(fenixMod);
+            task.exclude(element -> carried.contains(element.getName())
+                    || !isFenixMod(element.getFile()));
+            task.into(runDir.dir("mods"));
+        });
+
+        project.getTasks().register("runGameTest", JavaExec.class, task -> {
+            task.setGroup("fenix");
+            task.setDescription("Runs this mod's game tests in a headless world and writes a JUnit report");
+            task.dependsOn(syncTestMods);
+            task.getMainClass().set(LAUNCH_MAIN);
+            task.setWorkingDir(runDir);
+
+            // -Ptests=example-mod:* narrows a run to one mod, or one test.
+            String selector = project.hasProperty("tests")
+                    ? String.valueOf(project.property("tests")) : null;
+            File report = project.getLayout().getBuildDirectory()
+                    .file("reports/gametest/report.xml").get().getAsFile();
+
+            task.doFirst(unused -> {
+                MinecraftServer server = new MinecraftDownloader(cacheRoot).resolveServer(minecraft);
+                task.setClasspath(project.files(serverClasspath, server.libraries()));
+
+                // Deleted rather than reused: the runner places each test's
+                // structure into this world, and a leftover one from a previous
+                // run is scenery a test can pass against.
+                project.delete(runDir.dir("world"));
+                report.getParentFile().mkdirs();
+
+                List<String> args = new ArrayList<>(List.of(
+                        "--fenix.gameJar", server.serverJar().toAbsolutePath().toString(),
+                        "--fenix.gameMain", "net.minecraft.gametest.Main",
+                        "--fenix.side", "server",
+                        "--fenix.gameDir", runDir.getAsFile().getAbsolutePath(),
+                        "--universe", runDir.dir("world").getAsFile().getAbsolutePath(),
+                        "--report", report.getAbsolutePath()));
+                if (selector != null) {
+                    args.add("--tests");
+                    args.add(selector);
+                }
+                task.setArgs(args);
+            });
+
+            task.doLast(unused -> project.getLogger().lifecycle(
+                    "game test report: " + report));
+        });
+    }
+
     private void registerGenSources(Project project, MinecraftLibraries game, Configuration vineflower) {
         var outputDir = project.getLayout().getBuildDirectory().dir("fenix/minecraft-sources");
 
@@ -473,7 +548,7 @@ public final class FenixDevPlugin implements Plugin<Project> {
         if (!Boolean.getBoolean("idea.sync.active")) {
             return;
         }
-        for (String taskName : List.of("runClient", "runServer", "genSources")) {
+        for (String taskName : List.of("runClient", "runServer", "runGameTest", "genSources")) {
             writeRunConfig(project, taskName);
         }
     }

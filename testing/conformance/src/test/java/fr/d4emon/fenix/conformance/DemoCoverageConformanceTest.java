@@ -1,5 +1,6 @@
 package fr.d4emon.fenix.conformance;
 
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -131,6 +133,56 @@ class DemoCoverageConformanceTest {
     }
 
     /** {@return the names of the public abstract providers nested in a source file} */
+    @Test
+    @DisplayName("every game test the demo registers is named by a test instance")
+    void everyTestFunctionIsRun() throws IOException {
+        // Read directly rather than through read(): that helper skips test
+        // directories, which is where a mod's game tests live.
+        StringBuilder java = new StringBuilder();
+        Path root = Path.of("..", "..", "examples", "example-mod", "src", "main", "java");
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
+                java.append(Files.readString(file, StandardCharsets.UTF_8)).append('\n');
+            }
+        }
+
+        Set<String> registered = new TreeSet<>();
+        Matcher declares = Pattern.compile("testFunction\\(\"([a-z0-9_]+)\"")
+                .matcher(java.toString());
+        while (declares.find()) {
+            registered.add("example-mod:" + declares.group(1));
+        }
+        assertFalse(registered.isEmpty(),
+                "the demo should register game tests, and none were found");
+
+        Path instances = Path.of(System.getProperty("fenix.test.exampleGenerated"))
+                .resolve("data/example-mod/test_instance");
+        assertTrue(Files.isDirectory(instances),
+                "the demo should generate test instances at " + instances.toAbsolutePath());
+
+        Set<String> named = new TreeSet<>();
+        try (Stream<Path> files = Files.list(instances)) {
+            for (Path file : files.filter(f -> f.toString().endsWith(".json")).toList()) {
+                named.add(JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8))
+                        .getAsJsonObject().get("function").getAsString());
+            }
+        }
+
+        Set<String> neverRun = new TreeSet<>(registered);
+        neverRun.removeAll(named);
+        assertTrue(neverRun.isEmpty(),
+                "game tests that are registered and that no test instance names. They never "
+                        + "run, and the report shows the tests it found passing rather than "
+                        + "these missing: " + neverRun);
+
+        Set<String> missing = new TreeSet<>(named);
+        missing.removeAll(registered);
+        assertTrue(missing.isEmpty(),
+                "test instances naming functions the demo does not register. Each one fails "
+                        + "the run with \"missing test function\", which reads as a broken "
+                        + "runner rather than a renamed function: " + missing);
+    }
+
     private static List<String> nestedProviders(String text) {
         List<String> found = new ArrayList<>();
         Matcher matcher = Pattern.compile(
