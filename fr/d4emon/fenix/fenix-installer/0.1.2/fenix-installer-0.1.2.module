@@ -27,11 +27,11 @@
         {
           "name": "fenix-installer-0.1.2.jar",
           "url": "fenix-installer-0.1.2.jar",
-          "size": 1858445,
-          "sha512": "de4b8b305f5ffc12afd0c30ac137481e0f6af2171dc51028445bff22d4421670575ad9c2ac60735f6e9aa3add12d46cde92bf8cf19fc8814f46ccbe89cbe09d1",
-          "sha256": "c1fe3f4a28ad8819af63856d2bf34e08898bc5d30c8d24f18e137ab4bf23f1a0",
-          "sha1": "3afdfd59854e363244e8b9a82d62dd447c240d1a",
-          "md5": "68957e5cf83c84985a84565dcd8a4447"
+          "size": 1858747,
+          "sha512": "67e3c2a3ae95a8f460a38db2fa75d5cd0447ec8b81060b20dec9fabab885c9b5022ca076ea2b7fe23e3df78c0fce7bd5dc3c9af475af97b0e40018de4833ab45",
+          "sha256": "b5b1148c02608e6d8ca6655f9d1dcf81dbcda27ba922b53134e8c5385b66dcfe",
+          "sha1": "a1fab22180b70b81dc4873dc69641c9cf773aca3",
+          "md5": "9b1d7ac143d45d505073f3cd58024653"
         }
       ]
     },
@@ -57,11 +57,11 @@
         {
           "name": "fenix-installer-0.1.2.jar",
           "url": "fenix-installer-0.1.2.jar",
-          "size": 1858445,
-          "sha512": "de4b8b305f5ffc12afd0c30ac137481e0f6af2171dc51028445bff22d4421670575ad9c2ac60735f6e9aa3add12d46cde92bf8cf19fc8814f46ccbe89cbe09d1",
-          "sha256": "c1fe3f4a28ad8819af63856d2bf34e08898bc5d30c8d24f18e137ab4bf23f1a0",
-          "sha1": "3afdfd59854e363244e8b9a82d62dd447c240d1a",
-          "md5": "68957e5cf83c84985a84565dcd8a4447"
+          "size": 1858747,
+          "sha512": "67e3c2a3ae95a8f460a38db2fa75d5cd0447ec8b81060b20dec9fabab885c9b5022ca076ea2b7fe23e3df78c0fce7bd5dc3c9af475af97b0e40018de4833ab45",
+          "sha256": "b5b1148c02608e6d8ca6655f9d1dcf81dbcda27ba922b53134e8c5385b66dcfe",
+          "sha1": "a1fab22180b70b81dc4873dc69641c9cf773aca3",
+          "md5": "9b1d7ac143d45d505073f3cd58024653"
         }
       ]
     },

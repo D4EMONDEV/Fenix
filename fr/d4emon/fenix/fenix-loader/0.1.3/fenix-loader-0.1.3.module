@@ -1,0 +1,160 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-loader",
+    "version": "0.1.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-loader-0.1.3.jar",
+          "url": "fenix-loader-0.1.3.jar",
+          "size": 92422,
+          "sha512": "6c0bf9e0bcbd8ed9b5e0f7d22b9051b0713a396d87f70df269d09e573c541a2bd235c8412d859ad0eeb776f1dca2d6c2992b0ffe6b4e2e38e2ecd0a83beeb97b",
+          "sha256": "c1c7980fb75b106bbe10e8cc2a1c3e7d78460926ba67ed3d5a9d4107af334917",
+          "sha1": "6b29c0dcf73a7fc31fd07dd5408d73433d5dc00f",
+          "md5": "5dc8807627e7bfa42515f0672b9f206b"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "net.fabricmc",
+          "module": "sponge-mixin",
+          "version": {
+            "requires": "0.17.3+mixin.0.8.7"
+          }
+        },
+        {
+          "group": "org.ow2.asm",
+          "module": "asm",
+          "version": {
+            "requires": "9.10.1"
+          }
+        },
+        {
+          "group": "org.ow2.asm",
+          "module": "asm-analysis",
+          "version": {
+            "requires": "9.10.1"
+          }
+        },
+        {
+          "group": "org.ow2.asm",
+          "module": "asm-commons",
+          "version": {
+            "requires": "9.10.1"
+          }
+        },
+        {
+          "group": "org.ow2.asm",
+          "module": "asm-tree",
+          "version": {
+            "requires": "9.10.1"
+          }
+        },
+        {
+          "group": "org.ow2.asm",
+          "module": "asm-util",
+          "version": {
+            "requires": "9.10.1"
+          }
+        },
+        {
+          "group": "fr.d4emon.fenix",
+          "module": "fenix-api-core",
+          "version": {
+            "requires": "0.1.0+mc26.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-loader-0.1.3.jar",
+          "url": "fenix-loader-0.1.3.jar",
+          "size": 92422,
+          "sha512": "6c0bf9e0bcbd8ed9b5e0f7d22b9051b0713a396d87f70df269d09e573c541a2bd235c8412d859ad0eeb776f1dca2d6c2992b0ffe6b4e2e38e2ecd0a83beeb97b",
+          "sha256": "c1c7980fb75b106bbe10e8cc2a1c3e7d78460926ba67ed3d5a9d4107af334917",
+          "sha1": "6b29c0dcf73a7fc31fd07dd5408d73433d5dc00f",
+          "md5": "5dc8807627e7bfa42515f0672b9f206b"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-loader-0.1.3-sources.jar",
+          "url": "fenix-loader-0.1.3-sources.jar",
+          "size": 60590,
+          "sha512": "167686d4e520da527f8de8e59375e49bf0fe64715d2b55a7c57242ea839904cece393dd486cf2ba397514ede360cb950b742405eec24d11f4cea1eb7ad6239d4",
+          "sha256": "496a92f4ebbc372261aac3bc15e1ede4082888f5d7867ec1df1475d68b70993e",
+          "sha1": "697805ee693ad5610734aad60f4cbd541afa2e80",
+          "md5": "f5c14082638c6fc90008033f55977e33"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-loader-0.1.3-javadoc.jar",
+          "url": "fenix-loader-0.1.3-javadoc.jar",
+          "size": 4321758,
+          "sha512": "927f00fcc3eb7abd53539ea18beb411038fd96b0cdf5cb30665ad44e20497cd9e3762b0c16ea76f4c8e623c4ed7433692f59cde781b6de51926d30d2fc47861f",
+          "sha256": "b1ac64bd6585988ca0f3bffaf24e681b21406360cf48c65e3a166338aaa39bc9",
+          "sha1": "971880446bf19acb44b9a530fcd2c61aa453d21d",
+          "md5": "291fdc158d65730bf324397a0c58acfb"
+        }
+      ]
+    }
+  ]
+}

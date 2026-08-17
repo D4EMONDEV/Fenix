@@ -27,11 +27,11 @@
         {
           "name": "fenix-gradle-plugin-0.3.0.jar",
           "url": "fenix-gradle-plugin-0.3.0.jar",
-          "size": 42080,
-          "sha512": "420c57e0d0b9b316a1db5965e80e1aca8735d4c61b6b9fd51e813c870ca659c70c27d78242865ef167659506135a94676e165039353f3fa7cd13a6c7c9de9909",
-          "sha256": "32bccaf47ff180159aca5a34f27a26375350f96881b7420a1df0edcbf118db00",
-          "sha1": "70a9acf8dedd35ae7d6c68384bccf4101435924a",
-          "md5": "c8123a2fcecaa66276063ff9c0694919"
+          "size": 42081,
+          "sha512": "26c8a7dab226bd1ccf3d7145c577cf381dd1f039ef6aae96f133b60d3716e40fc403eca3f912c3e32325fcf97efcc82bdd5d795a826536d61cabda3aa474dbcf",
+          "sha256": "0c21f19235e1f8a7c790a003d415de0ea1a5507d56743560f2e2047bc81162cf",
+          "sha1": "5a15f9a2496ceec3494f0cb220a315c2d9f82988",
+          "md5": "5251a5499b647558e833219fb50eb656"
         }
       ]
     },
@@ -71,11 +71,11 @@
         {
           "name": "fenix-gradle-plugin-0.3.0.jar",
           "url": "fenix-gradle-plugin-0.3.0.jar",
-          "size": 42080,
-          "sha512": "420c57e0d0b9b316a1db5965e80e1aca8735d4c61b6b9fd51e813c870ca659c70c27d78242865ef167659506135a94676e165039353f3fa7cd13a6c7c9de9909",
-          "sha256": "32bccaf47ff180159aca5a34f27a26375350f96881b7420a1df0edcbf118db00",
-          "sha1": "70a9acf8dedd35ae7d6c68384bccf4101435924a",
-          "md5": "c8123a2fcecaa66276063ff9c0694919"
+          "size": 42081,
+          "sha512": "26c8a7dab226bd1ccf3d7145c577cf381dd1f039ef6aae96f133b60d3716e40fc403eca3f912c3e32325fcf97efcc82bdd5d795a826536d61cabda3aa474dbcf",
+          "sha256": "0c21f19235e1f8a7c790a003d415de0ea1a5507d56743560f2e2047bc81162cf",
+          "sha1": "5a15f9a2496ceec3494f0cb220a315c2d9f82988",
+          "md5": "5251a5499b647558e833219fb50eb656"
         }
       ]
     },
