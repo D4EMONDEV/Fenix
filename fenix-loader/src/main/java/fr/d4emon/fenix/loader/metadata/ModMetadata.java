@@ -36,6 +36,7 @@ public record ModMetadata(
         String description,
         List<String> authors,
         String license,
+        String icon,
         Map<String, String> contact,
         ModSide side,
         List<ModDependency> depends,
@@ -58,6 +59,7 @@ public record ModMetadata(
         description = description == null ? "" : description;
         authors = authors == null ? List.of() : List.copyOf(authors);
         license = license == null ? "" : license;
+        icon = icon == null ? "" : icon;
         contact = contact == null ? Map.of() : Map.copyOf(contact);
         side = side == null ? ModSide.BOTH : side;
         depends = depends == null ? List.of() : List.copyOf(depends);

@@ -30,28 +30,28 @@ class ModResolverTest {
 
     private static ModCandidate mod(String id, String version, ModSide side, ModDependency... depends) {
         ModMetadata metadata = new ModMetadata(
-                id, Version.parse(version), null, null, null, null, null, side, List.of(depends), null, null, null, null);
+                id, Version.parse(version), null, null, null, null, null, null, side, List.of(depends), null, null, null, null);
         return new ModCandidate(metadata, Path.of(id + ".jar"));
     }
 
     /** A mod as it arrives from inside another mod's jar. */
     private static ModCandidate bundled(String id, String version) {
         ModMetadata metadata = new ModMetadata(id, Version.parse(version), null, null, null, null,
-                null, ModSide.BOTH, null, null, null, null, null);
+                null, null, ModSide.BOTH, null, null, null, null, null);
         return new ModCandidate(metadata, Path.of(id + "-" + version + ".jar"), true);
     }
 
     /** A mod that refuses to run alongside something. */
     private static ModCandidate breaker(String id, ModDependency... broken) {
         ModMetadata metadata = new ModMetadata(id, Version.parse("1.0.0"), null, null, null, null,
-                null, ModSide.BOTH, null, List.of(broken), null, null, null);
+                null, null, ModSide.BOTH, null, List.of(broken), null, null, null);
         return new ModCandidate(metadata, Path.of(id + ".jar"));
     }
 
     /** A mod that wants to load after something, without requiring it. */
     private static ModCandidate follower(String id, ModDependency... after) {
         ModMetadata metadata = new ModMetadata(id, Version.parse("1.0.0"), null, null, null, null,
-                null, ModSide.BOTH, null, null, List.of(after), null, null);
+                null, null, ModSide.BOTH, null, null, List.of(after), null, null);
         return new ModCandidate(metadata, Path.of(id + ".jar"));
     }
 
@@ -188,7 +188,7 @@ class ModResolverTest {
         @Test
         void reportsDuplicateIdsWithBothFiles() {
             ModMetadata metadata = new ModMetadata(
-                    "twin", Version.parse("1.0.0"), null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
+                    "twin", Version.parse("1.0.0"), null, null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
 
             ResolutionException failure = assertThrows(ResolutionException.class, () -> ModResolver.resolve(
                     List.of(
@@ -369,7 +369,7 @@ class ModResolverTest {
         @DisplayName("a mod named by both depends and after is one edge, not two")
         void doesNotCountTheSameEdgeTwice() {
             ModMetadata both = new ModMetadata("patch", Version.parse("1.0.0"), null, null, null,
-                    null, null, ModSide.BOTH, List.of(dep("lib", "*")), null,
+                    null, null, null, ModSide.BOTH, List.of(dep("lib", "*")), null,
                     List.of(dep("lib", "*")), null, null);
 
             ResolutionResult result = ModResolver.resolve(

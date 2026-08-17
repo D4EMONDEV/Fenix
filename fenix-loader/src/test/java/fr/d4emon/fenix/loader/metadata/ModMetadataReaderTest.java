@@ -257,4 +257,59 @@ class ModMetadataReaderTest {
             assertEquals(SOURCE, readExpectingFailure("[]").source());
         }
     }
+
+    /** One backslash, kept out of the literals below. */
+    private static final String BACKSLASH = String.valueOf((char) 92);
+
+    @Nested
+    @DisplayName("icon")
+    class Icons {
+
+        @Test
+        @DisplayName("a path inside the jar is kept as written")
+        void readsAPath() {
+            ModMetadata metadata = read("""
+                    {
+                      "schema": 1,
+                      "id": "example-mod",
+                      "version": "1.0.0",
+                      "icon": "assets/example-mod/icon.png"
+                    }
+                    """);
+            assertEquals("assets/example-mod/icon.png", metadata.icon());
+        }
+
+        @Test
+        @DisplayName("a mod that declares none gets an empty string, not null")
+        void defaultsToEmpty() {
+            ModMetadata metadata = read("""
+                    {
+                      "schema": 1,
+                      "id": "example-mod",
+                      "version": "1.0.0"
+                    }
+                    """);
+            assertEquals("", metadata.icon());
+        }
+
+        @Test
+        @DisplayName("a path climbing out of the jar is refused, not resolved")
+        void refusesEscapes() {
+            // Written out of a constant: the character has to survive Java
+            // source and then JSON, and two layers of escaping in one literal
+            // is how a test ends up checking a string nobody meant.
+
+            for (String bad : new String[] {"/etc/passwd", "../outside.png",
+                    "assets" + BACKSLASH + "mymod" + BACKSLASH + "icon.png"}) {
+                assertThrows(InvalidMetadataException.class, () -> read("""
+                        {
+                          "schema": 1,
+                          "id": "example-mod",
+                          "version": "1.0.0",
+                          "icon": "%s"
+                        }
+                        """.formatted(bad)), bad + " should be refused");
+            }
+        }
+    }
 }

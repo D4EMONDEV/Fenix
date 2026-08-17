@@ -70,6 +70,7 @@ public final class ModMetadataReader {
                 optionalString(root, "description", source),
                 readStringArray(root, "authors", source),
                 optionalString(root, "license", source),
+                readIcon(root, source),
                 readStringMap(root, "contact", source),
                 readSide(root, source),
                 readDepends(root, source, "depends"),
@@ -77,6 +78,36 @@ public final class ModMetadataReader {
                 readDepends(root, source, "after"),
                 readStringArray(root, "mixins", source),
                 readStringArray(root, "accessible", source));
+    }
+
+    /**
+     * Reads the icon's path inside the jar.
+     *
+     * <p>A path, not a name: it is resolved against the jar's root, so
+     * {@code assets/mymod/icon.png} is where a mod's own resources already
+     * live. An absolute path or one climbing out of the jar is refused rather
+     * than resolved, because a manifest is data a mod ships and this is the
+     * one field in it that names a file.
+     *
+     * <p>Fenix itself does not draw it. There is no mod list screen to draw it
+     * on yet — this is the declaration, so that whatever displays mods can
+     * find it without every mod inventing its own convention.
+     *
+     * @param root   the manifest
+     * @param source what to name in an error
+     * @return the path, or {@code null} if the mod declares none
+     */
+    private static String readIcon(JsonObject root, String source) {
+        String icon = optionalString(root, "icon", source);
+        if (icon == null || icon.isBlank()) {
+            return null;
+        }
+        if (icon.startsWith("/") || icon.contains("..") || icon.contains("\\")) {
+            throw new InvalidMetadataException(source,
+                    "'icon' must be a path inside the jar, with forward slashes and no "
+                            + "leading slash — got '" + icon + "'");
+        }
+        return icon;
     }
 
     /**

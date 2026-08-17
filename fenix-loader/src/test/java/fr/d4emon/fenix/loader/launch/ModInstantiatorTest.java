@@ -130,7 +130,7 @@ class ModInstantiatorTest {
         }
         loader.addPath(jar);
         ModMetadata metadata = new ModMetadata(id, Version.parse("1.0.0"),
-                null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
+                null, null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
         return new ModCandidate(metadata, jar);
     }
 
@@ -200,7 +200,7 @@ class ModInstantiatorTest {
         }
         loader.addPath(jar);
         ModMetadata metadata = new ModMetadata("split", Version.parse("1.0.0"),
-                null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
+                null, null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
         return new ModCandidate(metadata, jar);
     }
 
@@ -224,7 +224,7 @@ class ModInstantiatorTest {
             out.closeEntry();
         }
         ModMetadata metadata = new ModMetadata("data-only", Version.parse("1.0.0"),
-                null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
+                null, null, null, null, null, null, ModSide.BOTH, null, null, null, null, null);
 
         List<LoadedMod> mods = ModInstantiator.instantiate(loader, List.of(new ModCandidate(metadata, jar)), Side.CLIENT);
 
