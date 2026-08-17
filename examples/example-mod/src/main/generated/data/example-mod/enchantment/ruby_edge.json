@@ -6,15 +6,22 @@
   "effects": {
     "minecraft:damage": [
       {
-        "effect": {
-          "type": "minecraft:add",
-          "value": {
-            "type": "minecraft:linear",
-            "base": 0.5,
-            "per_level_above_first": 0.5
-          }
-        }
+      "effect": {
+        "type": "example-mod:ruby_rising",
+        "peak": 2.0,
+        "strength": 2.5
       }
+    }
+    ],
+    "minecraft:post_attack": [
+      {
+      "enchanted": "attacker",
+      "affected": "victim",
+      "effect": {
+        "type": "example-mod:ruby_drain",
+        "seconds": 4
+      }
+    }
     ]
   },
   "exclusive_set": "#minecraft:exclusive_set/damage",

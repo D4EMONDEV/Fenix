@@ -19,14 +19,18 @@
     [],
     [],
     [],
-    [],
+    [
+      "example-mod:ruby_spire"
+    ],
     [],
     [
       "example-mod:ruby_ore"
     ],
     [],
     [],
-    [],
+    [
+      "example-mod:ruby_tree"
+    ],
     []
   ],
   "has_precipitation": false,

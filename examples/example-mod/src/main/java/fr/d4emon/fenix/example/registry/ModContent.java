@@ -12,6 +12,17 @@ import fr.d4emon.fenix.example.entity.RubyWisp;
 import fr.d4emon.fenix.example.menu.RubyReforgingMenu;
 import fr.d4emon.fenix.example.menu.RubySafeMenu;
 import fr.d4emon.fenix.example.network.ModPayloads;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.world.item.enchantment.effects.EnchantmentEntityEffect;
+import fr.d4emon.fenix.example.enchantment.RubyDrainEffect;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import fr.d4emon.fenix.example.worldgen.RubySpireFeature;
+import net.minecraft.world.level.levelgen.feature.treedecorators.TreeDecoratorType;
+import fr.d4emon.fenix.example.worldgen.RubyClusterDecorator;
+import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType;
+import fr.d4emon.fenix.example.worldgen.RubySpiralTrunkPlacer;
+import net.minecraft.world.item.enchantment.effects.EnchantmentValueEffect;
+import fr.d4emon.fenix.example.enchantment.RubyRisingValue;
 import fr.d4emon.fenix.example.recipe.RubyReforgingRecipe;
 import fr.d4emon.fenix.example.test.ModTestFunctions;
 
@@ -319,6 +330,54 @@ public final class ModContent {
     public static final SwingsTrigger SWINGS_TRIGGER =
             REGISTRAR.trigger("swings", new SwingsTrigger());
 
+    /**
+     * An enchantment effect of the mod's own, so an enchantment file can name
+     * something vanilla has no word for.
+     *
+     * <p>The codec is what is registered; the effect is what the codec builds.
+     */
+    public static final Holder<MapCodec<? extends EnchantmentEntityEffect>> RUBY_DRAIN =
+            REGISTRAR.enchantmentEffect("ruby_drain", RubyDrainEffect.CODEC);
+
+    /**
+     * A feature of the mod's own: a shape nothing in vanilla describes.
+     *
+     * <p>Registering it is half of it. Ember writes the configured and placed
+     * feature files, and the biome names the placed one — miss any of those
+     * and this is correct code that never runs.
+     */
+    public static final Holder<Feature<?>> RUBY_SPIRE =
+            REGISTRAR.feature("ruby_spire", new RubySpireFeature());
+
+    /**
+     * The same number as {@link #TOTAL_SWINGS}, kept the other way.
+     *
+     * <p>The attachment is the mod's storage and only the mod reads it. This
+     * is vanilla's: it shows in the statistics screen under Custom, the game
+     * saves and restores it, and a scoreboard or a command can read it. Both
+     * exist here on purpose, because the difference is worth seeing.
+     */
+    public static final Identifier HAMMER_SWINGS = REGISTRAR.stat("hammer_swings");
+
+    /**
+     * A tree decorator of the mod's own, so a tree can grow something vanilla
+     * has no word for.
+     */
+    public static final Holder<TreeDecoratorType<RubyClusterDecorator>> RUBY_CLUSTERS =
+            REGISTRAR.treeDecorator("ruby_clusters", RubyClusterDecorator.CODEC);
+
+    /**
+     * A trunk shape of the mod's own — the heavy half of a custom tree.
+     */
+    public static final Holder<TrunkPlacerType<RubySpiralTrunkPlacer>> RUBY_SPIRAL =
+            REGISTRAR.trunkPlacer("ruby_spiral", RubySpiralTrunkPlacer.CODEC);
+
+    /**
+     * A value curve of the mod's own, for the numbers an enchantment changes.
+     */
+    public static final Holder<MapCodec<? extends EnchantmentValueEffect>> RUBY_RISING =
+            REGISTRAR.enchantmentValueEffect("ruby_rising", RubyRisingValue.CODEC);
+
     private ModContent() {
     }
 
@@ -433,10 +492,10 @@ public final class ModContent {
                 ModBlocks.RUBY_SLAB, ModBlocks.RUBY_STAIRS, ModBlocks.RUBY_FENCE,
                 ModBlocks.RUBY_GATE, ModBlocks.RUBY_WALL, ModBlocks.RUBY_TRAPDOOR,
                 ModBlocks.RUBY_BUTTON, ModBlocks.RUBY_PLATE, ModBlocks.RUBY_DOOR,
-                ModItems.RUBY, ModItems.RUBY_HAMMER, ModItems.RUBY_DISC,
+                RUBY_BRINE.bucket().orElseThrow(), ModItems.RUBY_HAMMER, ModItems.RUBY_DISC,
                 ModItems.RUBY_HELMET, ModItems.RUBY_CHESTPLATE,
                 ModItems.RUBY_LEGGINGS, ModItems.RUBY_BOOTS,
-                RUBY_BRINE.bucket().orElseThrow(),
+                ModItems.RUBY,
                 RUBY_WISP_SPAWN_EGG, RUBY_SPRITE_SPAWN_EGG);
     }
 }

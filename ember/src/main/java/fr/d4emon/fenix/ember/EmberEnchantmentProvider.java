@@ -1,5 +1,7 @@
 package fr.d4emon.fenix.ember;
 
+import net.minecraft.world.item.enchantment.Enchantment;
+import com.google.gson.JsonParser;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 
@@ -78,6 +80,18 @@ public abstract class EmberEnchantmentProvider extends EmberProvider {
     }
 
     private void save(String name, String json) {
+        // Read back with the game's own codec before it is written. Ember runs
+        // inside a real Minecraft with the mod registered, so an effect type
+        // the mod invented resolves here and nowhere else — the conformance
+        // suite has vanilla only and has to leave those entries out.
+        //
+        // Worth doing because of how an enchantment fails: one malformed
+        // effect makes the whole file fail to load, and the enchantment is
+        // then absent from the table and the anvil with one line in the log.
+        Enchantment.DIRECT_CODEC.parse(registryOps(), JsonParser.parseString(json))
+                .getOrThrow(message -> new IllegalStateException(
+                        "enchantment " + name + " would not load: " + message));
+
         output().data("enchantment/" + name + ".json", json);
     }
 

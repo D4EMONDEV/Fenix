@@ -87,5 +87,9 @@ public final class ModLanguage extends EmberLanguageProvider {
         // The key comes from the tab, so renaming it cannot leave a stale
         // translation behind.
         add(ModContent.TAB, "Example Mod");
+
+        // A statistic with no name shows its key in the statistics screen,
+        // which reads as a broken font rather than a missing translation.
+        add("stat.example-mod.hammer_swings", "Ruby Hammer Swings");
     }
 }

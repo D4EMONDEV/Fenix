@@ -1,0 +1,9 @@
+{
+  "feature": "example-mod:ruby_spire",
+  "placement": [
+    {"type": "minecraft:rarity_filter", "chance": 90},
+    {"type": "minecraft:in_square"},
+    {"type": "minecraft:heightmap", "heightmap": "WORLD_SURFACE_WG"},
+    {"type": "minecraft:biome"}
+  ]
+}

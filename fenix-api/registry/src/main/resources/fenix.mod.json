@@ -30,6 +30,8 @@
     "method net.minecraft.world.level.block.LiquidBlock <init>",
     "method net.minecraft.world.level.block.state.properties.BlockSetType register",
     "method net.minecraft.world.entity.ai.sensing.SensorType <init>",
-    "method net.minecraft.world.entity.schedule.Activity <init>"
+    "method net.minecraft.world.entity.schedule.Activity <init>",
+    "method net.minecraft.world.level.levelgen.feature.treedecorators.TreeDecoratorType <init>",
+    "method net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType <init>"
   ]
 }

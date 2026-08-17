@@ -40,6 +40,11 @@ public final class ModBiomes extends EmberBiomeProvider {
                 // than numbered: at index 6 in the raw file, and an off-by-one
                 // would generate it among the lakes.
                 .feature(Step.UNDERGROUND_ORES, "example-mod:ruby_ore")
+                // The spire stands on the surface, so it belongs to the step
+                // that runs after the terrain is shaped rather than among the
+                // ores.
+                .feature(Step.SURFACE_STRUCTURES, "example-mod:ruby_spire")
+                .feature(Step.VEGETAL_DECORATION, "example-mod:ruby_tree")
                 .spawn("creature", "example-mod:ruby_sprite", 20, 2, 4)
                 .spawn("monster", "minecraft:zombie", 40, 2, 4)
                 .save();

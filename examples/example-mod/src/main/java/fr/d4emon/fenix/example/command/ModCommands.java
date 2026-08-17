@@ -5,6 +5,9 @@ import fr.d4emon.fenix.example.registry.ModContent;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import fr.d4emon.fenix.command.CommandEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 
 import static fr.d4emon.fenix.command.Commands.argument;
@@ -43,6 +46,23 @@ public final class ModCommands {
                                     context.getSource().sendSuccess(
                                             () -> Component.literal("That ore is " + ore.id()), false);
                                 })))));
+
+        // The dialog is a datapack file; opening it is the other half. A
+        // holder from the registry, not the file — the server sends the client
+        // an id and the client draws it from its own copy of the pack.
+        CommandEvents.REGISTER.register(registration -> registration.dispatcher().register(
+                literal("shrine")
+                        .executes(run(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            player.registryAccess()
+                                    .lookup(Registries.DIALOG)
+                                    .flatMap(registry -> registry.get(
+                                            Identifier.parse("example-mod:shrine_found")))
+                                    .ifPresentOrElse(player::openDialog,
+                                            () -> context.getSource().sendFailure(
+                                                    Component.literal("the dialog is not in "
+                                                            + "the loaded datapacks")));
+                        }))));
     }
 
     private static void spawn(net.minecraft.commands.CommandSourceStack source, int count) {

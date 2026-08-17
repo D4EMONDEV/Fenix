@@ -75,6 +75,23 @@ public final class FluidRendering {
         Objects.requireNonNull(stillTexture, "stillTexture");
         Objects.requireNonNull(flowTexture, "flowTexture");
 
+        if (tint != null && (tint >>> 24) == 0) {
+            // A tint is ARGB and it is multiplied into every sprite, so an
+            // alpha of zero paints the fluid invisible. Nothing else goes
+            // wrong: the source block is placed, it breaks the grass, it
+            // flows, entities swim in it — and the screen shows the ground.
+            //
+            // Six hex digits is exactly how you write that by accident, and
+            // 0xC8203A looks like a colour in every editor. Vanilla's own
+            // constant tints are negative integers for this reason: the alpha
+            // byte is set.
+            throw new IllegalArgumentException(
+                    "the tint 0x" + Integer.toHexString(tint) + " has an alpha of zero, so "
+                            + fluid.source().id() + " would be multiplied to nothing and "
+                            + "render as if it were not there. Tints are ARGB: 0xFF"
+                            + String.format("%06X", tint & 0xFFFFFF) + " is opaque.");
+        }
+
         FluidModel.Unbaked model = new FluidModel.Unbaked(
                 new Material(stillTexture),
                 new Material(flowTexture),

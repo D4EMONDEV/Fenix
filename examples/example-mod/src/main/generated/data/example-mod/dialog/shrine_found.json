@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:notice",
+  "title": "The Ruby Shrine",
+  "can_close_with_escape": true,
+  "pause": true,
+  "body": [
+    {
+      "type": "minecraft:plain_message",
+      "contents": "Four pillars, weathered by whatever has been here longer than you."
+    },
+    {
+      "type": "minecraft:plain_message",
+      "contents": "Something below still glitters."
+    }
+  ],
+  "action": {
+    "label": "Onwards"
+  }
+}

@@ -10,6 +10,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.InteractionHand;
 import fr.d4emon.fenix.example.registry.ModItems;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -63,12 +65,15 @@ public final class ModTestFunctions {
      */
     public static final Identifier ORE_DROPS =
             ModContent.REGISTRAR.testFunction("ore_drops", helper -> {
-                ServerPlayer player = helper.makeMockServerPlayerInLevel();
-                // Survival explicitly: a mock player arrives in the mode the
-                // level defaults to, and a creative one destroys blocks without
-                // dropping anything -- which reads exactly like a loot table
-                // that was never reached.
-                player.setGameMode(GameType.SURVIVAL);
+                // Survival explicitly, because a creative player destroys blocks
+                // without dropping anything -- which reads exactly like a loot
+                // table that was never reached.
+                //
+                // makeMockServerPlayer and not makeMockServerPlayerInLevel:
+                // the latter is deprecated for removal in 26.2, and it is the
+                // one that leaves the mode to the level.
+                ServerPlayer player =
+                        (ServerPlayer) helper.makeMockServerPlayer(GameType.SURVIVAL);
                 BlockPos pos = helper.absolutePos(ORIGIN);
 
                 helper.setBlock(ORIGIN, ModBlocks.RUBY_ORE.get());
@@ -121,6 +126,41 @@ public final class ModTestFunctions {
                 // Throws if there is nothing there, or if what is there is
                 // some other class -- both of which are the same mistake.
                 helper.getBlockEntity(ORIGIN, RubyReforgingBlockEntity.class);
+                helper.succeed();
+            });
+
+    /**
+     * The mod's statistic counts, and survives being read back.
+     *
+     * <p>A statistic that is awarded but never registered is dropped from the
+     * player's file when it is written — silently, and only noticed when
+     * someone opens the statistics screen and finds nothing there. Awarding it
+     * and reading it back is the only thing that says otherwise.
+     */
+    public static final Identifier STAT_COUNTS =
+            ModContent.REGISTRAR.testFunction("stat_counts", helper -> {
+                ServerPlayer player =
+                        (ServerPlayer) helper.makeMockServerPlayer(GameType.SURVIVAL);
+
+                // Asked first, because the failure otherwise arrives as a null
+                // pointer from inside the stats code — true, but it names
+                // nothing a reader can act on.
+                if (!BuiltInRegistries.CUSTOM_STAT.containsKey(ModContent.HAMMER_SWINGS)) {
+                    helper.fail("the statistic is not registered, so awarding it writes a "
+                            + "number the player's file drops on save");
+                }
+
+                int before = player.getStats().getValue(
+                        Stats.CUSTOM.get(ModContent.HAMMER_SWINGS));
+                player.awardStat(ModContent.HAMMER_SWINGS, 3);
+                int after = player.getStats().getValue(
+                        Stats.CUSTOM.get(ModContent.HAMMER_SWINGS));
+
+                if (after - before != 3) {
+                    helper.fail("the statistic did not count: " + before + " then " + after
+                            + ". A statistic that is awarded but not registered is dropped "
+                            + "rather than rejected");
+                }
                 helper.succeed();
             });
 }

@@ -2,6 +2,12 @@ package fr.d4emon.fenix.example.block.entity;
 
 import fr.d4emon.fenix.example.registry.ModContent;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,9 +38,7 @@ public final class RubyTallyBlockEntity extends BlockEntity {
      */
     public int tally() {
         count++;
-        // Without this the chunk is never marked dirty, so the new count is
-        // correct in memory and gone after a reload.
-        setChanged();
+        sync();
         return count;
     }
 
@@ -57,8 +61,44 @@ public final class RubyTallyBlockEntity extends BlockEntity {
      */
     public int reset() {
         count = 0;
-        setChanged();
+        sync();
         return count;
+    }
+
+    /**
+     * Saves the new count, and tells the clients that can see it.
+     *
+     * <p>{@code setChanged} alone marks the chunk dirty so the number is
+     * written to disk. It sends nothing. The client keeps the copy it was given
+     * when the chunk loaded, so a renderer drawing the count draws the number
+     * it had at load time for ever — while the server, and anything the server
+     * prints to chat, is perfectly correct. That is what makes this the hardest
+     * kind of block entity bug to place: both halves are right on their own
+     * side.
+     */
+    private void sync() {
+        setChanged();
+        if (level != null) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(getBlockPos(), state, state, Block.UPDATE_ALL);
+        }
+    }
+
+    /**
+     * What a client is given when the chunk arrives.
+     *
+     * <p>Without it the block entity reaches the client empty, so the count is
+     * zero until the first change — and stays zero if there is never one.
+     */
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return saveWithoutMetadata(registries);
+    }
+
+    /** What a client is sent when {@link #sync} runs. */
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

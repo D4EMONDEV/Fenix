@@ -30,5 +30,47 @@ public final class ModOres extends EmberOreProvider {
                 .between(-48, 48)
                 .discardOnAirExposure(0.5f)
                 .write();
+
+        // The two files the mod's own feature needs. Without them it is
+        // registered code that nothing ever calls.
+        placedFeature("ruby_spire", "example-mod:ruby_spire", "{}", """
+                [
+                    {"type": "minecraft:rarity_filter", "chance": 90},
+                    {"type": "minecraft:in_square"},
+                    {"type": "minecraft:heightmap", "heightmap": "WORLD_SURFACE_WG"},
+                    {"type": "minecraft:biome"}
+                  ]""");
+
+        // A tree, so the mod's own decorator has something to decorate. The
+        // trunk and foliage are vanilla's shapes; only the decorator is ours,
+        // which is the cheap half of a custom tree.
+        placedFeature("ruby_tree", "minecraft:tree", """
+                {
+                    "trunk_provider": {"type": "minecraft:simple_state_provider",
+                      "state": {"Name": "example-mod:ruby_log"}},
+                    "below_trunk_provider": {"type": "minecraft:simple_state_provider",
+                      "state": {"Name": "example-mod:ruby_log"}},
+                    "trunk_placer": {"type": "example-mod:ruby_spiral",
+                      "base_height": 5, "height_rand_a": 2, "height_rand_b": 0},
+                    "foliage_provider": {"type": "minecraft:simple_state_provider",
+                      "state": {"Name": "minecraft:oak_leaves", "Properties": {
+                        "distance": "7", "persistent": "false", "waterlogged": "false"}}},
+                    "foliage_placer": {"type": "minecraft:blob_foliage_placer",
+                      "radius": 2, "offset": 0, "height": 3},
+                    "dirt_provider": {"type": "minecraft:simple_state_provider",
+                      "state": {"Name": "minecraft:dirt"}},
+                    "minimum_size": {"type": "minecraft:two_layers_feature_size",
+                      "limit": 1, "lower_size": 0, "upper_size": 1},
+                    "decorators": [
+                      {"type": "example-mod:ruby_clusters", "chance": 4}
+                    ],
+                    "ignore_vines": true
+                  }""", """
+                [
+                    {"type": "minecraft:rarity_filter", "chance": 60},
+                    {"type": "minecraft:in_square"},
+                    {"type": "minecraft:heightmap", "heightmap": "WORLD_SURFACE_WG"},
+                    {"type": "minecraft:biome"}
+                  ]""");
     }
 }

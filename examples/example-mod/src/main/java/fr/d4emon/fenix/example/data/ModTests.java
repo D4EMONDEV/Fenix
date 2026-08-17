@@ -35,5 +35,9 @@ public final class ModTests extends EmberTestProvider {
         test("block_entity_is_bound", ModTestFunctions.BLOCK_ENTITY_IS_BOUND)
                 .structure("example-mod:test_platform")
                 .save();
+
+        test("stat_counts", ModTestFunctions.STAT_COUNTS)
+                .structure("example-mod:test_platform")
+                .save();
     }
 }

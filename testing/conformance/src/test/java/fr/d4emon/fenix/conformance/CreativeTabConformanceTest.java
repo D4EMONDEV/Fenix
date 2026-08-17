@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -45,6 +46,17 @@ class CreativeTabConformanceTest {
     private static final Pattern DECLARATION =
             Pattern.compile("Holder<(?:Block|Item)>\\s+([A-Z][A-Z0-9_]*)\\s*=");
 
+    /**
+     * {@code public static final FluidResult RUBY_BRINE = …}
+     *
+     * <p>A fluid is declared as neither a block nor an item and brings both: a
+     * source block and a bucket. The bucket is a real item a player can hold,
+     * and it was invisible here — it happened to be in the tab, which is not
+     * the same as being kept there.
+     */
+    private static final Pattern FLUID =
+            Pattern.compile("FluidResult\\s+([A-Z][A-Z0-9_]*)\\s*=");
+
     @Test
     @DisplayName("every block and item the demo declares is in the demo's tab")
     void everythingIsReachable() throws IOException {
@@ -58,6 +70,19 @@ class CreativeTabConformanceTest {
                 declared.add(matcher.group(1));
             }
         }
+        // A fluid's bucket is written MY_FLUID.bucket(), so the declaration's
+        // own name is what has to appear in the tab.
+        Set<String> fluids = new LinkedHashSet<>();
+        for (String file : SOURCES) {
+            Matcher matcher = FLUID.matcher(Files.readString(source(file), StandardCharsets.UTF_8));
+            while (matcher.find()) {
+                fluids.add(matcher.group(1));
+            }
+        }
+        assertFalse(fluids.isEmpty(),
+                "the demo declares a fluid, and this check no longer finds it");
+        declared.addAll(fluids);
+
         assertTrue(declared.size() > 10,
                 "found only " + declared.size() + " declarations; the pattern has stopped "
                         + "matching how the demo declares content, so this check proves nothing");

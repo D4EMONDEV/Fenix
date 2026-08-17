@@ -299,6 +299,67 @@ Blowing it plays the mod's chime and carries 128 blocks rather than vanilla's
 256. Walk away from a friend blowing it: it should cut out at about half the
 distance a vanilla horn does.
 
+### The dialog
+
+```
+/shrine
+```
+
+A screen opens: **The Ruby Shrine**, two paragraphs, one button that says
+Onwards. Escape closes it, and in single player the game pauses behind it.
+
+This is the only thing the mod draws that is not client code. It is a datapack
+file, so it works on a vanilla client connected to a server running the mod —
+which is what makes it different from every screen the demo has. If the command
+answers *the dialog is not in the loaded datapacks*, the file did not load;
+`/reload` and try again.
+
+### The spire, and the tree
+
+Both generate in the mod's own biome, so a world made **after** the mod was
+installed:
+
+```
+/execute in example-mod:ruby_realm run tp @s ~ ~ ~
+```
+
+Look around. A **ruby spire** tapers upward with a glowing block at its tip —
+that is a feature written in Java, not a vanilla one configured differently.
+Rarer still, a **ruby tree**: its trunk leans one block east every third log,
+and glowing clusters hang under about a quarter of its leaves.
+
+Three separate pieces are being tested at once there. The lean is the mod's
+trunk placer, the clusters are its tree decorator, and the tree itself is
+vanilla's `minecraft:tree` feature configured with both. A straight trunk means
+the placer is not being used; leaves with nothing under them mean the decorator
+is not.
+
+### The enchantment's own effect
+
+Enchant a sword with **Ruby Edge** and hit something.
+
+Two of the mod's own pieces are in that enchantment. The damage it adds follows
+a curve the mod wrote — strongest at level 2, weaker at 1 and 3, so level 3 is
+deliberately *not* the best. And on hit, the glimmer is taken from whoever was
+struck and given to whoever swung, which no vanilla effect can express.
+
+If the enchantment does not appear in the enchanting table at all, the whole
+file failed to load rather than one effect misbehaving — that is how an
+enchantment fails.
+
+### The statistic
+
+Swing the ruby hammer a few times, then open **Statistics → Custom** in the
+pause menu. **Ruby Hammer Swings** counts up.
+
+It is the same number the attachment keeps, on purpose. The attachment is the
+mod's own storage and only the mod reads it; the statistic is vanilla's, saved
+and restored by the game and readable by a command:
+
+```
+/scoreboard objectives add swings minecraft.custom:example-mod.hammer_swings
+```
+
 ## What this does not cover
 
 Nothing here checks the **server** side on a real server. `./gradlew

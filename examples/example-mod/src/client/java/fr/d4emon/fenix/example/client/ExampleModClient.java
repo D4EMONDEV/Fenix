@@ -69,10 +69,14 @@ public final class ExampleModClient implements FenixMod {
         // A fluid with no rendering shows as the missing-texture checkerboard.
         // This reuses water's own sprites — no new textures to ship — and tints
         // them ruby red, so the brine is water-shaped and unmistakably not water.
+        //
+        // 0xFF and not six digits: the tint is ARGB and is multiplied into
+        // every sprite, so an alpha of zero renders the fluid invisible while
+        // everything else about it keeps working.
         FluidRendering.register(ModContent.RUBY_BRINE,
                 Identifier.withDefaultNamespace("block/water_still"),
                 Identifier.withDefaultNamespace("block/water_flow"),
-                null, 0xC8203A);
+                null, 0xFFC8203A);
 
         // Keys are client-only, and registered here rather than beside the
         // content: onRegister runs before the game builds its options, which

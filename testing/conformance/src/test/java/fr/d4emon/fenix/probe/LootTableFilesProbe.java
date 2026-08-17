@@ -248,9 +248,19 @@ public final class LootTableFilesProbe {
             files = found.filter(file -> file.toString().endsWith(".json")).toList();
         }
 
+        int modEffects = 0;
         for (Path file : files) {
             JsonElement json = JsonParser.parseString(
                     Files.readString(file, StandardCharsets.UTF_8));
+
+            // An effect kind the mod invented has no vanilla stand-in — the
+            // registry key simply is not in this process. Those entries are
+            // counted and dropped rather than swapped for some other effect,
+            // which would check a different effect's fields against these.
+            // Ember reads the whole file back with this same codec as it
+            // writes it, in a game that does have the mod.
+            modEffects += removeModEffects(json);
+
             Enchantment.DIRECT_CODEC.parse(ops, json)
                     .getOrThrow(message -> new AssertionError(
                             "enchantment conformance failed: " + file.getFileName()
@@ -258,7 +268,12 @@ public final class LootTableFilesProbe {
         }
 
         require(!files.isEmpty(), "the demo should have enchantments to check");
-        System.out.println("enchantment files: " + files.size() + " parsed");
+        // Without this, an effect that stopped being used reads as a clean run.
+        require(modEffects > 0,
+                "the demo should use at least one enchantment effect of its own, "
+                        + "and none was found");
+        System.out.println("enchantment files: " + files.size() + " parsed, "
+                + modEffects + " effect(s) of the mod's own left to Ember");
     }
 
     /**
@@ -675,6 +690,50 @@ public final class LootTableFilesProbe {
         try (Stream<Path> found = Files.walk(directory)) {
             return found.filter(file -> file.toString().endsWith(".json")).toList();
         }
+    }
+
+    /**
+     * Drops every enchantment effect entry naming a type this process has
+     * never heard of.
+     *
+     * @param element the enchantment, changed in place
+     * @return how many entries were dropped
+     */
+    private static int removeModEffects(JsonElement element) {
+        JsonObject effects = element.getAsJsonObject().getAsJsonObject("effects");
+        if (effects == null) {
+            return 0;
+        }
+
+        int dropped = 0;
+        for (String component : List.copyOf(effects.keySet())) {
+            JsonElement value = effects.get(component);
+            if (!value.isJsonArray()) {
+                continue;
+            }
+            JsonArray kept = new JsonArray();
+            for (JsonElement entry : value.getAsJsonArray()) {
+                JsonElement effect = entry.isJsonObject()
+                        ? entry.getAsJsonObject().get("effect") : null;
+                String type = effect != null && effect.isJsonObject()
+                        && effect.getAsJsonObject().has("type")
+                        ? effect.getAsJsonObject().get("type").getAsString() : "minecraft:";
+                if (type.startsWith("minecraft:")) {
+                    kept.add(entry);
+                } else {
+                    dropped++;
+                }
+            }
+            // A component whose list is now empty is removed: an empty list is
+            // not what the codec expects, and leaving one would fail the parse
+            // on this edit rather than on the file.
+            if (kept.isEmpty()) {
+                effects.remove(component);
+            } else {
+                effects.add(component, kept);
+            }
+        }
+        return dropped;
     }
 
     /**

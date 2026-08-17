@@ -24,7 +24,8 @@
     "PotionBrewingBuilderMixin",
     "RegistryDataLoaderMixin",
     "SpawnPlacementsInvoker",
-    "WeatheringCopperMixin"
+    "WeatheringCopperMixin",
+    "WorldDimensionsMixin"
   ],
   "client": [
     "CreativeModeTabsMixin",

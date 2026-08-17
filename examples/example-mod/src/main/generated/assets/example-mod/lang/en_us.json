@@ -45,5 +45,6 @@
   "key.example-mod.count_wisps": "Count nearby wisps",
   "message.example-mod.glimmer": "The hammer glimmers on swing %s — %s swung in all.",
   "message.example-mod.too_bright": "That block is too bright to break by hand.",
+  "stat.example-mod.hammer_swings": "Ruby Hammer Swings",
   "tooltip.example-mod.ruby": "Warm to the touch."
 }

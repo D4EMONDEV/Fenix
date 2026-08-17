@@ -1,5 +1,8 @@
 package fr.d4emon.fenix.ember;
 
+import net.minecraft.world.level.levelgen.placement.PlacementModifier;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import com.google.gson.JsonParser;
 import fr.d4emon.fenix.registry.Holder;
 import net.minecraft.world.level.block.Block;
 
@@ -47,6 +50,63 @@ public abstract class EmberOreProvider extends EmberProvider {
     @Override
     protected final void run() {
         ores();
+    }
+
+    /**
+     * Writes the two files a feature of the mod's own needs to run.
+     *
+     * <p>A registered feature is code nothing calls. The configured feature
+     * says how it is set up, the placed feature says where and how often it is
+     * tried, and a biome names the placed one. Miss either and the feature is
+     * registered, correct and never runs — with nothing in the log.
+     *
+     * @param name       the path part of both files' ids
+     * @param feature    the feature's id, from {@code Registrar.feature}
+     * @param config     the configured feature's {@code config} object, or
+     *                   {@code {}} for a feature that takes no configuration
+     * @param placement  the placed feature's modifiers, as a JSON array
+     */
+    protected final void placedFeature(String name, String feature,
+                                       String config, String placement) {
+        String configured = """
+                {
+                  "type": %s,
+                  "config": %s
+                }
+                """.formatted(EmberOutput.quote(feature), config.strip());
+
+        // Read back here rather than in the conformance suite. A feature the
+        // mod wrote is not in a vanilla-only process, so this is the only place
+        // the pair can be checked against the game's own codecs at all.
+        //
+        // Worth checking because of how it fails: a configured feature that
+        // does not parse is dropped at pack load, the biome that names it
+        // generates without it, and the world simply looks like one where the
+        // feature was rare.
+        ConfiguredFeature.DIRECT_CODEC.parse(registryOps(), JsonParser.parseString(configured))
+                .getOrThrow(message -> new IllegalStateException(
+                        "configured feature " + name + " would not load: " + message));
+        output().data("worldgen/configured_feature/" + name + ".json", configured);
+
+        String placed = """
+                {
+                  "feature": %s,
+                  "placement": %s
+                }
+                """.formatted(EmberOutput.quote(modId() + ":" + name), placement.strip());
+
+        // The modifiers alone, not the whole placed feature. The file names a
+        // configured feature that is in no registry until a datapack loads, so
+        // parsing the whole thing always fails — and a check written to
+        // tolerate that failure tolerates every other one with it. Tried:
+        // a misspelled modifier passed, because the message mentioned the
+        // unresolved feature too.
+        PlacementModifier.CODEC.listOf()
+                .parse(registryOps(), JsonParser.parseString(placement.strip()))
+                .getOrThrow(message -> new IllegalStateException(
+                        "placed feature " + name + " has a placement the game will not "
+                                + "read: " + message));
+        output().data("worldgen/placed_feature/" + name + ".json", placed);
     }
 
     /**

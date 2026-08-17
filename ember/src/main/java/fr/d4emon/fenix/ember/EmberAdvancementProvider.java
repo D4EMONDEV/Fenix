@@ -102,27 +102,6 @@ public abstract class EmberAdvancementProvider extends EmberProvider {
         output().data("advancement/" + name + ".json", json);
     }
 
-    /**
-     * The ops the check above reads with, built once.
-     *
-     * <p>Not {@code JsonOps.INSTANCE}: a criterion names items as a holder set,
-     * and a holder set is resolved through the ops rather than parsed out of
-     * the JSON. Plain ops have no registry to resolve against, so every item in
-     * every criterion fails — and the message it fails with is "Not a json
-     * array", which describes the last branch tried rather than the cause.
-     *
-     * <p>Building the lookup runs the datapack registries, which is slow enough
-     * to be worth doing once for a whole generation rather than once per file.
-     */
-    private static DynamicOps<JsonElement> registryOps() {
-        if (ops == null) {
-            ops = RegistryOps.create(JsonOps.INSTANCE, VanillaRegistries.createLookup());
-        }
-        return ops;
-    }
-
-    private static DynamicOps<JsonElement> ops;
-
     /** Collects one advancement. */
     public static final class Builder {
 

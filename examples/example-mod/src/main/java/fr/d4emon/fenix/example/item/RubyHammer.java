@@ -49,6 +49,10 @@ public final class RubyHammer extends Item {
         // On the stack above; on the player here. This one outlives the hammer,
         // and because it is persistent it survives logging out — set once, read
         // back next session.
+        // Vanilla's counter and the mod's, side by side. awardStat is a no-op
+        // on the client, so it can be called unguarded here.
+        player.awardStat(ModContent.HAMMER_SWINGS);
+
         int total = Attachments.get(player, ModContent.TOTAL_SWINGS) + 1;
         Attachments.set(player, ModContent.TOTAL_SWINGS, total);
 

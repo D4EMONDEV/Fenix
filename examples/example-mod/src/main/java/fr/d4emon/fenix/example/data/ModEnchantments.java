@@ -33,7 +33,30 @@ public final class ModEnchantments extends EmberEnchantmentProvider {
                 .weight(4)
                 .anvilCost(2)
                 .cost(4, 9, 24, 9)
-                .addsDamage(0.5f, 0.5f)
+                // The mod's own curve rather than a straight line: strongest at
+                // level 2, weaker at 1 and 3, so the best level is not simply
+                // the highest one.
+                .effect("minecraft:damage", """
+                        {
+                              "effect": {
+                                "type": "example-mod:ruby_rising",
+                                "peak": 2.0,
+                                "strength": 2.5
+                              }
+                            }""")
+                // And the mod's own effect, which no vanilla enchantment could
+                // express: it takes the glimmer from whoever is hit and gives
+                // it to whoever swung. Named here by id; the class behind that
+                // id is registered in Java.
+                .effect("minecraft:post_attack", """
+                        {
+                              "enchanted": "attacker",
+                              "affected": "victim",
+                              "effect": {
+                                "type": "example-mod:ruby_drain",
+                                "seconds": 4
+                              }
+                            }""")
                 .save();
     }
 }

@@ -1,5 +1,14 @@
 package fr.d4emon.fenix.registry;
 
+import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType;
+import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacer;
+import net.minecraft.world.level.levelgen.feature.treedecorators.TreeDecoratorType;
+import net.minecraft.world.level.levelgen.feature.treedecorators.TreeDecorator;
+import net.minecraft.stats.Stats;
+import net.minecraft.stats.StatFormatter;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.item.enchantment.effects.EnchantmentValueEffect;
+import net.minecraft.world.item.enchantment.effects.EnchantmentEntityEffect;
 import net.minecraft.gametest.framework.GameTestHelper;
 import java.util.function.Consumer;
 import net.minecraft.core.Registry;
@@ -923,6 +932,248 @@ public final class Registrar {
     // ------------------------------------------------------------------
     // Loot
     // ------------------------------------------------------------------
+
+    /**
+     * Registers a tree decorator: something added to a tree after its trunk
+     * and leaves are placed.
+     *
+     * <p>Vanilla's are vines, cocoa and beehives. A decorator of the mod's own
+     * is how a tree grows something only the mod knows about — and it is far
+     * less work than a trunk or foliage placer, because the tree's shape is
+     * already decided and handed to it.
+     *
+     * <pre>{@code
+     * public final class ClusterDecorator extends TreeDecorator {
+     *
+     *     public static final MapCodec<ClusterDecorator> CODEC = ...;
+     *
+     *     protected TreeDecoratorType<?> type() {
+     *         return ModContent.CLUSTERS.get();
+     *     }
+     *
+     *     public void place(Context context) {
+     *         // context.logs() and context.leaves() are where the tree is
+     *     }
+     * }
+     * }</pre>
+     *
+     * <p>The registered thing is a {@link TreeDecoratorType}, which is a codec
+     * with a name. The decorator's {@code type()} must return the very object
+     * this hands back, or the tree writes a decorator the game cannot read
+     * again.
+     *
+     * @param <T>   the decorator's own class
+     * @param name  the path part of its id, named under {@code type} in a
+     *              tree's {@code decorators} list
+     * @param codec how to read the decorator's own fields
+     * @return a holder, bound when the registrar is applied
+     */
+    public <T extends TreeDecorator> Holder<TreeDecoratorType<T>> treeDecorator(
+            String name, MapCodec<T> codec) {
+        Objects.requireNonNull(codec, "codec");
+        Identifier id = identifier(name);
+        Holder<TreeDecoratorType<T>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(
+                BuiltInRegistries.TREE_DECORATOR_TYPE, id, new TreeDecoratorType<>(codec))));
+        return holder;
+    }
+
+    /**
+     * Registers a trunk placer: the shape a tree's trunk grows in.
+     *
+     * <p>Straight, forking, bending and giant are vanilla's. A placer of the
+     * mod's own decides where every log goes and reports which positions the
+     * foliage should hang from, so it is the heaviest of the tree pieces to
+     * write — and the only way to a trunk shape vanilla has no word for.
+     *
+     * @param <T>   the placer's own class
+     * @param name  the path part of its id
+     * @param codec how to read it; build it with {@code trunkPlacerParts}, or
+     *              the three height fields every placer shares are missing
+     * @return a holder, bound when the registrar is applied
+     */
+    public <T extends TrunkPlacer> Holder<TrunkPlacerType<T>> trunkPlacer(
+            String name, MapCodec<T> codec) {
+        Objects.requireNonNull(codec, "codec");
+        Identifier id = identifier(name);
+        Holder<TrunkPlacerType<T>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(
+                BuiltInRegistries.TRUNK_PLACER_TYPE, id, new TrunkPlacerType<>(codec))));
+        return holder;
+    }
+
+    /**
+     * Registers a statistic: a number the game keeps per player, for ever.
+     *
+     * <p>An attachment is the mod's own storage and the mod decides what it
+     * means. A statistic is vanilla's: it appears in the statistics screen
+     * under Custom, it is saved and restored with the player by the game, and
+     * a scoreboard or a command can read it. Reach for this when the number is
+     * something a player would want to look up.
+     *
+     * <pre>{@code
+     * public static final Identifier SWINGS = REGISTRAR.stat("hammer_swings");
+     *
+     * // later, on the server:
+     * player.awardStat(SWINGS);
+     * }</pre>
+     *
+     * <p>Registered eagerly. Statistics are read back as a player's file loads,
+     * which can happen before deferred content is bound, and a statistic the
+     * reader cannot find is dropped from that player's file.
+     *
+     * @param name      the path part of its id, and its translation key under
+     *                  {@code stat.&lt;namespace&gt;.&lt;name&gt;}
+     * @param formatter how the number is shown: {@link StatFormatter#DEFAULT}
+     *                  for a count, {@code TIME} for ticks, {@code DISTANCE}
+     *                  for centimetres
+     * @return the id, which is what {@code awardStat} takes
+     */
+    public Identifier stat(String name, StatFormatter formatter) {
+        Objects.requireNonNull(formatter, "formatter");
+        Identifier id = identifier(name);
+        Registry.register(BuiltInRegistries.CUSTOM_STAT, id, id);
+        // Building the Stat is what attaches the formatter. Without it the
+        // number still counts and is shown as a bare integer, so a duration
+        // reads as a tick count nobody can interpret.
+        Stats.CUSTOM.get(id, formatter);
+        return id;
+    }
+
+    /**
+     * Registers a statistic shown as a plain count.
+     *
+     * @param name the path part of its id
+     * @return the id, which is what {@code awardStat} takes
+     */
+    public Identifier stat(String name) {
+        return stat(name, StatFormatter.DEFAULT);
+    }
+
+    /**
+     * Registers a world generation feature: code that decides what to build,
+     * where the game has decided to build something.
+     *
+     * <p>Everything a mod adds to the world so far has been vanilla's features
+     * configured differently — an ore vein is {@code minecraft:ore} with the
+     * mod's block in it. A feature of the mod's own is the other kind: a shape
+     * nothing in vanilla describes, built by code with the level in hand.
+     *
+     * <p>Extend {@link Feature}, handing its constructor the codec for whatever
+     * a configured feature may set, and do the work in {@code place}. It is
+     * given the level, the chunk generator, a random source and an origin, and
+     * returns whether it placed anything — the return value is not cosmetic,
+     * because a feature that reports success without building is a feature the
+     * game counts against the biome's budget.
+     *
+     * <pre>{@code
+     * public final class SpireFeature extends Feature<NoneFeatureConfiguration> {
+     *     public SpireFeature() {
+     *         super(NoneFeatureConfiguration.CODEC);
+     *     }
+     *
+     *     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+     *         ...
+     *     }
+     * }
+     *
+     * REGISTRAR.feature("ruby_spire", new SpireFeature());
+     * }</pre>
+     *
+     * <p>Registering it is half of it. A feature nothing configures never runs,
+     * and a configured feature nothing places never runs either — Ember writes
+     * both files.
+     *
+     * @param <T>     the feature's own class
+     * @param name    the path part of its id, named by a configured feature's
+     *                {@code type}
+     * @param feature the feature itself
+     * @return a holder, bound when the registrar is applied
+     */
+    public <T extends Feature<?>> Holder<Feature<?>> feature(String name, T feature) {
+        Objects.requireNonNull(feature, "feature");
+        Identifier id = identifier(name);
+        Holder<Feature<?>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(BuiltInRegistries.FEATURE, id, feature)));
+        return holder;
+    }
+
+    /**
+     * Registers an enchantment effect: something an enchantment does to an
+     * entity, written by the mod rather than chosen from vanilla's list.
+     *
+     * <p>Enchantments became data, which means a mod can already build one out
+     * of the effects vanilla ships — damage, ignite, a status effect. What it
+     * could not do is invent a new kind of effect. This is that.
+     *
+     * <p>Implement {@link EnchantmentEntityEffect}: its {@code apply} is handed
+     * the level, the enchantment's level, the item that carried it, the entity
+     * it landed on and where. Give the class a {@code MapCodec} for whatever
+     * the enchantment file is allowed to configure, and register that codec
+     * here — the codec is the registered thing, not the effect.
+     *
+     * <pre>{@code
+     * public record Drain(float amount) implements EnchantmentEntityEffect {
+     *
+     *     public static final MapCodec<Drain> CODEC = RecordCodecBuilder.mapCodec(
+     *             i -> i.group(Codec.FLOAT.fieldOf("amount").forGetter(Drain::amount))
+     *                     .apply(i, Drain::new));
+     *
+     *     public void apply(ServerLevel level, int enchantLevel,
+     *                       EnchantedItemInUse item, Entity target, Vec3 at) {
+     *         ...
+     *     }
+     *
+     *     public MapCodec<Drain> codec() {
+     *         return CODEC;
+     *     }
+     * }
+     *
+     * REGISTRAR.enchantmentEffect("drain", Drain.CODEC);
+     * }</pre>
+     *
+     * @param name  the path part of its id, which the enchantment file names
+     *              under {@code type}
+     * @param codec how to read the effect's own fields
+     * @return a holder, bound when the registrar is applied
+     */
+    public Holder<MapCodec<? extends EnchantmentEntityEffect>> enchantmentEffect(
+            String name, MapCodec<? extends EnchantmentEntityEffect> codec) {
+        Objects.requireNonNull(codec, "codec");
+        Identifier id = identifier(name);
+        Holder<MapCodec<? extends EnchantmentEntityEffect>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(
+                BuiltInRegistries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id, codec)));
+        return holder;
+    }
+
+    /**
+     * Registers an enchantment value effect: a way of changing a number that
+     * an enchantment is allowed to change.
+     *
+     * <p>Vanilla's are add, multiply, and a few curves. A mod wanting damage
+     * that rises and then falls away, or armour that depends on something only
+     * it knows, needs its own — and the enchantment file can then use it
+     * anywhere a value effect is accepted.
+     *
+     * @param name  the path part of its id
+     * @param codec how to read it
+     * @return a holder, bound when the registrar is applied
+     */
+    public Holder<MapCodec<? extends EnchantmentValueEffect>> enchantmentValueEffect(
+            String name, MapCodec<? extends EnchantmentValueEffect> codec) {
+        Objects.requireNonNull(codec, "codec");
+        Identifier id = identifier(name);
+        Holder<MapCodec<? extends EnchantmentValueEffect>> holder = new Holder<>(id);
+
+        defer(() -> holder.bind(Registry.register(
+                BuiltInRegistries.ENCHANTMENT_VALUE_EFFECT_TYPE, id, codec)));
+        return holder;
+    }
 
     /**
      * Registers a loot condition: a question a loot table can ask.
