@@ -1,6 +1,8 @@
 package fr.d4emon.fenix.installer;
 
 import com.google.gson.Gson;
+import java.util.Base64;
+import java.io.InputStream;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -202,7 +204,7 @@ public final class Installer {
         String now = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString();
         profile.addProperty("name", "Fenix " + minecraftVersion);
         profile.addProperty("type", "custom");
-        profile.addProperty("icon", "Furnace");
+        profile.addProperty("icon", profileIcon());
         profile.addProperty("created", now);
         profile.addProperty("lastUsed", now);
         profile.addProperty("lastVersionId", versionId);
@@ -212,6 +214,32 @@ public final class Installer {
             GSON.toJson(root, writer);
         }
         return file;
+    }
+
+    /**
+     * The icon the launcher draws beside the profile.
+     *
+     * <p>The field takes one of the launcher's own names — {@code Furnace},
+     * {@code Grass}, and the rest — or a PNG as a {@code data:} URI. It was
+     * {@code Furnace}, which is why every Fenix install looked like a furnace:
+     * not a fallback, a name somebody had to type.
+     *
+     * <p>Falls back to that name if the logo is somehow not in the jar. An icon
+     * is not worth failing an install over, and a furnace is at least a profile
+     * the launcher can draw.
+     *
+     * @return a {@code data:} URI, or a launcher icon name
+     */
+    private static String profileIcon() {
+        try (InputStream logo = Installer.class.getResourceAsStream("/fenix-logo.png")) {
+            if (logo == null) {
+                return "Furnace";
+            }
+            return "data:image/png;base64,"
+                    + Base64.getEncoder().encodeToString(logo.readAllBytes());
+        } catch (IOException e) {
+            return "Furnace";
+        }
     }
 
     private static String sha1(Path file) throws IOException {
