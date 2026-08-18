@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "fr.d4emon.fenix",
+    "module": "fenix-installer",
+    "version": "0.1.5",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.6.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "fenix-installer-0.1.5.jar",
+          "url": "fenix-installer-0.1.5.jar",
+          "size": 1859151,
+          "sha512": "2908252dc90caea1a31a06e4c4ca20fea751f13cd8fa78036d93e7598989a90d1a21f1c8fbf469f90ddfc39b144ede9b5c7967938cc167fad62d77d7144d7281",
+          "sha256": "a82bc233156232c4eb48490bf936d4b862db15f8d041c1660327700c9bfac97c",
+          "sha1": "e8d082c835243a0d07280857cd4fff77e5646444",
+          "md5": "8b53b56a3eabb6097332fdade75797dd"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 25,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.google.code.gson",
+          "module": "gson",
+          "version": {
+            "requires": "2.14.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "fenix-installer-0.1.5.jar",
+          "url": "fenix-installer-0.1.5.jar",
+          "size": 1859151,
+          "sha512": "2908252dc90caea1a31a06e4c4ca20fea751f13cd8fa78036d93e7598989a90d1a21f1c8fbf469f90ddfc39b144ede9b5c7967938cc167fad62d77d7144d7281",
+          "sha256": "a82bc233156232c4eb48490bf936d4b862db15f8d041c1660327700c9bfac97c",
+          "sha1": "e8d082c835243a0d07280857cd4fff77e5646444",
+          "md5": "8b53b56a3eabb6097332fdade75797dd"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-installer-0.1.5-sources.jar",
+          "url": "fenix-installer-0.1.5-sources.jar",
+          "size": 13064,
+          "sha512": "a4d03a70de5ffc3e2417d20f269b256172aae17720ccada48dd7e9292afaee91ad39124ca237b6499d0d23960e7024b398ac139c34f55e3e52b66efee0629ef7",
+          "sha256": "4cd55a461db8ef39bbed25d6a50772f428fa540d3048259762f9d5f56e605a0a",
+          "sha1": "bb7365f02e1df0314270e0b8f51154fa697d95aa",
+          "md5": "12fb5696ac883057fe37f6edd6467317"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "fenix-installer-0.1.5-javadoc.jar",
+          "url": "fenix-installer-0.1.5-javadoc.jar",
+          "size": 4163761,
+          "sha512": "69055e12f43eada09c9acdd3f35904df4c2f9c9211cc8ad58bac5dafc3ecf08cf0c0dd13f49b1bb7e517bca04e738870e544f02962a9e79e8ee01a2731fda253",
+          "sha256": "915fa8d2042267bd760f0a778074e3d8bbcc5baa96f3905f079c5cb688167b5e",
+          "sha1": "e3ad704d3d016d3cd7ef19549c8ccc1a7670a66b",
+          "md5": "3f03a9c3e8c9f7ee3721a8946306ad03"
+        }
+      ]
+    }
+  ]
+}
