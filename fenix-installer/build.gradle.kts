@@ -148,6 +148,16 @@ tasks.register<Zip>("distInstaller") {
     description = "Zips the native Fenix Installer for release"
     dependsOn(packageApp)
     from(appDir)
-    archiveFileName = "fenix-installer-${project.version}-windows.zip"
+    // Named for the machine that built it, not hardcoded: jpackage bundles a
+    // runtime for the platform it runs on, so three builds produce three
+    // different archives. Calling them all "-windows" is how two of them
+    // overwrite the third on a release page.
+    val os = System.getProperty("os.name").lowercase()
+    val platform = when {
+        os.contains("win") -> "windows"
+        os.contains("mac") -> "macos"
+        else -> "linux"
+    }
+    archiveFileName = "fenix-installer-${project.version}-$platform.zip"
     destinationDirectory = layout.buildDirectory.dir("distributions")
 }
